@@ -145,6 +145,12 @@ app.use((req, res, next) => {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     next();
 });
+
+/* Raíz siempre muestra la página de inicio */
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -469,12 +475,8 @@ app.post('/api/upload', (req, res) => {
 });
 
 /* ══════════════════════════════════════════
-   RUTA RAÍZ Y CATCH-ALL
+   CATCH-ALL
    ══════════════════════════════════════════ */
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
 app.use((req, res) => {
     if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/')) {
         res.redirect('/');
