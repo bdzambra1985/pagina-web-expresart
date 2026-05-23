@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>EXPRESART — Cartelera</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: radial-gradient(ellipse 80% 60% at 50% 30%, #3a000f 0%, #130002 55%, #060002 100%);
+            font-family: 'Poppins', sans-serif;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(201,162,39,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(180,10,10,0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .cartelera-wrap {
+            position: relative;
+            z-index: 1;
+            padding: 32px 24px 80px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* ── Separador dorado ── */
+        .gold-rule {
+            width: 60px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 12px auto 0;
+        }
+        .gold-divider {
+            width: 100%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201,162,39,0.40) 30%, rgba(201,162,39,0.40) 70%, transparent);
+            margin: 0;
+        }
+
+        /* ── Título de sección ── */
+        .section-heading {
+            margin-bottom: 28px;
+        }
+        .section-heading .eyebrow {
+            font-size: 0.63em;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.85);
+            margin-bottom: 6px;
+        }
+        .section-heading h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 24px rgba(220,30,30,0.40);
+        }
+        .section-heading h2 span { color: #c9a227; }
+
+        /* ══════════════════════════════
+           PRODUCCIÓN DESTACADA
+           ══════════════════════════════ */
+        .featured-section {
+            margin-bottom: 56px;
+        }
+
+        .featured-card {
+            background: rgba(255,255,255,0.055);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border: 1px solid rgba(201,162,39,0.22);
+            border-top: 2px solid rgba(201,162,39,0.50);
+            border-radius: 22px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 380px;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+        }
+
+        .featured-img-side {
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+        }
+        .featured-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .featured-img-placeholder {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            background: linear-gradient(135deg, #3a0010 0%, #1a0005 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .featured-img-placeholder i {
+            font-size: 5rem;
+            color: rgba(201,162,39,0.30);
+        }
+        .featured-img-placeholder span {
+            font-size: 0.62rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.35);
+        }
+        /* Gradiente de transición foto → texto */
+        .featured-img-side::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, transparent 50%, rgba(6,0,2,0.85) 100%);
+            pointer-events: none;
+        }
+
+        .featured-info {
+            padding: 40px 38px 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .featured-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            background: rgba(158,0,0,0.45);
+            border: 1px solid rgba(220,40,40,0.50);
+            border-radius: 20px;
+            font-size: 0.62em;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: #ffaaaa;
+            width: fit-content;
+        }
+        .featured-badge i { font-size: 0.9rem; color: #c9a227; }
+
+        .featured-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.10;
+            text-shadow: 0 0 30px rgba(220,30,30,0.35);
+        }
+
+        .featured-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .featured-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76em;
+            color: rgba(201,162,39,0.85);
+        }
+        .featured-meta-item i { font-size: 1rem; }
+
+        .featured-desc {
+            font-size: 0.84em;
+            line-height: 1.72;
+            color: rgba(255,220,220,0.72);
+            font-weight: 300;
+        }
+
+        .featured-line {
+            width: 50px; height: 2px;
+            background: linear-gradient(90deg, #c9a227, transparent);
+        }
+
+        /* ══════════════════════════════
+           GRID DE PRODUCCIONES
+           ══════════════════════════════ */
+        .producciones-section {
+            margin-top: 48px;
+        }
+
+        .prod-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .prod-card {
+            background: rgba(255,255,255,0.045);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 16px;
+            padding: 28px 26px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s;
+        }
+        .prod-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(201,162,39,0.55) 50%, transparent);
+        }
+        .prod-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 55px rgba(0,0,0,0.50), 0 0 0 1px rgba(201,162,39,0.22);
+            border-color: rgba(201,162,39,0.22);
+        }
+
+        .prod-year {
+            display: inline-block;
+            padding: 3px 12px;
+            background: rgba(201,162,39,0.12);
+            border: 1px solid rgba(201,162,39,0.30);
+            border-radius: 20px;
+            font-size: 0.62em;
+            letter-spacing: 2px;
+            color: #c9a227;
+            margin-bottom: 14px;
+        }
+
+        .prod-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.18rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            line-height: 1.25;
+        }
+
+        .prod-desc {
+            font-size: 0.78em;
+            line-height: 1.65;
+            color: rgba(255,220,220,0.58);
+            font-weight: 300;
+        }
+
+        /* ══════════════════════════════
+           ESTADO VACÍO
+           ══════════════════════════════ */
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+        }
+        .empty-state i {
+            font-size: 5rem;
+            color: rgba(201,162,39,0.20);
+            display: block;
+            margin-bottom: 20px;
+        }
+        .empty-state h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            color: rgba(255,255,255,0.28);
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            font-size: 0.78em;
+            color: rgba(255,200,200,0.28);
+            letter-spacing: 1px;
+        }
+
+        /* ── Footer ── */
+        .cartelera-footer {
+            text-align: center;
+            padding: 32px 24px 40px;
+            border-top: 1px solid rgba(201,162,39,0.15);
+            margin-top: 48px;
+        }
+        .cartelera-footer p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75em;
+            color: rgba(255,200,200,0.40);
+            letter-spacing: 1.5px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 760px) {
+            .featured-card {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+            .featured-img-side::after { display: none; }
+            .featured-info { padding: 28px 24px 24px; }
+            .featured-title { font-size: 1.6rem; }
+        }
+        @media (max-width: 520px) {
+            .cartelera-wrap { padding: 80px 14px 60px; }
+            .prod-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"       class="nav-link">Inicio</a></li>
+            <li><a href="cartelera.html"   class="nav-link active">Cartelera</a></li>
+            <li><a href="agenda.html"      class="nav-link">Agenda</a></li>
+            <li><a href="nosotros.html"    class="nav-link">Nosotros</a></li>
+            <li><a href="portafolio.html"  class="nav-link">Portafolio</a></li>
+            <li><a href="login.html"       class="nav-link" id="navLoginLink">Login</a></li>
+            <li><a href="#"               class="nav-link nav-cta">Entradas</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-curtain-l"></div>
+    <div class="hero-curtain-r"></div>
+    <div class="hero-light"></div>
+    <div class="hero-content">
+        <p class="hero-label">Escuela de Actuación</p>
+        <h1 class="hero-title">Cartelera</h1>
+        <div class="hero-rule"></div>
+    </div>
+</section>
+
+<div class="cartelera-wrap">
+
+    <!-- ══ PRODUCCIÓN DESTACADA ══ -->
+    <div class="featured-section" id="featuredSection" style="display:none">
+        <div class="section-heading">
+            <p class="eyebrow">En Cartel</p>
+            <h2>Producción <span>Destacada</span></h2>
+        </div>
+
+        <div class="featured-card" id="featuredCard">
+            <!-- se rellena por JS -->
+        </div>
+    </div>
+
+    <div class="gold-divider" id="featuredDivider" style="display:none; margin-bottom:48px;"></div>
+
+    <!-- ══ PRODUCCIONES ══ -->
+    <div class="producciones-section">
+        <div class="section-heading">
+            <p class="eyebrow">Historial</p>
+            <h2>Nuestras <span>Producciones</span></h2>
+        </div>
+
+        <div class="prod-grid" id="prodGrid">
+            <!-- estado de carga -->
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,200,200,0.30); font-size:0.85em;">
+                Cargando…
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer class="cartelera-footer">
+    <p>© 2025 EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</p>
+</footer>
+
+<script src="common.js"></script>
+<script>
+initNavAuth();
+
+async function loadCartelera() {
+    let content = {};
+    try {
+        const r = await fetch('/api/content');
+        content  = await r.json();
+    } catch (e) { /* servidor no disponible */ }
+
+    renderDestacada(content.destacada);
+    renderProducciones(content.producciones || []);
+}
+
+/* ── Producción destacada ── */
+function renderDestacada(d) {
+    if (!d || !d.title) return;
+
+    document.getElementById('featuredSection').style.display = '';
+    document.getElementById('featuredDivider').style.display = '';
+
+    const card = document.getElementById('featuredCard');
+    const imgSide = d.photo
+        ? `<div class="featured-img-side">
+               <img class="featured-img" src="${esc(d.photo)}" alt="${esc(d.title)}">
+           </div>`
+        : `<div class="featured-img-side">
+               <div class="featured-img-placeholder">
+                   <i class="bx bx-mask"></i>
+                   <span>Producción</span>
+               </div>
+           </div>`;
+
+    const metaAuthor   = d.author ? `<span class="featured-meta-item"><i class="bx bx-pen"></i>${esc(d.author)}</span>` : '';
+    const metaSeason   = d.year   ? `<span class="featured-meta-item"><i class="bx bx-calendar"></i>${esc(d.year)}</span>` : '';
+    const descBlock    = d.description
+        ? `<div class="featured-line"></div>
+           <p class="featured-desc">${esc(d.description)}</p>`
+        : '';
+
+    card.innerHTML = imgSide + `
+        <div class="featured-info">
+            <div class="featured-badge"><i class="bx bxs-star"></i> En Cartel</div>
+            <h2 class="featured-title">${esc(d.title)}</h2>
+            <div class="featured-meta">${metaAuthor}${metaSeason}</div>
+            ${descBlock}
+        </div>`;
+}
+
+/* ── Grid de producciones ── */
+function renderProducciones(prods) {
+    const grid = document.getElementById('prodGrid');
+
+    if (!prods.length) {
+        grid.innerHTML = `
+            <div class="empty-state" style="grid-column:1/-1">
+                <i class="bx bx-mask"></i>
+                <h3>Próximamente</h3>
+                <p>Las producciones de EXPRESART aparecerán aquí</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = prods.map(p => `
+        <div class="prod-card">
+            ${p.year ? `<span class="prod-year">${esc(p.year)}</span>` : ''}
+            <div class="prod-title">${esc(p.title)}</div>
+            ${p.description ? `<p class="prod-desc">${esc(p.description)}</p>` : ''}
+        </div>`).join('');
+}
+
+loadCartelera();
+</script>
+</body>
+</html>

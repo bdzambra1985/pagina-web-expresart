@@ -5,7 +5,7 @@ const fs       = require('fs');
 const crypto   = require('crypto');
 
 const app  = express();
-const PORT = 9090;
+const PORT = process.env.PORT || 9090;
 
 /* ── Rutas ── */
 const DATA_DIR     = path.join(__dirname, 'data');
@@ -76,7 +76,7 @@ function initAdmin() {
         users.push({
             userId: 'admin',
             username: 'admin',
-            passwordHash: hashPassword('expresart2025'),
+            passwordHash: hashPassword(process.env.EXP_ADMIN_PW || 'expresart2025'),
             role: 'admin',
             active: true,
             createdAt: new Date().toISOString()
@@ -488,10 +488,5 @@ app.use((req, res) => {
    ══════════════════════════════════════════ */
 initAdmin();
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n  ╔══════════════════════════════════╗`);
-    console.log(`  ║  EXPRESART Server — puerto ${PORT}  ║`);
-    console.log(`  ╚══════════════════════════════════╝`);
-    console.log(`\n  Local:   http://localhost:${PORT}`);
-    console.log(`  Red:     http://192.168.1.42:${PORT}`);
-    console.log(`\n  Admin:   admin / expresart2025\n`);
+    console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}\n`);
 });
