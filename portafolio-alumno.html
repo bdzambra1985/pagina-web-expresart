@@ -563,6 +563,18 @@
     </div>
 </nav>
 
+<section class="page-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-curtain-l"></div>
+    <div class="hero-curtain-r"></div>
+    <div class="hero-light"></div>
+    <div class="hero-content">
+        <p class="hero-label">Escuela de Actuación</p>
+        <h1 class="hero-title" id="pageHeroTitle">Portafolio Artístico</h1>
+        <div class="hero-rule"></div>
+    </div>
+</section>
+
 <!-- ════════ VISTA ESCRITORIO — Libro 3D ════════ -->
 <div class="book-wrapper port-wrap">
     <div class="port-heading">
@@ -741,6 +753,8 @@ fetch('/api/profile/' + userId)
 function populateBook(p) {
     document.title = 'EXPRESART — ' + (p.displayName || 'Portafolio');
     document.getElementById('bookTitle').textContent = p.displayName || 'Artista';
+    const heroTitle = document.getElementById('pageHeroTitle');
+    if (heroTitle) heroTitle.textContent = p.displayName || 'Portafolio Artístico';
     document.getElementById('coverName').textContent = p.displayName || '';
     document.getElementById('bookName').textContent  = p.displayName || '';
     document.getElementById('bookBio').textContent   = p.bio || p.bio_short || '';

@@ -20,115 +20,6 @@
 
         .nosotros-page {
             min-height: 100vh;
-            padding-top: 80px; /* espacio bajo el navbar */
-        }
-
-        /* ── Hero con cortina de fondo ── */
-        .nosotros-hero {
-            position: relative;
-            width: 100%;
-            height: 38vh;
-            min-height: 220px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .hero-bg {
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 80% 70% at 50% 40%, #500020 0%, #220008 55%, #060002 100%);
-        }
-
-        /* Pliegues de telón decorativos en el hero */
-        .hero-curtain-l,
-        .hero-curtain-r {
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 22%;
-            z-index: 1;
-        }
-        .hero-curtain-l {
-            left: 0;
-            background:
-                repeating-linear-gradient(90deg,
-                    rgba(0,0,0,0.40) 0px, rgba(0,0,0,0.10) 7px,
-                    transparent 15px, rgba(0,0,0,0.30) 26px,
-                    rgba(0,0,0,0.08) 32px, transparent 42px
-                ),
-                linear-gradient(to right, #7a0000 0%, #cc0000 55%, rgba(150,0,0,0.3) 100%);
-        }
-        .hero-curtain-r {
-            right: 0;
-            background:
-                repeating-linear-gradient(90deg,
-                    transparent 0px, rgba(0,0,0,0.08) 10px,
-                    rgba(0,0,0,0.30) 18px, transparent 28px,
-                    rgba(0,0,0,0.10) 35px, rgba(0,0,0,0.40) 42px
-                ),
-                linear-gradient(to left, #7a0000 0%, #cc0000 55%, rgba(150,0,0,0.3) 100%);
-        }
-
-        /* Haz de luz desde arriba */
-        .hero-light {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            pointer-events: none;
-            background: radial-gradient(
-                ellipse 40% 80% at 50% 0%,
-                rgba(255, 245, 200, 0.14) 0%,
-                rgba(255, 200, 120, 0.06) 45%,
-                transparent 75%
-            );
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 3;
-            text-align: center;
-        }
-
-        .hero-label {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.72em;
-            font-weight: 500;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: rgba(201, 162, 39, 0.90);
-            text-shadow: 0 0 20px rgba(201, 162, 39, 0.50);
-            margin-bottom: 14px;
-        }
-
-        .hero-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.4rem, 7vw, 4.8rem);
-            font-weight: 900;
-            color: #fff;
-            line-height: 1.05;
-            text-shadow:
-                0 0 40px rgba(220, 30, 30, 0.50),
-                0 4px 24px rgba(0, 0, 0, 0.70);
-            letter-spacing: 2px;
-        }
-
-        .hero-rule {
-            width: 80px; height: 2px;
-            margin: 18px auto 0;
-            background: linear-gradient(90deg, transparent, #c9a227, transparent);
-        }
-
-        /* Línea dorada proscenio al pie del hero */
-        .nosotros-hero::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent 0%, #c9a227 10%, #e8d060 50%, #c9a227 90%, transparent 100%);
-            box-shadow: 0 0 18px rgba(200, 160, 0, 0.50);
-            z-index: 5;
         }
 
         /* ── Contenido principal ── */
@@ -415,7 +306,7 @@
 <div class="nosotros-page">
 
     <!-- ══ HERO ══ -->
-    <section class="nosotros-hero">
+    <section class="page-hero">
         <div class="hero-bg"></div>
         <div class="hero-curtain-l"></div>
         <div class="hero-curtain-r"></div>
