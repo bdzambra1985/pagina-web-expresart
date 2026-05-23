@@ -33,12 +33,16 @@ body {
         0 2px 24px rgba(0, 0, 0, 0.55),
         0 1px 0 rgba(201, 162, 39, 0.18);
 
-    animation: navFadeIn 0.9s ease-out 2.8s both;
+    animation: none;
 }
 
 @keyframes navFadeIn {
     from { opacity: 0; transform: translateY(-14px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+.top-nav.nav-intro {
+    animation: navFadeIn 0.9s ease-out 2.8s both;
 }
 
 /* Línea dorada de acento en la parte inferior */
