@@ -262,7 +262,7 @@ body {
         rgba(255, 210, 180, 0.07) 55%,
         transparent 75%
     );
-    animation: stageFlash 1.6s ease-out 2.8s forwards;
+    animation: stageFlash 1.6s ease-out 2.2s forwards;
 }
 
 @keyframes stageFlash {
@@ -374,7 +374,7 @@ body {
     z-index: 15;
     opacity: 0;
     margin-bottom: 4%;
-    animation: revealContent 1.1s ease-out 3.5s forwards;
+    animation: revealContent 1.1s ease-out 2.8s forwards;
 }
 
 @keyframes revealContent {
@@ -480,7 +480,7 @@ body {
             #9a0000 90%, #780000 100%
         );
     box-shadow: inset -28px 0 55px rgba(0,0,0,0.58), 10px 0 30px rgba(0,0,0,0.72);
-    animation: openCurtainLeft 8s linear 0.55s forwards;
+    animation: openCurtainLeft 6s linear 0.55s forwards;
 }
 
 /* ── Telón derecho — espejo del izquierdo ── */
@@ -505,7 +505,7 @@ body {
             #9a0000 90%, #780000 100%
         );
     box-shadow: inset 28px 0 55px rgba(0,0,0,0.58), -10px 0 30px rgba(0,0,0,0.72);
-    animation: openCurtainRight 8s linear 0.55s forwards;
+    animation: openCurtainRight 6s linear 0.55s forwards;
 }
 
 /*
@@ -1072,13 +1072,13 @@ body {
 /* Gato derecho: empieza en el centro, camina hacia la derecha */
 .cat-stage-right {
     left: 50%;
-    animation: catWalkRight 8s linear 0.55s both;
+    animation: catWalkRight 6s linear 0.55s both;
 }
 
 /* Gato izquierdo: empieza en el centro, camina hacia la izquierda */
 .cat-stage-left {
     left: calc(50% - 95px);
-    animation: catWalkLeft 8s linear 0.55s both;
+    animation: catWalkLeft 6s linear 0.55s both;
 }
 
 /* Contenedor visual: escala el gato a tamaño de escenario */
