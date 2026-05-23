@@ -1035,9 +1035,9 @@ body {
     /* Escenario más compacto → más sala para las butacas */
     .stage-area     { flex: 0 0 52%; }
 
-    /* Butacas llenan toda la sala con perspectiva teatro correcta */
+    /* Butacas centradas verticalmente en la sala */
     .seats-perspective {
-        align-items: flex-end;
+        align-items: center;
         padding-bottom: 0;
     }
     .seats-rows {
