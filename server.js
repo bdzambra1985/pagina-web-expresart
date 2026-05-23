@@ -20,42 +20,53 @@ const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 });
 
 /* ── Contraseñas ── */
+const PW_SALT = process.env.EXP_SALT || 'expresart_salt_2025';
 function hashPassword(pw) {
-    return crypto.pbkdf2Sync(pw, 'expresart_salt_2025', 100000, 64, 'sha256').toString('hex');
+    return crypto.pbkdf2Sync(pw, PW_SALT, 100000, 64, 'sha256').toString('hex');
 }
 function verifyPassword(pw, hash) {
-    return hashPassword(pw) === hash;
+    return crypto.timingSafeEqual(Buffer.from(hashPassword(pw), 'hex'), Buffer.from(hash, 'hex'));
 }
 
 /* ── Helpers de datos ── */
-function readUsers() {
-    if (!fs.existsSync(USERS_FILE)) return [];
-    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+function readJSON(file, fallback) {
+    try {
+        if (!fs.existsSync(file)) return fallback;
+        return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+        console.error('readJSON error:', file, e.message);
+        return fallback;
+    }
 }
-function writeUsers(data) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
+function writeJSON(file, data) {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
+
+function readUsers()              { return readJSON(USERS_FILE, []); }
+function writeUsers(data)         { writeJSON(USERS_FILE, data); }
 function readProfile(userId) {
-    const f = path.join(PROFILES_DIR, userId + '.json');
-    if (!fs.existsSync(f)) return null;
-    return JSON.parse(fs.readFileSync(f, 'utf8'));
+    if (!/^[\w-]+$/.test(userId)) return null;
+    return readJSON(path.join(PROFILES_DIR, userId + '.json'), null);
 }
 function writeProfile(userId, data) {
-    fs.writeFileSync(path.join(PROFILES_DIR, userId + '.json'), JSON.stringify(data, null, 2));
+    if (!/^[\w-]+$/.test(userId)) return;
+    writeJSON(path.join(PROFILES_DIR, userId + '.json'), data);
 }
-function readContent() {
-    if (!fs.existsSync(CONTENT_FILE)) return {};
-    return JSON.parse(fs.readFileSync(CONTENT_FILE, 'utf8'));
-}
-function writeContent(data) {
-    fs.writeFileSync(CONTENT_FILE, JSON.stringify(data, null, 2));
-}
-function readEvents() {
-    if (!fs.existsSync(EVENTS_FILE)) return [];
-    return JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf8'));
-}
-function writeEvents(data) {
-    fs.writeFileSync(EVENTS_FILE, JSON.stringify(data, null, 2));
+function readContent()            { return readJSON(CONTENT_FILE, {}); }
+function writeContent(data)       { writeJSON(CONTENT_FILE, data); }
+function readEvents()             { return readJSON(EVENTS_FILE, []); }
+function writeEvents(data)        { writeJSON(EVENTS_FILE, data); }
+
+/* ── Rate limiting simple para /api/login ── */
+const loginAttempts = new Map();
+function checkRateLimit(ip) {
+    const now  = Date.now();
+    const entry = loginAttempts.get(ip) || { count: 0, first: now };
+    if (now - entry.first > 15 * 60 * 1000) { loginAttempts.set(ip, { count: 1, first: now }); return true; }
+    if (entry.count >= 10) return false;
+    entry.count++;
+    loginAttempts.set(ip, entry);
+    return true;
 }
 
 /* ── Crear admin en primer inicio ── */
@@ -125,8 +136,15 @@ function uploaderFor(userId) {
 }
 
 /* ── Middleware ── */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -134,9 +152,16 @@ app.use('/uploads', express.static(UPLOADS_DIR));
    AUTENTICACIÓN
    ══════════════════════════════════════════ */
 app.post('/api/login', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    if (!checkRateLimit(ip)) {
+        return res.status(429).json({ ok: false, message: 'Demasiados intentos. Intenta en 15 minutos.' });
+    }
     const { username, password } = req.body;
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+        return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
+    }
     const users = readUsers();
-    const user  = users.find(u => u.username === username);
+    const user  = users.find(u => u.username === username.trim());
     if (!user || !verifyPassword(password, user.passwordHash)) {
         return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos' });
     }
@@ -285,11 +310,17 @@ app.get('/api/users', (req, res) => {
 app.post('/api/users', (req, res) => {
     if (!requireAdmin(req, res)) return;
     const { username, password, displayName } = req.body;
-    if (!username || !password) {
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
     }
+    if (username.trim().length < 3 || username.trim().length > 40) {
+        return res.status(400).json({ ok: false, message: 'Usuario debe tener entre 3 y 40 caracteres' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 6 caracteres' });
+    }
     const users = readUsers();
-    if (users.find(u => u.username === username)) {
+    if (users.find(u => u.username === username.trim())) {
         return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
     }
     const userId = 'alu_' + Date.now();
@@ -347,18 +378,25 @@ app.get('/api/events', (req, res) => {
     res.json(events);
 });
 
+const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
 app.post('/api/events', (req, res) => {
     if (!requireAdmin(req, res)) return;
     const { title, date, time, location, description, category } = req.body;
-    if (!title || !date) return res.status(400).json({ ok: false, message: 'Título y fecha son requeridos' });
+    if (!title || !date || typeof title !== 'string' || typeof date !== 'string') {
+        return res.status(400).json({ ok: false, message: 'Título y fecha son requeridos' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+        return res.status(400).json({ ok: false, message: 'Formato de fecha inválido (YYYY-MM-DD)' });
+    }
     const events = readEvents();
     const event  = {
         id: 'evt_' + Date.now(),
-        title, date,
-        time:        time        || '',
-        location:    location    || '',
-        description: description || '',
-        category:    category    || 'otro',
+        title:       title.trim().slice(0, 200),
+        date:        date.trim(),
+        time:        (time        || '').slice(0, 10),
+        location:    (location    || '').slice(0, 200),
+        description: (description || '').slice(0, 1000),
+        category:    VALID_CATEGORIES.has(category) ? category : 'otro',
         createdAt:   new Date().toISOString()
     };
     events.push(event);

@@ -11,16 +11,14 @@
     <link rel="stylesheet" href="style.css">
     <style>
         :root {
-            --gold:        #c9a227;
             --gold-light:  #e8d060;
-            --crimson:     #9e0000;
             --crimson-mid: #cc0000;
             --dark:        #0e0003;
             --page-bg:     linear-gradient(135deg, #fdf5e8 0%, #f5ead6 100%);
             --text:        #1a0505;
             --text2:       #4a1a1a;
-            --border:      0.12rem solid #c9a227;
-            --cover-bg:    linear-gradient(135deg, #6b0000 0%, #9e0000 40%, #7a0000 70%, #5a0000 100%);
+            --border:      0.12rem solid var(--gold);
+            --cover-bg:    linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 40%, #7a0000 70%, #5a0000 100%);
         }
 
         body {
@@ -708,31 +706,14 @@
 
 </div><!-- /mobile-view -->
 
+<script src="common.js"></script>
 <script>
-/* ── Helpers ── */
-function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 function ytThumb(url) {
     const m = url.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{11})/);
     return m ? 'https://img.youtube.com/vi/' + m[1] + '/mqdefault.jpg' : null;
 }
 
-/* ── Actualizar nav ── */
-const tok = localStorage.getItem('exp_token');
-if (tok) {
-    fetch('/api/auth', { headers: { 'x-session-token': tok } })
-        .then(r => r.json())
-        .then(d => {
-            if (!d.ok) return;
-            const link = document.getElementById('navLoginLink');
-            if (link) {
-                if (d.role === 'admin') { link.textContent = 'Admin'; link.href = 'admin.html'; }
-                else { link.textContent = 'Mi Perfil'; link.href = 'mi-portafolio.html'; }
-            }
-        }).catch(() => {});
-}
+initNavAuth();
 
 /* ── Cargar perfil ── */
 const userId = new URLSearchParams(location.search).get('id');

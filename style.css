@@ -4,6 +4,19 @@
    Paleta: Carmesí · Blanco · Oro teatral
    ============================================================ */
 
+:root {
+    --gold:         #c9a227;
+    --gold-rgb:     201,162,39;
+    --crimson:      #9e0000;
+    --crimson-rgb:  158,0,0;
+    --crimson-dark: #7a0000;
+    --bg-dark:      #060002;
+    --text-muted:   rgba(255,200,200,0.55);
+    --glass-bg:     rgba(255,255,255,0.07);
+    --glass-border: rgba(255,255,255,0.14);
+    --shadow-deep:  0 20px 60px rgba(0,0,0,0.55);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {

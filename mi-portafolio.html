@@ -478,6 +478,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="common.js"></script>
 <script>
 const TOKEN = localStorage.getItem('exp_token');
 let myUserId = '';
@@ -809,9 +810,6 @@ document.getElementById('addVideoBtn').onclick = async () => {
     }
 };
 
-function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 </script>
 </body>
 </html>

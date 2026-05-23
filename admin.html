@@ -601,6 +601,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="common.js"></script>
 <script>
 const TOKEN = localStorage.getItem('exp_token');
 
@@ -995,14 +996,14 @@ async function loadEvents() {
                     return `
                     <tr>
                         <td>${dateLabel}${ev.time ? ' '+ev.time : ''}</td>
-                        <td>${escAdmin(ev.title)}</td>
+                        <td>${esc(ev.title)}</td>
                         <td><span style="color:${cat.color};font-size:0.80em;letter-spacing:1px;text-transform:uppercase">${cat.label}</span></td>
-                        <td style="font-size:0.78em;color:rgba(255,200,200,0.55)">${escAdmin(ev.location)}</td>
+                        <td style="font-size:0.78em;color:rgba(255,200,200,0.55)">${esc(ev.location)}</td>
                         <td style="display:flex;gap:6px;flex-wrap:wrap">
                             <button class="tbl-btn tbl-btn-view" onclick="editEvent(${JSON.stringify(ev).replace(/"/g,'&quot;')})">
                                 <i class="bx bx-edit"></i> Editar
                             </button>
-                            <button class="tbl-btn tbl-btn-delete" onclick="deleteEvent('${ev.id}','${escAdmin(ev.title)}')">
+                            <button class="tbl-btn tbl-btn-delete" onclick="deleteEvent('${ev.id}','${esc(ev.title)}')">
                                 <i class="bx bx-trash"></i> Eliminar
                             </button>
                         </td>
@@ -1093,9 +1094,6 @@ async function deleteEvent(id, title) {
     else       showToast(d.message || 'Error', true);
 }
 
-function escAdmin(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 
 loadEvents();
 </script>

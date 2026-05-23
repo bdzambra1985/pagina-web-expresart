@@ -10,10 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --gold:    #c9a227;
-            --crimson: #9e0000;
-        }
 
         body {
             min-height: 100vh;
@@ -472,6 +468,7 @@
 
 </div>
 
+<script src="common.js"></script>
 <script>
 /* ── Configuración de categorías ── */
 const CATS = {
@@ -495,20 +492,7 @@ let activeFilter  = 'all';
 const today = new Date();
 today.setHours(0,0,0,0);
 
-/* ── Actualizar nav según sesión ── */
-const tok = localStorage.getItem('exp_token');
-if (tok) {
-    fetch('/api/auth', { headers: { 'x-session-token': tok } })
-        .then(r => r.json())
-        .then(d => {
-            if (!d.ok) return;
-            const link = document.getElementById('navLoginLink');
-            if (link) {
-                if (d.role === 'admin') { link.textContent = 'Admin';     link.href = 'admin.html'; }
-                else                   { link.textContent = 'Mi Perfil'; link.href = 'mi-portafolio.html'; }
-            }
-        }).catch(() => {});
-}
+initNavAuth();
 
 /* ── Cargar eventos ── */
 async function loadEvents() {
@@ -704,10 +688,6 @@ document.getElementById('catFilters').querySelectorAll('.cat-filter').forEach(bt
         renderUpcoming();
     };
 });
-
-function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 
 loadEvents();
 </script>
