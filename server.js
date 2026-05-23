@@ -431,6 +431,21 @@ app.post('/api/upload', (req, res) => {
 });
 
 /* ══════════════════════════════════════════
+   RUTA RAÍZ Y CATCH-ALL
+   ══════════════════════════════════════════ */
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use((req, res) => {
+    if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/')) {
+        res.redirect('/');
+    } else {
+        res.status(404).json({ ok: false, message: 'No encontrado' });
+    }
+});
+
+/* ══════════════════════════════════════════
    Iniciar servidor
    ══════════════════════════════════════════ */
 initAdmin();
