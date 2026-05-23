@@ -33,7 +33,7 @@ body {
         0 2px 24px rgba(0, 0, 0, 0.55),
         0 1px 0 rgba(201, 162, 39, 0.18);
 
-    animation: navFadeIn 0.9s ease-out 0.2s both;
+    animation: navFadeIn 0.9s ease-out 2.8s both;
 }
 
 @keyframes navFadeIn {
