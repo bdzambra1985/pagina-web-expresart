@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>EXPRESART — Portafolio Artístico</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --gold:        #c9a227;
+            --gold-light:  #e8d060;
+            --crimson:     #9e0000;
+            --crimson-mid: #cc0000;
+            --dark:        #0e0003;
+            --page-bg:     linear-gradient(135deg, #fdf5e8 0%, #f5ead6 100%);
+            --text:        #1a0505;
+            --text2:       #4a1a1a;
+            --border:      0.12rem solid #c9a227;
+            --cover-bg:    linear-gradient(135deg, #6b0000 0%, #9e0000 40%, #7a0000 70%, #5a0000 100%);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: radial-gradient(ellipse 80% 60% at 50% 30%, #3a000f 0%, #130002 55%, #060002 100%);
+            font-family: 'Poppins', sans-serif;
+            color: var(--text);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(201,162,39,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(180,10,10,0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ══════════════════════════════════
+           VISTA ESCRITORIO (libro 3D)
+           ══════════════════════════════════ */
+        .port-wrap {
+            position: relative;
+            z-index: 1;
+            padding-top: 80px;
+            padding-bottom: 40px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .port-heading {
+            text-align: center;
+        }
+        .port-heading .eyebrow {
+            font-size: 0.70em;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.85);
+            margin-bottom: 6px;
+        }
+        .port-heading h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(200,30,30,0.45);
+        }
+        .gold-rule {
+            width: 60px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 10px auto 0;
+        }
+
+        .back-link-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: rgba(201,162,39,0.70);
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+        .back-link-top:hover { color: var(--gold); }
+
+        /* ── Libro ── */
+        .wrapper {
+            position: relative;
+            width: 66rem;
+            height: 44rem;
+            padding: 2rem;
+            perspective: 250rem;
+            animation: bookReveal 1.8s forwards;
+        }
+        @keyframes bookReveal {
+            0%,30% { opacity:0; transform: rotate(-18deg) translateY(20px); }
+            100%    { opacity:1; transform: rotate(0deg)  translateY(0); }
+        }
+
+        .cover {
+            position: absolute;
+            top: 0; left: 0;
+            width: 50%; height: 100%;
+            background: var(--cover-bg);
+            box-shadow: 0 0 0 3px rgba(201,162,39,0.55), 0 10px 40px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,245,180,0.25);
+            border-top-left-radius: 0.5rem;
+            border-bottom-left-radius: 0.5rem;
+            transform-origin: right;
+        }
+        .cover::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: repeating-linear-gradient(90deg,
+                rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.04) 4px,
+                transparent 8px, rgba(0,0,0,0.09) 14px,
+                rgba(0,0,0,0.03) 18px, transparent 24px);
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            width: 6px;
+            background: linear-gradient(to bottom, var(--gold-light), var(--gold), var(--gold-light));
+            box-shadow: 0 0 12px rgba(201,162,39,0.60);
+        }
+        .cover.cover-left  { z-index: -1; }
+        .cover.cover-right {
+            z-index: 100;
+            transition: transform 1s cubic-bezier(.645,.045,.355,1);
+        }
+        .cover.cover-right.turn { transform: rotateY(180deg); }
+
+        .cover-logo {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1;
+        }
+        .cover-logo img {
+            width: 140px;
+            filter: drop-shadow(0 0 16px rgba(201,162,39,0.60));
+        }
+        .cover-logo p {
+            font-size: 0.62em;
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.90);
+            margin-top: 8px;
+            text-shadow: 0 0 12px rgba(201,162,39,0.50);
+        }
+        .cover-logo .cover-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: rgba(255,240,210,0.90);
+            margin-top: 6px;
+        }
+
+        /* ── Páginas ── */
+        .book {
+            position: relative;
+            width: 100%; height: 100%;
+            display: flex;
+            perspective: 250rem;
+        }
+        .book-page {
+            position: absolute;
+            width: 50%; height: 100%;
+            background: var(--page-bg);
+            box-shadow: 0 0 .6rem rgba(0,0,0,0.12);
+            display: flex;
+            padding: 2rem;
+        }
+        .book-page.page-left {
+            box-shadow: -.6rem .6rem .6rem rgba(0,0,0,0.12);
+        }
+        .book-page.page-left::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            width: 20px;
+            background: linear-gradient(to left, rgba(0,0,0,0.14), transparent);
+            pointer-events: none;
+        }
+        .book-page.page-right {
+            position: absolute;
+            right: 0;
+            transform-style: preserve-3d;
+            transform-origin: left;
+            transition: transform 1s cubic-bezier(.645,.045,.355,1);
+        }
+        .book-page.page-right.turn { transform: rotateY(-180deg); }
+
+        .page-front,
+        .page-back {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--page-bg);
+            padding: 1.6rem 2rem;
+        }
+        .page-front { transform: rotateY(0deg)   translateZ(1px); }
+        .page-back  { transform: rotateY(180deg) translateZ(1px); }
+
+        .page-front::before,
+        .page-back::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--crimson), var(--gold), var(--crimson));
+        }
+
+        .number-page {
+            position: absolute;
+            bottom: 1rem; left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        /* ── Botones vuelta ── */
+        .nextprev-btn {
+            position: absolute;
+            bottom: 0.9rem; right: 1.5rem;
+            width: 2rem; height: 2rem;
+            cursor: pointer;
+            font-size: 2rem;
+            color: var(--text2);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .nextprev-btn:hover { color: var(--crimson); }
+        .nextprev-btn.back  { left: 1.5rem; right: auto; }
+
+        /* ── Página de perfil (izquierda fija) ── */
+        .profile-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        .profile-page .avatar {
+            width: 130px; height: 130px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 20px rgba(201,162,39,0.35);
+            object-fit: cover;
+            margin-bottom: 0.4rem;
+        }
+        .avatar-placeholder {
+            width: 130px; height: 130px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            background: linear-gradient(135deg, #3a0010, #1a0005);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.4rem;
+        }
+        .avatar-placeholder i { font-size: 3.2rem; color: rgba(201,162,39,0.45); }
+        .profile-page h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--crimson);
+            line-height: 1.1;
+        }
+        .profile-page h3 {
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .profile-page .divider {
+            width: 50px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 4px 0;
+        }
+        .profile-page p {
+            font-size: 0.80rem;
+            line-height: 1.65;
+            color: var(--text2);
+        }
+
+        /* ── Títulos de sección ── */
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--crimson);
+            text-align: center;
+            margin-bottom: 0.3rem;
+        }
+        .page-title-rule {
+            width: 40px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 0 auto 1.2rem;
+        }
+
+        /* ── Timeline ── */
+        .timeline {
+            border-left: 2px solid var(--gold);
+            margin-left: 0.5rem;
+            padding-left: 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: 31rem;
+        }
+        .timeline-item { position: relative; }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 4px; left: -1.96rem;
+            width: 1rem; height: 1rem;
+            border-radius: 50%;
+            background: var(--crimson);
+            border: 2px solid var(--gold);
+        }
+        .timeline-year {
+            font-size: 0.72rem; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--gold);
+        }
+        .timeline-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem; font-weight: 700;
+            color: var(--crimson); margin: 2px 0;
+        }
+        .timeline-text { font-size: 0.76rem; color: var(--text2); line-height: 1.5; }
+        .timeline-img {
+            width: 100%; height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-top: 6px;
+            border: 1px solid rgba(201,162,39,0.30);
+        }
+
+        /* ── Videos ── */
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            overflow-y: auto;
+            max-height: 32rem;
+        }
+        .video-item a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            background: rgba(201,162,39,0.04);
+            transition: background 0.25s;
+        }
+        .video-item a:hover { background: rgba(201,162,39,0.10); }
+        .video-item i { font-size: 1.6rem; color: var(--crimson); flex-shrink: 0; }
+        .video-item .vt {
+            font-size: 0.80rem; color: var(--text);
+            font-family: 'Playfair Display', serif;
+        }
+        .video-item .vu {
+            font-size: 0.65rem; color: var(--text2);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        /* ── Especialidades ── */
+        .esp-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.3rem;
+        }
+        .esp-tag {
+            padding: 8px 16px;
+            border: var(--border);
+            border-radius: 24px;
+            font-size: 0.80rem;
+            color: var(--text);
+            background: rgba(201,162,39,0.06);
+            transition: 0.25s;
+        }
+        .esp-tag:hover { background: var(--gold); color: #fff; }
+
+        /* ── Contacto ── */
+        .contact-school {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0.4rem;
+        }
+        .contact-school p {
+            font-size: 0.82rem; line-height: 1.6; color: var(--text2);
+        }
+        .tbtn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 1.4rem;
+            height: 2.6rem;
+            background: var(--crimson);
+            border: 0.12rem solid var(--crimson-mid);
+            border-radius: 0.3rem;
+            font-size: 0.78rem; font-weight: 500;
+            letter-spacing: 1px; color: #fff;
+            text-decoration: none;
+            transition: 0.3s; cursor: pointer;
+        }
+        .tbtn:hover { background: transparent; color: var(--crimson); }
+
+        /* ══════════════════════════════════
+           VISTA MÓVIL (scroll lineal)
+           ══════════════════════════════════ */
+        .mobile-view {
+            display: none;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 80px 18px 50px;
+        }
+
+        .mobile-profile {
+            text-align: center;
+            padding: 28px 20px 32px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(201,162,39,0.18);
+            border-radius: 18px;
+            margin-bottom: 22px;
+        }
+        .mobile-profile .m-avatar {
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            object-fit: cover;
+            margin-bottom: 14px;
+        }
+        .mobile-profile .m-avatar-ph {
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            background: linear-gradient(135deg, #3a0010, #1a0005);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px;
+        }
+        .mobile-profile .m-avatar-ph i { font-size: 2.8rem; color: rgba(201,162,39,0.40); }
+        .mobile-profile h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem; font-weight: 900; color: #fff;
+        }
+        .mobile-profile .m-sub {
+            font-size: 0.70rem; letter-spacing: 2px;
+            text-transform: uppercase; color: rgba(201,162,39,0.80);
+            margin: 4px 0 12px;
+        }
+        .mobile-profile .m-bio {
+            font-size: 0.82rem; color: rgba(255,220,220,0.65); line-height: 1.6;
+        }
+        .mobile-profile .m-divider {
+            width: 50px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 12px auto;
+        }
+
+        .mobile-section {
+            background: #fff;
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin-bottom: 16px;
+        }
+        .mobile-section h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--crimson); margin-bottom: 4px;
+        }
+        .mobile-section .m-rule {
+            width: 30px; height: 2px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+            margin-bottom: 16px;
+        }
+
+        .m-timeline { border-left: 2px solid var(--gold); margin-left: 6px; padding-left: 16px; }
+        .m-timeline .timeline-item { margin-bottom: 16px; }
+        .m-timeline .timeline-item:last-child { margin-bottom: 0; }
+
+        .m-esp-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .m-esp-tag {
+            padding: 6px 14px;
+            border: 1px solid rgba(158,0,0,0.40);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--crimson);
+            background: rgba(158,0,0,0.05);
+        }
+
+        .m-video-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+        .m-video-item:last-child { border-bottom: none; }
+        .m-video-item i { font-size: 1.4rem; color: var(--crimson); }
+        .m-video-item a { color: var(--text); text-decoration: none; font-size: 0.82rem; }
+        .m-video-item a:hover { color: var(--crimson); }
+
+        /* ── Responsive toggle ── */
+        @media (max-width: 767px) {
+            .book-wrapper { display: none !important; }
+            .mobile-view  { display: block; }
+        }
+        @media (min-width: 768px) {
+            .book-wrapper { display: flex; }
+            .mobile-view  { display: none; }
+        }
+
+        /* ── Responsive libro ── */
+        @media (max-width: 900px) {
+            .wrapper { width: 95vw; height: auto; min-height: 480px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"      class="nav-link">Inicio</a></li>
+            <li><a href="#"               class="nav-link">Cartelera</a></li>
+            <li><a href="agenda.html"     class="nav-link">Agenda</a></li>
+            <li><a href="nosotros.html"   class="nav-link">Nosotros</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="login.html"      class="nav-link" id="navLoginLink">Login</a></li>
+            <li><a href="#"               class="nav-link nav-cta">Entradas</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- ════════ VISTA ESCRITORIO — Libro 3D ════════ -->
+<div class="book-wrapper port-wrap">
+    <div class="port-heading">
+        <p class="eyebrow">Escuela de Actuación</p>
+        <h1 id="bookTitle">Portafolio Artístico</h1>
+        <div class="gold-rule"></div>
+        <a href="portafolio.html" class="back-link-top" style="margin-top:10px;display:inline-flex">
+            <i class="bx bx-arrow-back"></i> Todos los artistas
+        </a>
+    </div>
+
+    <div class="wrapper">
+        <!-- Tapa trasera -->
+        <div class="cover cover-left"></div>
+
+        <!-- Tapa delantera -->
+        <div class="cover cover-right">
+            <div class="cover-logo">
+                <img src="logo.png" alt="EXPRESART">
+                <p>Portafolio Artístico</p>
+                <div class="cover-name" id="coverName">Cargando…</div>
+            </div>
+        </div>
+
+        <div class="book">
+
+            <!-- ── Página izquierda fija — Perfil ── -->
+            <div class="book-page page-left">
+                <div class="profile-page">
+                    <div id="bookAvatar" class="avatar-placeholder"><i class="bx bx-user"></i></div>
+                    <h1 id="bookName">Cargando…</h1>
+                    <h3>EXPRESART</h3>
+                    <div class="divider"></div>
+                    <p id="bookBio"></p>
+                </div>
+            </div>
+
+            <!-- ── Páginas 1 & 2 — Producciones / Videos ── -->
+            <div class="book-page page-right" id="turn-1" style="z-index:2">
+                <div class="page-front">
+                    <h2 class="page-title">Producciones</h2>
+                    <div class="page-title-rule"></div>
+                    <div class="timeline" id="bookProd">
+                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>
+                    </div>
+                    <span class="number-page">1</span>
+                    <span class="nextprev-btn" data-page="turn-1"><i class="bx bx-chevron-right"></i></span>
+                </div>
+                <div class="page-back">
+                    <h2 class="page-title">Videos</h2>
+                    <div class="page-title-rule"></div>
+                    <div class="video-list" id="bookVideos">
+                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>
+                    </div>
+                    <span class="number-page">2</span>
+                    <span class="nextprev-btn back" data-page="turn-1"><i class="bx bx-chevron-left"></i></span>
+                </div>
+            </div>
+
+            <!-- ── Páginas 3 & 4 — Especialidades / Sobre la Escuela ── -->
+            <div class="book-page page-right" id="turn-2" style="z-index:1">
+                <div class="page-front">
+                    <h2 class="page-title">Especialidades</h2>
+                    <div class="page-title-rule"></div>
+                    <div class="esp-list" id="bookEsp">
+                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin especialidades registradas.</p>
+                    </div>
+                    <span class="number-page">3</span>
+                    <span class="nextprev-btn" data-page="turn-2"><i class="bx bx-chevron-right"></i></span>
+                </div>
+                <div class="page-back">
+                    <h2 class="page-title">Sobre la Escuela</h2>
+                    <div class="page-title-rule"></div>
+                    <div class="contact-school">
+                        <p>EXPRESART forma artistas escénicos con técnica, sensibilidad y vocación. Cada alumno construye su propio lenguaje artístico a través de nuestra metodología integral.</p>
+                        <a href="nosotros.html" class="tbtn" style="align-self:flex-start">Conoce EXPRESART</a>
+                        <a href="portafolio.html" class="tbtn" style="align-self:flex-start;background:transparent;border-color:var(--gold);color:var(--gold)">← Otros artistas</a>
+                    </div>
+                    <span class="number-page">4</span>
+                    <span class="nextprev-btn back" data-page="turn-2"><i class="bx bx-chevron-left"></i></span>
+                </div>
+            </div>
+
+        </div><!-- /book -->
+    </div><!-- /wrapper -->
+
+</div><!-- /book-wrapper -->
+
+<!-- ════════ VISTA MÓVIL — Scroll lineal ════════ -->
+<div class="mobile-view">
+
+    <a href="portafolio.html" style="display:inline-flex;align-items:center;gap:5px;color:rgba(201,162,39,0.70);text-decoration:none;font-size:0.74rem;letter-spacing:1px;margin-bottom:16px">
+        <i class="bx bx-arrow-back"></i> Todos los artistas
+    </a>
+
+    <!-- Perfil -->
+    <div class="mobile-profile">
+        <div id="mAvatar" class="m-avatar-ph"><i class="bx bx-user"></i></div>
+        <h2 id="mName">Cargando…</h2>
+        <p class="m-sub">EXPRESART — Artista Escénico</p>
+        <div class="m-divider"></div>
+        <p class="m-bio" id="mBio"></p>
+    </div>
+
+    <!-- Producciones -->
+    <div class="mobile-section" id="mProdSection">
+        <h3>Producciones</h3>
+        <div class="m-rule"></div>
+        <div class="m-timeline" id="mProd">
+            <p style="color:#888;font-size:0.80rem;font-style:italic">Sin producciones.</p>
+        </div>
+    </div>
+
+    <!-- Videos -->
+    <div class="mobile-section" id="mVideosSection">
+        <h3>Videos</h3>
+        <div class="m-rule"></div>
+        <div id="mVideos">
+            <p style="color:#888;font-size:0.80rem;font-style:italic">Sin videos.</p>
+        </div>
+    </div>
+
+    <!-- Especialidades -->
+    <div class="mobile-section" id="mEspSection">
+        <h3>Especialidades</h3>
+        <div class="m-rule"></div>
+        <div class="m-esp-list" id="mEsp">
+            <p style="color:#888;font-size:0.80rem;font-style:italic">Sin especialidades.</p>
+        </div>
+    </div>
+
+</div><!-- /mobile-view -->
+
+<script>
+/* ── Helpers ── */
+function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function ytThumb(url) {
+    const m = url.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{11})/);
+    return m ? 'https://img.youtube.com/vi/' + m[1] + '/mqdefault.jpg' : null;
+}
+
+/* ── Actualizar nav ── */
+const tok = localStorage.getItem('exp_token');
+if (tok) {
+    fetch('/api/auth', { headers: { 'x-session-token': tok } })
+        .then(r => r.json())
+        .then(d => {
+            if (!d.ok) return;
+            const link = document.getElementById('navLoginLink');
+            if (link) {
+                if (d.role === 'admin') { link.textContent = 'Admin'; link.href = 'admin.html'; }
+                else { link.textContent = 'Mi Perfil'; link.href = 'mi-portafolio.html'; }
+            }
+        }).catch(() => {});
+}
+
+/* ── Cargar perfil ── */
+const userId = new URLSearchParams(location.search).get('id');
+if (!userId) { location.href = 'portafolio.html'; }
+
+fetch('/api/profile/' + userId)
+    .then(r => {
+        if (!r.ok) throw new Error('no encontrado');
+        return r.json();
+    })
+    .then(({ profile: p }) => {
+        populateBook(p);
+        populateMobile(p);
+    })
+    .catch(() => { location.href = 'portafolio.html'; });
+
+/* ── Poblar libro ── */
+function populateBook(p) {
+    document.title = 'EXPRESART — ' + (p.displayName || 'Portafolio');
+    document.getElementById('bookTitle').textContent = p.displayName || 'Artista';
+    document.getElementById('coverName').textContent = p.displayName || '';
+    document.getElementById('bookName').textContent  = p.displayName || '';
+    document.getElementById('bookBio').textContent   = p.bio || p.bio_short || '';
+
+    /* Avatar */
+    if (p.photoUrl) {
+        const img = document.createElement('img');
+        img.className = 'avatar';
+        img.src = p.photoUrl;
+        img.alt = p.displayName || '';
+        document.getElementById('bookAvatar').replaceWith(img);
+    }
+
+    /* Producciones */
+    if (p.producciones && p.producciones.length) {
+        document.getElementById('bookProd').innerHTML = p.producciones.map(pr => `
+            <div class="timeline-item">
+                <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
+                <h3 class="timeline-title">${esc(pr.title||'')}</h3>
+                <p class="timeline-text">${esc(pr.description||'')}</p>
+                ${pr.photoUrl ? `<img class="timeline-img" src="${esc(pr.photoUrl)}" alt="${esc(pr.title||'')}">` : ''}
+            </div>`).join('');
+    }
+
+    /* Videos */
+    if (p.videos && p.videos.length) {
+        document.getElementById('bookVideos').innerHTML = p.videos.map((v,i) => `
+            <div class="video-item">
+                <a href="${esc(v.url)}" target="_blank" rel="noopener">
+                    <i class="bx bx-play-circle"></i>
+                    <div>
+                        <div class="vt">${esc(v.title||'Video '+(i+1))}</div>
+                        <div class="vu">${esc(v.url)}</div>
+                    </div>
+                </a>
+            </div>`).join('');
+    }
+
+    /* Especialidades */
+    if (p.especialidades && p.especialidades.length) {
+        document.getElementById('bookEsp').innerHTML = p.especialidades.map(e =>
+            `<span class="esp-tag">${esc(e)}</span>`
+        ).join('');
+    }
+
+    /* Abrir portada ahora que los datos están listos */
+    openCover();
+}
+
+/* ── Poblar móvil ── */
+function populateMobile(p) {
+    document.getElementById('mName').textContent = p.displayName || '';
+    document.getElementById('mBio').textContent  = p.bio || p.bio_short || '';
+
+    /* Avatar */
+    if (p.photoUrl) {
+        const img = document.createElement('img');
+        img.className = 'm-avatar';
+        img.src = p.photoUrl;
+        img.alt = p.displayName || '';
+        document.getElementById('mAvatar').replaceWith(img);
+    }
+
+    /* Producciones */
+    if (p.producciones && p.producciones.length) {
+        document.getElementById('mProd').innerHTML = p.producciones.map(pr => `
+            <div class="timeline-item">
+                <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
+                <h3 class="timeline-title">${esc(pr.title||'')}</h3>
+                <p class="timeline-text">${esc(pr.description||'')}</p>
+                ${pr.photoUrl ? `<img class="timeline-img" src="${esc(pr.photoUrl)}" alt="">` : ''}
+            </div>`).join('');
+    } else {
+        document.getElementById('mProdSection').style.display = 'none';
+    }
+
+    /* Videos */
+    if (p.videos && p.videos.length) {
+        document.getElementById('mVideos').innerHTML = p.videos.map((v,i) => `
+            <div class="m-video-item">
+                <i class="bx bx-play-circle"></i>
+                <a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.title||'Video '+(i+1))}</a>
+            </div>`).join('');
+    } else {
+        document.getElementById('mVideosSection').style.display = 'none';
+    }
+
+    /* Especialidades */
+    if (p.especialidades && p.especialidades.length) {
+        document.getElementById('mEsp').innerHTML = p.especialidades.map(e =>
+            `<span class="m-esp-tag">${esc(e)}</span>`
+        ).join('');
+    } else {
+        document.getElementById('mEspSection').style.display = 'none';
+    }
+}
+
+/* ── Libro ── */
+const coverRight = document.querySelector('.cover.cover-right');
+
+/* Botones siguiente / anterior */
+document.querySelectorAll('.nextprev-btn').forEach(function(el) {
+    el.onclick = function() {
+        var page = document.getElementById(el.getAttribute('data-page'));
+        if (page.classList.contains('turn')) {
+            page.classList.remove('turn');
+            page.style.zIndex = page.id === 'turn-1' ? 2 : 1;
+        } else {
+            page.classList.add('turn');
+            page.style.zIndex = 20;
+        }
+    };
+});
+
+/* La portada se abre brevemente cuando los datos ya están listos */
+function openCover() {
+    setTimeout(function() {
+        coverRight.classList.add('turn');
+        setTimeout(function() { coverRight.style.zIndex = -1; }, 800);
+    }, 300);
+}
+</script>
+</body>
+</html>

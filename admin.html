@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>EXPRESART — Panel Admin</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { overflow-y: auto; background: #0a0002; }
+
+        .admin-wrap {
+            padding: 74px 20px 60px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        /* ── Encabezado ── */
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0 20px;
+            border-bottom: 1px solid rgba(201,162,39,0.22);
+            margin-bottom: 28px;
+        }
+        .admin-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(200,30,30,0.40);
+        }
+        .admin-header h1 span { color: #c9a227; }
+
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            background: rgba(160,10,10,0.45);
+            border: 1px solid rgba(220,40,40,0.35);
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            color: #ffaaaa;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+        }
+        .logout-btn:hover { background: rgba(200,15,15,0.65); }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 22px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.80em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,200,200,0.50);
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            margin-bottom: -1px;
+        }
+        .tab-btn i { font-size: 1.1rem; }
+        .tab-btn.active {
+            color: #c9a227;
+            border-bottom-color: #c9a227;
+        }
+        .tab-btn:hover:not(.active) { color: rgba(255,200,200,0.80); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Secciones ── */
+        .admin-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-top: 2px solid rgba(201,162,39,0.35);
+            border-radius: 16px;
+            padding: 28px 28px 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title i { color: #c9a227; font-size: 1.3rem; }
+
+        /* ── Tabla de alumnos ── */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .user-table th {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.62em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.75);
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .user-table td {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.80em;
+            color: rgba(255,220,220,0.80);
+            padding: 10px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .user-table tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.72em;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .badge-active   { background: rgba(30,180,30,0.18); color: #88ee88; border: 1px solid rgba(60,200,60,0.30); }
+        .badge-inactive { background: rgba(180,30,30,0.18); color: #ee8888; border: 1px solid rgba(200,60,60,0.30); }
+        .badge-admin    { background: rgba(201,162,39,0.18); color: #c9a227; border: 1px solid rgba(201,162,39,0.35); }
+
+        .tbl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72em;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background 0.2s, color 0.2s;
+        }
+        .tbl-btn-toggle {
+            background: rgba(30,120,30,0.22);
+            border-color: rgba(60,180,60,0.30);
+            color: #88dd88;
+        }
+        .tbl-btn-toggle:hover { background: rgba(30,160,30,0.35); }
+        .tbl-btn-toggle.deactivate {
+            background: rgba(160,100,0,0.22);
+            border-color: rgba(200,140,0,0.30);
+            color: #ddaa44;
+        }
+        .tbl-btn-delete {
+            background: rgba(160,30,30,0.22);
+            border-color: rgba(200,60,60,0.30);
+            color: #ee8888;
+        }
+        .tbl-btn-delete:hover { background: rgba(200,30,30,0.35); }
+        .tbl-btn-view {
+            background: rgba(20,80,160,0.22);
+            border-color: rgba(60,120,200,0.30);
+            color: #88aaee;
+        }
+        .tbl-btn-view:hover { background: rgba(30,100,180,0.35); }
+
+        .no-users {
+            text-align: center;
+            padding: 28px;
+            color: rgba(255,200,200,0.35);
+            font-style: italic;
+            font-size: 0.85em;
+        }
+
+        /* ── Formulario crear alumno ── */
+        .create-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+            .create-form { grid-template-columns: 1fr; }
+        }
+
+        /* ── Campos ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .field-row.full { grid-template-columns: 1fr; }
+        .field-group { display: flex; flex-direction: column; gap: 5px; }
+        .field-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.63em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.80);
+        }
+        .admin-input, .admin-textarea {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.84em;
+            color: #fff;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        .admin-input:focus, .admin-textarea:focus {
+            outline: none;
+            border-color: rgba(201,162,39,0.55);
+        }
+        .admin-input::placeholder, .admin-textarea::placeholder { color: rgba(255,200,200,0.28); }
+        .admin-textarea { resize: vertical; min-height: 72px; }
+
+        /* ── Ítems de lista ── */
+        .items-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+        .item-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 12px;
+            padding: 16px 18px 12px;
+        }
+        .item-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .item-num {
+            font-size: 0.68em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.70);
+        }
+        .del-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255,100,100,0.55);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .del-btn:hover { color: #ff6666; background: rgba(255,50,50,0.10); }
+
+        /* ── Botones ── */
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+        .add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(201,162,39,0.45);
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            color: rgba(201,162,39,0.85);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .add-btn:hover { background: rgba(201,162,39,0.14); }
+
+        .save-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 24px;
+            background: rgba(160,10,10,0.60);
+            border: 1px solid rgba(220,40,40,0.45);
+            border-radius: 9px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.78em;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .save-btn:hover { background: rgba(200,15,15,0.80); box-shadow: 0 0 18px rgba(220,30,30,0.35); }
+        .save-btn:disabled { opacity: 0.50; cursor: not-allowed; }
+
+        /* ── Foto ── */
+        .photo-preview {
+            width: 100%; max-height: 220px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid rgba(201,162,39,0.30);
+            margin-bottom: 12px;
+            display: none;
+        }
+        .photo-placeholder {
+            width: 100%; height: 160px;
+            background: linear-gradient(135deg, #2a0008, #0e0003);
+            border: 2px dashed rgba(201,162,39,0.30);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(201,162,39,0.55);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.25s;
+        }
+        .photo-placeholder:hover {
+            border-color: rgba(201,162,39,0.60);
+            background: linear-gradient(135deg, #350010, #130004);
+        }
+        .photo-placeholder i { font-size: 2.5rem; }
+        .photo-placeholder p { font-family: 'Poppins', sans-serif; font-size: 0.78em; }
+        .photo-input { display: none; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            padding: 12px 22px;
+            background: rgba(10,50,10,0.92);
+            border: 1px solid rgba(60,200,60,0.40);
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.82em;
+            color: #aaffaa;
+            backdrop-filter: blur(14px);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: transform 0.35s, opacity 0.35s;
+            z-index: 200;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { background: rgba(60,0,0,0.92); border-color: rgba(220,40,40,0.40); color: #ffaaaa; }
+
+        @media (max-width: 600px) {
+            .field-row { grid-template-columns: 1fr; }
+            .admin-section { padding: 18px 14px; }
+            .tabs { gap: 0; }
+            .tab-btn { padding: 10px 14px; font-size: 0.72em; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"      class="nav-link">Inicio</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="nosotros.html"   class="nav-link">Nosotros</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-wrap">
+
+    <div class="admin-header">
+        <h1>Panel <span>Admin</span></h1>
+        <button class="logout-btn" id="logoutBtn"><i class="bx bx-log-out"></i> Cerrar sesión</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="alumnos">
+            <i class="bx bxs-group"></i> Alumnos
+        </button>
+        <button class="tab-btn" data-tab="agenda">
+            <i class="bx bx-calendar-event"></i> Agenda
+        </button>
+        <button class="tab-btn" data-tab="contenido">
+            <i class="bx bx-edit-alt"></i> Contenido
+        </button>
+    </div>
+
+    <!-- ══════════════ TAB ALUMNOS ══════════════ -->
+    <div class="tab-panel active" id="tab-alumnos">
+
+        <!-- Crear alumno -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-user-plus"></i> Crear cuenta de alumno</h2>
+            <div class="create-form">
+                <div class="field-group">
+                    <label class="field-label">Usuario</label>
+                    <input id="new_username" class="admin-input" type="text" placeholder="nombre.apellido">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Contraseña</label>
+                    <input id="new_password" class="admin-input" type="password" placeholder="••••••••">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Nombre para mostrar</label>
+                    <input id="new_displayName" class="admin-input" type="text" placeholder="María González">
+                </div>
+            </div>
+            <div class="btn-row" style="margin-top:14px">
+                <button class="save-btn" id="createUserBtn"><i class="bx bx-plus"></i> Crear alumno</button>
+            </div>
+        </div>
+
+        <!-- Lista de alumnos -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bxs-group"></i> Alumnos registrados</h2>
+            <div id="usersTableWrap">
+                <p class="no-users">Cargando…</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══════════════ TAB AGENDA ══════════════ -->
+    <div class="tab-panel" id="tab-agenda">
+
+        <!-- Crear / Editar evento -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-calendar-plus"></i>
+                <span id="evtFormTitle">Crear evento</span>
+            </h2>
+            <input type="hidden" id="evtEditId">
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Título del evento</label>
+                    <input id="evtTitle" class="admin-input" type="text" placeholder="Nombre del evento">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Categoría</label>
+                    <select id="evtCat" class="admin-input">
+                        <option value="obra">Obra de teatro</option>
+                        <option value="taller">Taller</option>
+                        <option value="audicion">Audición</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Fecha</label>
+                    <input id="evtDate" class="admin-input" type="date">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Hora</label>
+                    <input id="evtTime" class="admin-input" type="time" placeholder="19:00">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Lugar</label>
+                    <input id="evtLocation" class="admin-input" type="text" placeholder="Teatro EXPRESART — Sala Principal">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <textarea id="evtDesc" class="admin-textarea" rows="3" placeholder="Descripción del evento..."></textarea>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" id="saveEvtBtn"><i class="bx bx-plus"></i> <span id="saveEvtLabel">Crear evento</span></button>
+                <button class="add-btn" id="cancelEvtBtn" style="display:none"><i class="bx bx-x"></i> Cancelar edición</button>
+            </div>
+        </div>
+
+        <!-- Lista de eventos -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-list-ul"></i> Eventos</h2>
+            <div id="eventsListWrap"><p class="no-users">Cargando…</p></div>
+        </div>
+
+    </div>
+
+    <!-- ══════════════ TAB CONTENIDO ══════════════ -->
+    <div class="tab-panel" id="tab-contenido">
+
+        <!-- Producción destacada -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-star"></i> Producción Destacada</h2>
+            <div class="field-row full">
+                <div class="field-group">
+                    <span class="field-label">Foto de la producción</span>
+                    <img id="photoPreview" class="photo-preview" src="" alt="Preview">
+                    <div class="photo-placeholder" id="photoZone">
+                        <i class="bx bx-image-add"></i>
+                        <p>Haz clic para subir una foto (JPG, PNG, WEBP — máx. 10 MB)</p>
+                    </div>
+                    <input type="file" id="photoInput" class="photo-input" accept=".jpg,.jpeg,.png,.webp,.gif">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Título de la obra</label>
+                    <input id="dest_title"  class="admin-input" type="text" placeholder="La Casa de Bernarda Alba">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Autor</label>
+                    <input id="dest_author" class="admin-input" type="text" placeholder="Federico García Lorca">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Temporada / Año</label>
+                    <input id="dest_year" class="admin-input" type="text" placeholder="Temporada 2024">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <textarea id="dest_desc" class="admin-textarea" placeholder="Descripción de la producción..."></textarea>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" data-section="destacada"><i class="bx bx-save"></i> Guardar</button>
+            </div>
+        </div>
+
+        <!-- Producciones -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-mask"></i> Producciones</h2>
+            <div class="items-list" id="prodList"></div>
+            <div class="btn-row">
+                <button class="add-btn" id="addProd"><i class="bx bx-plus"></i> Agregar producción</button>
+                <button class="save-btn" data-section="producciones"><i class="bx bx-save"></i> Guardar</button>
+            </div>
+        </div>
+
+        <!-- Formación -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-graduation"></i> Formación</h2>
+            <div class="items-list" id="formList"></div>
+            <div class="btn-row">
+                <button class="add-btn" id="addForm"><i class="bx bx-plus"></i> Agregar nivel</button>
+                <button class="save-btn" data-section="formacion"><i class="bx bx-save"></i> Guardar</button>
+            </div>
+        </div>
+
+        <!-- Especialidades -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-body"></i> Especialidades</h2>
+            <div class="items-list" id="espList"></div>
+            <div class="btn-row">
+                <button class="add-btn" id="addEsp"><i class="bx bx-plus"></i> Agregar especialidad</button>
+                <button class="save-btn" data-section="especialidades"><i class="bx bx-save"></i> Guardar</button>
+            </div>
+        </div>
+
+        <!-- Perfil -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bxs-institution"></i> Perfil EXPRESART</h2>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <textarea id="profile_desc" class="admin-textarea" rows="3" placeholder="Descripción de EXPRESART..."></textarea>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" data-section="profile"><i class="bx bx-save"></i> Guardar</button>
+            </div>
+        </div>
+
+    </div><!-- /tab-contenido -->
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('exp_token');
+
+async function checkAuth() {
+    if (!TOKEN) return (location.href = 'login.html');
+    const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
+    const d = await r.json();
+    if (!d.ok || d.role !== 'admin') {
+        localStorage.removeItem('exp_token');
+        location.href = 'login.html';
+    }
+}
+checkAuth();
+
+/* ── Toast ── */
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    };
+});
+
+/* ── Logout ── */
+document.getElementById('logoutBtn').onclick = async () => {
+    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': TOKEN } });
+    localStorage.removeItem('exp_token');
+    location.href = 'login.html';
+};
+
+/* ══════════════════════
+   TAB ALUMNOS
+   ══════════════════════ */
+async function loadUsers() {
+    const r    = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
+    const data = await r.json();
+    const wrap = document.getElementById('usersTableWrap');
+
+    const alumnos = data.filter(u => u.role !== 'admin');
+    if (!alumnos.length) {
+        wrap.innerHTML = '<p class="no-users">No hay alumnos registrados todavía.</p>';
+        return;
+    }
+
+    wrap.innerHTML = `
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Creado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${alumnos.map(u => `
+                <tr data-uid="${u.userId}">
+                    <td>${u.username}</td>
+                    <td>
+                        <span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">
+                            ${u.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>${new Date(u.createdAt).toLocaleDateString('es')}</td>
+                    <td style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="tbl-btn tbl-btn-toggle ${u.active ? 'deactivate' : ''}"
+                            onclick="toggleUser('${u.userId}', ${u.active})">
+                            <i class="bx ${u.active ? 'bx-block' : 'bx-check'}"></i>
+                            ${u.active ? 'Desactivar' : 'Activar'}
+                        </button>
+                        <button class="tbl-btn tbl-btn-view"
+                            onclick="window.open('portafolio-alumno.html?id=${u.userId}','_blank')">
+                            <i class="bx bx-show"></i> Ver
+                        </button>
+                        <button class="tbl-btn tbl-btn-delete"
+                            onclick="deleteUser('${u.userId}', '${u.username}')">
+                            <i class="bx bx-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+}
+
+async function toggleUser(userId, currentlyActive) {
+    const r = await fetch('/api/users/' + userId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ active: !currentlyActive })
+    });
+    const d = await r.json();
+    if (d.ok) { showToast(currentlyActive ? '✓ Alumno desactivado' : '✓ Alumno activado'); loadUsers(); }
+    else        showToast(d.message || 'Error', true);
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`¿Eliminar al alumno "${username}"? Se borrarán su perfil y todas sus fotos.`)) return;
+    const r = await fetch('/api/users/' + userId, {
+        method: 'DELETE',
+        headers: { 'x-session-token': TOKEN }
+    });
+    const d = await r.json();
+    if (d.ok) { showToast('✓ Alumno eliminado'); loadUsers(); }
+    else        showToast(d.message || 'Error', true);
+}
+
+document.getElementById('createUserBtn').onclick = async () => {
+    const username    = document.getElementById('new_username').value.trim();
+    const password    = document.getElementById('new_password').value;
+    const displayName = document.getElementById('new_displayName').value.trim();
+    if (!username || !password) return showToast('Usuario y contraseña son requeridos', true);
+    const r = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ username, password, displayName })
+    });
+    const d = await r.json();
+    if (d.ok) {
+        showToast('✓ Alumno creado: ' + username);
+        document.getElementById('new_username').value    = '';
+        document.getElementById('new_password').value    = '';
+        document.getElementById('new_displayName').value = '';
+        loadUsers();
+    } else {
+        showToast(d.message || 'Error al crear alumno', true);
+    }
+};
+
+loadUsers();
+
+/* ══════════════════════
+   TAB CONTENIDO
+   ══════════════════════ */
+let content = {};
+
+async function loadContent() {
+    const r = await fetch('/api/content');
+    content  = await r.json();
+    renderDestacada();
+    renderProd();
+    renderForm();
+    renderEsp();
+    renderProfile();
+}
+
+function renderDestacada() {
+    const d = content.destacada || {};
+    document.getElementById('dest_title').value  = d.title       || '';
+    document.getElementById('dest_author').value = d.author      || '';
+    document.getElementById('dest_year').value   = d.year        || '';
+    document.getElementById('dest_desc').value   = d.description || '';
+    if (d.photo) {
+        document.getElementById('photoPreview').src           = d.photo;
+        document.getElementById('photoPreview').style.display = 'block';
+        document.getElementById('photoZone').style.display    = 'none';
+    }
+}
+
+function makeItemCard(label, fields, onDel) {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    const header = document.createElement('div');
+    header.className = 'item-card-header';
+    header.innerHTML = `<span class="item-num">${label}</span>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.innerHTML = '<i class="bx bx-trash"></i>';
+    delBtn.onclick = onDel;
+    header.appendChild(delBtn);
+    card.appendChild(header);
+    fields.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'field-row' + (f.full ? ' full' : '');
+        const grp = document.createElement('div');
+        grp.className = 'field-group';
+        const lbl = document.createElement('label');
+        lbl.className = 'field-label';
+        lbl.textContent = f.label;
+        let inp;
+        if (f.textarea) {
+            inp = document.createElement('textarea');
+            inp.className = 'admin-textarea';
+            inp.rows = 2;
+        } else {
+            inp = document.createElement('input');
+            inp.className = 'admin-input';
+            inp.type = 'text';
+        }
+        inp.placeholder = f.placeholder || '';
+        inp.value = f.value || '';
+        inp.dataset.key = f.key;
+        grp.appendChild(lbl);
+        grp.appendChild(inp);
+        row.appendChild(grp);
+        card.appendChild(row);
+    });
+    return card;
+}
+
+function renderProd() {
+    const list = document.getElementById('prodList');
+    list.innerHTML = '';
+    (content.producciones || []).forEach((p, i) => {
+        const card = makeItemCard(`Producción ${i+1}`, [
+            { label:'Año',         key:'year',        value: p.year,        placeholder:'2024' },
+            { label:'Título',      key:'title',       value: p.title,       placeholder:'Nombre de la obra' },
+            { label:'Descripción', key:'description', value: p.description, placeholder:'Descripción...', textarea:true, full:true }
+        ], () => { content.producciones.splice(i, 1); renderProd(); });
+        list.appendChild(card);
+    });
+}
+document.getElementById('addProd').onclick = () => {
+    content.producciones = content.producciones || [];
+    content.producciones.push({ id: Date.now(), year:'', title:'', description:'' });
+    renderProd();
+};
+function collectProd() {
+    return Array.from(document.getElementById('prodList').querySelectorAll('.item-card')).map(card => {
+        const obj = { id: Date.now() };
+        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        return obj;
+    });
+}
+
+function renderForm() {
+    const list = document.getElementById('formList');
+    list.innerHTML = '';
+    (content.formacion || []).forEach((f, i) => {
+        const card = makeItemCard(`Nivel ${i+1}`, [
+            { label:'Nivel',       key:'level',       value: f.level,       placeholder:'Nivel Básico' },
+            { label:'Título',      key:'title',       value: f.title,       placeholder:'Nombre del nivel' },
+            { label:'Descripción', key:'description', value: f.description, placeholder:'Descripción...', textarea:true, full:true }
+        ], () => { content.formacion.splice(i, 1); renderForm(); });
+        list.appendChild(card);
+    });
+}
+document.getElementById('addForm').onclick = () => {
+    content.formacion = content.formacion || [];
+    content.formacion.push({ id: Date.now(), level:'', title:'', description:'' });
+    renderForm();
+};
+function collectForm() {
+    return Array.from(document.getElementById('formList').querySelectorAll('.item-card')).map(card => {
+        const obj = { id: Date.now() };
+        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        return obj;
+    });
+}
+
+function renderEsp() {
+    const list = document.getElementById('espList');
+    list.innerHTML = '';
+    (content.especialidades || []).forEach((e, i) => {
+        const card = makeItemCard(`Especialidad ${i+1}`, [
+            { label:'Título',      key:'title',       value: e.title,       placeholder:'Expresión Corporal' },
+            { label:'Descripción', key:'description', value: e.description, placeholder:'Descripción...', textarea:true, full:true }
+        ], () => { content.especialidades.splice(i, 1); renderEsp(); });
+        list.appendChild(card);
+    });
+}
+document.getElementById('addEsp').onclick = () => {
+    content.especialidades = content.especialidades || [];
+    content.especialidades.push({ id: Date.now(), icon:'bx-star', title:'', description:'' });
+    renderEsp();
+};
+function collectEsp() {
+    return Array.from(document.getElementById('espList').querySelectorAll('.item-card')).map(card => {
+        const obj = { id: Date.now(), icon:'bx-star' };
+        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        return obj;
+    });
+}
+
+function renderProfile() {
+    document.getElementById('profile_desc').value = (content.profile || {}).description || '';
+}
+
+async function saveSection(section, data) {
+    const r = await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ section, data })
+    });
+    const d = await r.json();
+    if (d.ok) showToast('✓ Guardado correctamente');
+    else      showToast(d.message || 'Error al guardar', true);
+}
+
+document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
+    btn.onclick = async () => {
+        btn.disabled = true;
+        const section = btn.dataset.section;
+        let data;
+        if (section === 'destacada') {
+            data = {
+                title:       document.getElementById('dest_title').value,
+                author:      document.getElementById('dest_author').value,
+                year:        document.getElementById('dest_year').value,
+                description: document.getElementById('dest_desc').value,
+                photo:       (content.destacada || {}).photo || ''
+            };
+        } else if (section === 'producciones') {
+            data = collectProd();
+        } else if (section === 'formacion') {
+            data = collectForm();
+        } else if (section === 'especialidades') {
+            data = collectEsp();
+        } else if (section === 'profile') {
+            data = { description: document.getElementById('profile_desc').value };
+        }
+        await saveSection(section, data);
+        await loadContent();
+        btn.disabled = false;
+    };
+});
+
+/* ── Subida de foto destacada ── */
+document.getElementById('photoZone').onclick  = () => document.getElementById('photoInput').click();
+document.getElementById('photoInput').onchange = async () => {
+    const file = document.getElementById('photoInput').files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('photo', file);
+    showToast('Subiendo imagen…');
+    const r = await fetch('/api/upload', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: formData });
+    const d = await r.json();
+    if (d.ok) {
+        content.destacada       = content.destacada || {};
+        content.destacada.photo = d.url;
+        document.getElementById('photoPreview').src           = d.url;
+        document.getElementById('photoPreview').style.display = 'block';
+        document.getElementById('photoZone').style.display    = 'none';
+        showToast('✓ Foto subida correctamente');
+    } else {
+        showToast(d.message || 'Error al subir la foto', true);
+    }
+};
+
+loadContent();
+
+/* ══════════════════════
+   TAB AGENDA
+   ══════════════════════ */
+const EVT_CATS = {
+    obra:     { label: 'Obra',     color: '#c0282a' },
+    taller:   { label: 'Taller',   color: '#c9a227' },
+    audicion: { label: 'Audición', color: '#2a8ab4' },
+    otro:     { label: 'Evento',   color: '#888888' }
+};
+const MONTHS_ES_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+let editingEvtId = null;
+
+async function loadEvents() {
+    const r    = await fetch('/api/events', { headers: { 'x-session-token': TOKEN } });
+    const evts = await r.json();
+    const wrap = document.getElementById('eventsListWrap');
+
+    if (!evts.length) {
+        wrap.innerHTML = '<p class="no-users">No hay eventos creados todavía.</p>';
+        return;
+    }
+
+    evts.sort((a,b) => a.date.localeCompare(b.date));
+
+    wrap.innerHTML = `
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Lugar</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${evts.map(ev => {
+                    const cat = EVT_CATS[ev.category] || EVT_CATS.otro;
+                    const [y,m,d] = (ev.date||'').split('-');
+                    const dateLabel = d ? parseInt(d)+' '+MONTHS_ES_SHORT[parseInt(m)-1]+' '+y : ev.date;
+                    return `
+                    <tr>
+                        <td>${dateLabel}${ev.time ? ' '+ev.time : ''}</td>
+                        <td>${escAdmin(ev.title)}</td>
+                        <td><span style="color:${cat.color};font-size:0.80em;letter-spacing:1px;text-transform:uppercase">${cat.label}</span></td>
+                        <td style="font-size:0.78em;color:rgba(255,200,200,0.55)">${escAdmin(ev.location)}</td>
+                        <td style="display:flex;gap:6px;flex-wrap:wrap">
+                            <button class="tbl-btn tbl-btn-view" onclick="editEvent(${JSON.stringify(ev).replace(/"/g,'&quot;')})">
+                                <i class="bx bx-edit"></i> Editar
+                            </button>
+                            <button class="tbl-btn tbl-btn-delete" onclick="deleteEvent('${ev.id}','${escAdmin(ev.title)}')">
+                                <i class="bx bx-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+}
+
+function editEvent(ev) {
+    editingEvtId = ev.id;
+    document.getElementById('evtEditId').value    = ev.id;
+    document.getElementById('evtTitle').value     = ev.title    || '';
+    document.getElementById('evtCat').value       = ev.category || 'otro';
+    document.getElementById('evtDate').value      = ev.date     || '';
+    document.getElementById('evtTime').value      = ev.time     || '';
+    document.getElementById('evtLocation').value  = ev.location || '';
+    document.getElementById('evtDesc').value      = ev.description || '';
+    document.getElementById('evtFormTitle').textContent = 'Editar evento';
+    document.getElementById('saveEvtLabel').textContent = 'Guardar cambios';
+    document.getElementById('saveEvtBtn').querySelector('i').className = 'bx bx-save';
+    document.getElementById('cancelEvtBtn').style.display = 'inline-flex';
+    document.querySelector('[data-tab="agenda"]').click();
+    document.getElementById('evtTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function resetEvtForm() {
+    editingEvtId = null;
+    document.getElementById('evtEditId').value    = '';
+    document.getElementById('evtTitle').value     = '';
+    document.getElementById('evtCat').value       = 'obra';
+    document.getElementById('evtDate').value      = '';
+    document.getElementById('evtTime').value      = '';
+    document.getElementById('evtLocation').value  = '';
+    document.getElementById('evtDesc').value      = '';
+    document.getElementById('evtFormTitle').textContent = 'Crear evento';
+    document.getElementById('saveEvtLabel').textContent = 'Crear evento';
+    document.getElementById('saveEvtBtn').querySelector('i').className = 'bx bx-plus';
+    document.getElementById('cancelEvtBtn').style.display = 'none';
+}
+
+document.getElementById('cancelEvtBtn').onclick = resetEvtForm;
+
+document.getElementById('saveEvtBtn').onclick = async () => {
+    const title    = document.getElementById('evtTitle').value.trim();
+    const date     = document.getElementById('evtDate').value;
+    const time     = document.getElementById('evtTime').value;
+    const location = document.getElementById('evtLocation').value.trim();
+    const category = document.getElementById('evtCat').value;
+    const description = document.getElementById('evtDesc').value.trim();
+
+    if (!title || !date) return showToast('Título y fecha son requeridos', true);
+
+    const body = { title, date, time, location, category, description };
+
+    let r;
+    if (editingEvtId) {
+        r = await fetch('/api/events/' + editingEvtId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify(body)
+        });
+    } else {
+        r = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify(body)
+        });
+    }
+    const d = await r.json();
+    if (d.ok) {
+        showToast(editingEvtId ? '✓ Evento actualizado' : '✓ Evento creado');
+        resetEvtForm();
+        loadEvents();
+    } else {
+        showToast(d.message || 'Error', true);
+    }
+};
+
+async function deleteEvent(id, title) {
+    if (!confirm('¿Eliminar el evento "' + title + '"?')) return;
+    const r = await fetch('/api/events/' + id, {
+        method: 'DELETE',
+        headers: { 'x-session-token': TOKEN }
+    });
+    const d = await r.json();
+    if (d.ok) { showToast('✓ Evento eliminado'); loadEvents(); }
+    else       showToast(d.message || 'Error', true);
+}
+
+function escAdmin(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadEvents();
+</script>
+</body>
+</html>

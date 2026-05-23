@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPRESART — Nosotros</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ══════════════════════════════════
+           NOSOTROS — estilos de página
+           ══════════════════════════════════ */
+        body {
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #060002;
+        }
+
+        .nosotros-page {
+            min-height: 100vh;
+            padding-top: 80px; /* espacio bajo el navbar */
+        }
+
+        /* ── Hero con cortina de fondo ── */
+        .nosotros-hero {
+            position: relative;
+            width: 100%;
+            height: 38vh;
+            min-height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 70% at 50% 40%, #500020 0%, #220008 55%, #060002 100%);
+        }
+
+        /* Pliegues de telón decorativos en el hero */
+        .hero-curtain-l,
+        .hero-curtain-r {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 22%;
+            z-index: 1;
+        }
+        .hero-curtain-l {
+            left: 0;
+            background:
+                repeating-linear-gradient(90deg,
+                    rgba(0,0,0,0.40) 0px, rgba(0,0,0,0.10) 7px,
+                    transparent 15px, rgba(0,0,0,0.30) 26px,
+                    rgba(0,0,0,0.08) 32px, transparent 42px
+                ),
+                linear-gradient(to right, #7a0000 0%, #cc0000 55%, rgba(150,0,0,0.3) 100%);
+        }
+        .hero-curtain-r {
+            right: 0;
+            background:
+                repeating-linear-gradient(90deg,
+                    transparent 0px, rgba(0,0,0,0.08) 10px,
+                    rgba(0,0,0,0.30) 18px, transparent 28px,
+                    rgba(0,0,0,0.10) 35px, rgba(0,0,0,0.40) 42px
+                ),
+                linear-gradient(to left, #7a0000 0%, #cc0000 55%, rgba(150,0,0,0.3) 100%);
+        }
+
+        /* Haz de luz desde arriba */
+        .hero-light {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(
+                ellipse 40% 80% at 50% 0%,
+                rgba(255, 245, 200, 0.14) 0%,
+                rgba(255, 200, 120, 0.06) 45%,
+                transparent 75%
+            );
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+        }
+
+        .hero-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72em;
+            font-weight: 500;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(201, 162, 39, 0.90);
+            text-shadow: 0 0 20px rgba(201, 162, 39, 0.50);
+            margin-bottom: 14px;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.4rem, 7vw, 4.8rem);
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.05;
+            text-shadow:
+                0 0 40px rgba(220, 30, 30, 0.50),
+                0 4px 24px rgba(0, 0, 0, 0.70);
+            letter-spacing: 2px;
+        }
+
+        .hero-rule {
+            width: 80px; height: 2px;
+            margin: 18px auto 0;
+            background: linear-gradient(90deg, transparent, #c9a227, transparent);
+        }
+
+        /* Línea dorada proscenio al pie del hero */
+        .nosotros-hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #c9a227 10%, #e8d060 50%, #c9a227 90%, transparent 100%);
+            box-shadow: 0 0 18px rgba(200, 160, 0, 0.50);
+            z-index: 5;
+        }
+
+        /* ── Contenido principal ── */
+        .nosotros-content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+
+        /* ── Bloque de sección ── */
+        .info-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 36px;
+            align-items: start;
+        }
+
+        .info-block.reverse {
+            direction: rtl;
+        }
+        .info-block.reverse > * {
+            direction: ltr;
+        }
+
+        /* Panel glass para cada bloque */
+        .info-glass {
+            background: rgba(255, 255, 255, 0.055);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 32px 30px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        .block-icon {
+            font-size: 2.2rem;
+            margin-bottom: 14px;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(201, 162, 39, 0.55));
+        }
+
+        .block-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            text-shadow: 0 0 20px rgba(220, 30, 30, 0.35);
+        }
+
+        .block-title span {
+            color: #c9a227;
+        }
+
+        .block-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.88em;
+            font-weight: 300;
+            line-height: 1.78;
+            color: rgba(255, 220, 220, 0.80);
+        }
+
+        /* ── Sección de imagen / decorativa (lado opuesto al texto) ── */
+        .info-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .visual-quote {
+            padding: 28px 26px;
+            border-left: 3px solid #c9a227;
+            background: rgba(201, 162, 39, 0.06);
+            border-radius: 0 12px 12px 0;
+        }
+
+        .visual-quote blockquote {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.15rem;
+            color: rgba(255, 235, 200, 0.92);
+            line-height: 1.65;
+            margin: 0 0 10px;
+        }
+
+        .visual-quote cite {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72em;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(201, 162, 39, 0.80);
+        }
+
+        /* ── Valores / Cards pequeñas ── */
+        .valores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .valor-card {
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-top: 1px solid rgba(201, 162, 39, 0.28);
+            border-radius: 14px;
+            padding: 22px 18px;
+            text-align: center;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .valor-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(201, 162, 39, 0.14);
+        }
+
+        .valor-icon {
+            font-size: 1.7rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .valor-name {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.78em;
+            font-weight: 600;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: #c9a227;
+            margin-bottom: 6px;
+        }
+
+        .valor-desc {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.76em;
+            font-weight: 300;
+            color: rgba(255, 210, 210, 0.72);
+            line-height: 1.55;
+        }
+
+        /* ── Cursos / Oferta ── */
+        .cursos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .curso-card {
+            background: rgba(160, 10, 10, 0.18);
+            border: 1px solid rgba(220, 40, 40, 0.22);
+            border-radius: 14px;
+            padding: 22px 22px 18px;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .curso-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #c9a227 50%, transparent);
+        }
+
+        .curso-card:hover {
+            background: rgba(160, 10, 10, 0.30);
+            border-color: rgba(220, 40, 40, 0.40);
+        }
+
+        .curso-titulo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .curso-desc {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.78em;
+            font-weight: 300;
+            color: rgba(255, 210, 210, 0.75);
+            line-height: 1.55;
+        }
+
+        .curso-tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 3px 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.65em;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #c9a227;
+            border: 1px solid rgba(201, 162, 39, 0.40);
+            border-radius: 20px;
+        }
+
+        /* ── Separador dorado ── */
+        .gold-divider {
+            width: 100%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.45) 30%, rgba(201, 162, 39, 0.45) 70%, transparent);
+        }
+
+        /* ── Títulos de sección ── */
+        .section-heading {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .section-heading h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 24px rgba(220, 30, 30, 0.40);
+        }
+
+        .section-heading h2 span { color: #c9a227; }
+
+        .section-heading p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.82em;
+            font-weight: 300;
+            color: rgba(255, 210, 210, 0.70);
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Footer ── */
+        .nosotros-footer {
+            text-align: center;
+            padding: 32px 24px 40px;
+            border-top: 1px solid rgba(201, 162, 39, 0.18);
+        }
+
+        .nosotros-footer p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75em;
+            color: rgba(255, 200, 200, 0.45);
+            letter-spacing: 1.5px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 680px) {
+            .nosotros-page { padding-top: 70px; }
+            .info-block    { grid-template-columns: 1fr; }
+            .info-block.reverse { direction: ltr; }
+            .valores-grid  { grid-template-columns: 1fr 1fr; }
+            .cursos-grid   { grid-template-columns: 1fr; }
+            .nosotros-content { gap: 40px; padding: 40px 16px 60px; }
+        }
+
+        @media (max-width: 400px) {
+            .valores-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR (mismo que en index.html) ══ -->
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html" class="nav-link">Inicio</a></li>
+            <li><a href="#"          class="nav-link">Cartelera</a></li>
+            <li><a href="agenda.html" class="nav-link">Agenda</a></li>
+            <li><a href="nosotros.html"   class="nav-link active">Nosotros</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="login.html" class="nav-link" id="navLoginLink">Login</a></li>
+            <li><a href="#"              class="nav-link nav-cta">Entradas</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="nosotros-page">
+
+    <!-- ══ HERO ══ -->
+    <section class="nosotros-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-curtain-l"></div>
+        <div class="hero-curtain-r"></div>
+        <div class="hero-light"></div>
+        <div class="hero-content">
+            <p class="hero-label">Escuela de Actuación</p>
+            <h1 class="hero-title">Nosotros</h1>
+            <div class="hero-rule"></div>
+        </div>
+    </section>
+
+    <!-- ══ CONTENIDO ══ -->
+    <div class="nosotros-content">
+
+        <!-- Historia -->
+        <div class="info-block">
+            <div class="info-glass">
+                <span class="block-icon">🎭</span>
+                <h2 class="block-title">Nuestra <span>Historia</span></h2>
+                <p class="block-text">
+                    EXPRESART nació con el propósito de abrir un espacio donde la expresión artística y el teatro sean accesibles para todos. Fundada por artistas y docentes apasionados por las artes escénicas, nuestra escuela se ha convertido en un semillero de talentos que transforman el escenario en un lugar de vida, emoción y comunicación.
+                </p>
+                <p class="block-text" style="margin-top:12px;">
+                    Desde nuestros inicios hemos formado actores, artistas y comunicadores capaces de conectar con el público desde la autenticidad y la técnica.
+                </p>
+            </div>
+            <div class="info-visual">
+                <div class="visual-quote">
+                    <blockquote>"El teatro es el arte de hacer vivir lo que no existe, y existir lo que no se ve."</blockquote>
+                    <cite>— EXPRESART</cite>
+                </div>
+            </div>
+        </div>
+
+        <div class="gold-divider"></div>
+
+        <!-- Misión y Visión -->
+        <div class="info-block reverse">
+            <div class="info-glass">
+                <span class="block-icon">🌟</span>
+                <h2 class="block-title">Misión <span>&</span> Visión</h2>
+                <p class="block-text">
+                    <strong style="color:#c9a227;">Misión:</strong> Formar artistas escénicos con bases técnicas sólidas, sensibilidad creativa y vocación de comunicar, brindando una educación teatral de calidad en un ambiente de respeto, pasión y disciplina.
+                </p>
+                <p class="block-text" style="margin-top:12px;">
+                    <strong style="color:#c9a227;">Visión:</strong> Ser la escuela de actuación de referencia de la región, reconocida por la excelencia de sus egresados y por su compromiso con el arte escénico como herramienta de transformación personal y social.
+                </p>
+            </div>
+            <div class="info-visual">
+                <div class="visual-quote">
+                    <blockquote>"Formamos artistas que no solo actúan — transforman el mundo desde el escenario."</blockquote>
+                    <cite>— Dirección EXPRESART</cite>
+                </div>
+            </div>
+        </div>
+
+        <div class="gold-divider"></div>
+
+        <!-- Valores -->
+        <div>
+            <div class="section-heading">
+                <h2>Nuestros <span>Valores</span></h2>
+                <p>Los pilares que guían cada clase, cada ensayo y cada puesta en escena.</p>
+            </div>
+            <div class="valores-grid">
+                <div class="valor-card">
+                    <span class="valor-icon">🔥</span>
+                    <p class="valor-name">Pasión</p>
+                    <p class="valor-desc">Enseñamos desde el amor genuino por el arte escénico.</p>
+                </div>
+                <div class="valor-card">
+                    <span class="valor-icon">🎯</span>
+                    <p class="valor-name">Disciplina</p>
+                    <p class="valor-desc">El talento se potencia con trabajo constante y dedicación.</p>
+                </div>
+                <div class="valor-card">
+                    <span class="valor-icon">🤝</span>
+                    <p class="valor-name">Comunidad</p>
+                    <p class="valor-desc">El teatro es colectivo — crecemos juntos en el escenario.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="gold-divider"></div>
+
+        <!-- Oferta académica -->
+        <div>
+            <div class="section-heading">
+                <h2>Lo que <span>Ofrecemos</span></h2>
+                <p>Programas diseñados para todos los niveles y edades.</p>
+            </div>
+            <div class="cursos-grid">
+                <div class="curso-card">
+                    <h3 class="curso-titulo">Actuación Básica</h3>
+                    <p class="curso-desc">Introducción a las técnicas fundamentales de la actuación: expresión corporal, voz, respiración y presencia escénica.</p>
+                    <span class="curso-tag">Principiantes</span>
+                </div>
+                <div class="curso-card">
+                    <h3 class="curso-titulo">Actuación Avanzada</h3>
+                    <p class="curso-desc">Profundización en métodos de interpretación, construcción de personaje y trabajo con texto dramático.</p>
+                    <span class="curso-tag">Avanzado</span>
+                </div>
+                <div class="curso-card">
+                    <h3 class="curso-titulo">Teatro para Niños y Jóvenes</h3>
+                    <p class="curso-desc">Talleres lúdicos que desarrollan la creatividad, la confianza y la comunicación desde una edad temprana.</p>
+                    <span class="curso-tag">4 – 17 años</span>
+                </div>
+                <div class="curso-card">
+                    <h3 class="curso-titulo">Taller de Puesta en Escena</h3>
+                    <p class="curso-desc">Producción de una obra completa: desde la lectura del guion hasta la presentación ante el público.</p>
+                    <span class="curso-tag">Todos los niveles</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ FOOTER ══ -->
+    <footer class="nosotros-footer">
+        <p>© 2025 EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</p>
+    </footer>
+
+</div>
+
+</body>
+</html>

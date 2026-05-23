@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>EXPRESART — Mi Portafolio</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { overflow-y: auto; background: #0a0002; }
+
+        .dash-wrap {
+            padding: 74px 20px 70px;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* ── Encabezado ── */
+        .dash-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 24px 0 20px;
+            border-bottom: 1px solid rgba(201,162,39,0.22);
+            margin-bottom: 28px;
+        }
+        .dash-header-left { display: flex; flex-direction: column; gap: 2px; }
+        .dash-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(200,30,30,0.40);
+        }
+        .dash-header h1 span { color: #c9a227; }
+        .dash-header .sub {
+            font-size: 0.72rem;
+            color: rgba(255,200,200,0.45);
+            letter-spacing: 1px;
+        }
+
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .preview-btn, .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.74em;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+        .preview-btn {
+            background: rgba(201,162,39,0.15);
+            border-color: rgba(201,162,39,0.35);
+            color: #c9a227;
+        }
+        .preview-btn:hover { background: rgba(201,162,39,0.28); }
+        .logout-btn {
+            background: rgba(160,10,10,0.45);
+            border-color: rgba(220,40,40,0.35);
+            color: #ffaaaa;
+        }
+        .logout-btn:hover { background: rgba(200,15,15,0.65); }
+
+        /* ── Secciones ── */
+        .dash-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-top: 2px solid rgba(201,162,39,0.35);
+            border-radius: 16px;
+            padding: 26px 26px 22px;
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.10rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .section-title i { color: #c9a227; font-size: 1.3rem; }
+
+        /* ── Foto de perfil ── */
+        .photo-area {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+        .current-avatar {
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            border: 3px solid rgba(201,162,39,0.55);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .avatar-placeholder-sm {
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            border: 3px solid rgba(201,162,39,0.40);
+            background: linear-gradient(135deg, #2a0008, #0e0003);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .avatar-placeholder-sm i { font-size: 2.8rem; color: rgba(201,162,39,0.40); }
+
+        .photo-actions { display: flex; flex-direction: column; gap: 8px; }
+        .photo-actions p {
+            font-size: 0.72rem;
+            color: rgba(255,200,200,0.45);
+            line-height: 1.4;
+        }
+
+        /* ── Campos ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .field-row.full { grid-template-columns: 1fr; }
+        .field-group { display: flex; flex-direction: column; gap: 5px; }
+        .field-label {
+            font-size: 0.63em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.80);
+        }
+        .dash-input, .dash-textarea {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.84em;
+            color: #fff;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        .dash-input:focus, .dash-textarea:focus {
+            outline: none;
+            border-color: rgba(201,162,39,0.55);
+        }
+        .dash-input::placeholder, .dash-textarea::placeholder { color: rgba(255,200,200,0.28); }
+        .dash-textarea { resize: vertical; min-height: 80px; }
+
+        /* ── Tags de especialidades ── */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 36px;
+            margin-bottom: 10px;
+        }
+        .esp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px 4px 14px;
+            background: rgba(201,162,39,0.14);
+            border: 1px solid rgba(201,162,39,0.40);
+            border-radius: 20px;
+            font-size: 0.74rem;
+            color: rgba(255,220,150,0.90);
+        }
+        .esp-chip button {
+            background: none; border: none;
+            color: rgba(255,150,150,0.70); cursor: pointer;
+            font-size: 0.85rem; line-height: 1;
+            padding: 0;
+        }
+        .esp-chip button:hover { color: #ff8888; }
+        .esp-add-row {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .esp-add-row input {
+            flex: 1;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.82em;
+            color: #fff;
+        }
+        .esp-add-row input:focus { outline: none; border-color: rgba(201,162,39,0.55); }
+        .esp-add-row input::placeholder { color: rgba(255,200,200,0.28); }
+        .esp-add-row .add-chip-btn {
+            padding: 8px 14px;
+            background: rgba(201,162,39,0.18);
+            border: 1px solid rgba(201,162,39,0.40);
+            border-radius: 8px;
+            font-size: 0.78em;
+            color: #c9a227;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .esp-add-row .add-chip-btn:hover { background: rgba(201,162,39,0.30); }
+
+        /* ── Lista de producciones ── */
+        .prod-list { display: flex; flex-direction: column; gap: 18px; margin-bottom: 14px; }
+
+        .prod-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 12px;
+            padding: 16px 18px 14px;
+        }
+        .prod-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .prod-num {
+            font-size: 0.65em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,0.70);
+        }
+        .del-btn {
+            background: transparent; border: none;
+            color: rgba(255,100,100,0.55); cursor: pointer;
+            font-size: 1.05rem; padding: 2px 6px;
+            border-radius: 4px; transition: color 0.2s, background 0.2s;
+        }
+        .del-btn:hover { color: #ff6666; background: rgba(255,50,50,0.10); }
+
+        /* Foto de producción */
+        .prod-photo-wrap { margin-bottom: 12px; }
+        .prod-photo-preview {
+            width: 100%; height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(201,162,39,0.25);
+            display: none;
+            margin-bottom: 8px;
+        }
+        .prod-photo-zone {
+            width: 100%; height: 80px;
+            background: rgba(255,255,255,0.04);
+            border: 1px dashed rgba(201,162,39,0.28);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(201,162,39,0.50);
+            cursor: pointer;
+            font-size: 0.76rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .prod-photo-zone:hover { border-color: rgba(201,162,39,0.55); background: rgba(201,162,39,0.05); }
+        .prod-photo-zone i { font-size: 1.3rem; }
+        .prod-photo-input { display: none; }
+
+        /* ── Lista de videos ── */
+        .video-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+        .video-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .video-card i { font-size: 1.6rem; color: #c9a227; flex-shrink: 0; }
+        .video-card-info { flex: 1; min-width: 0; }
+        .video-card-title {
+            font-size: 0.82rem; color: rgba(255,220,220,0.85);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .video-card-url {
+            font-size: 0.70rem; color: rgba(255,200,200,0.40);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .video-add-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        /* ── Botones ── */
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+        .add-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(201,162,39,0.45);
+            border-radius: 8px;
+            font-size: 0.75em; letter-spacing: 1px;
+            color: rgba(201,162,39,0.85); cursor: pointer;
+            transition: background 0.2s;
+        }
+        .add-btn:hover { background: rgba(201,162,39,0.14); }
+
+        .save-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 24px;
+            background: rgba(160,10,10,0.60);
+            border: 1px solid rgba(220,40,40,0.45);
+            border-radius: 9px;
+            font-size: 0.78em; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: #fff; cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .save-btn:hover { background: rgba(200,15,15,0.80); box-shadow: 0 0 18px rgba(220,30,30,0.35); }
+        .save-btn:disabled { opacity: 0.50; cursor: not-allowed; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            padding: 12px 22px;
+            background: rgba(10,50,10,0.92);
+            border: 1px solid rgba(60,200,60,0.40);
+            border-radius: 10px;
+            font-size: 0.82em; color: #aaffaa;
+            backdrop-filter: blur(14px);
+            transform: translateY(80px); opacity: 0;
+            transition: transform 0.35s, opacity 0.35s;
+            z-index: 200;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { background: rgba(60,0,0,0.92); border-color: rgba(220,40,40,0.40); color: #ffaaaa; }
+
+        @media (max-width: 600px) {
+            .field-row { grid-template-columns: 1fr; }
+            .video-add-row { grid-template-columns: 1fr; }
+            .dash-section { padding: 18px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"      class="nav-link">Inicio</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="nosotros.html"   class="nav-link">Nosotros</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="dash-wrap">
+
+    <div class="dash-header">
+        <div class="dash-header-left">
+            <h1>Mi <span>Portafolio</span></h1>
+            <span class="sub" id="dashSub">Cargando…</span>
+        </div>
+        <div class="header-actions">
+            <a id="previewBtn" href="#" target="_blank" class="preview-btn">
+                <i class="bx bx-show"></i> Ver mi portafolio
+            </a>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="bx bx-log-out"></i> Cerrar sesión
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ FOTO DE PERFIL ══ -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-camera"></i> Foto de perfil</h2>
+        <div class="photo-area">
+            <div id="avatarWrap">
+                <div class="avatar-placeholder-sm"><i class="bx bx-user"></i></div>
+            </div>
+            <div class="photo-actions">
+                <p>Sube tu foto profesional (JPG, PNG, WEBP — máx. 10 MB)</p>
+                <button class="add-btn" id="photoBtn"><i class="bx bx-upload"></i> Subir foto</button>
+                <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.webp,.gif" style="display:none">
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ INFORMACIÓN BÁSICA ══ -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bxs-user"></i> Información básica</h2>
+        <div class="field-row">
+            <div class="field-group">
+                <label class="field-label">Nombre para mostrar</label>
+                <input id="displayName" class="dash-input" type="text" placeholder="María González">
+            </div>
+        </div>
+        <div class="field-row full">
+            <div class="field-group">
+                <label class="field-label">Presentación corta (para la galería)</label>
+                <input id="bio_short" class="dash-input" type="text" placeholder="Actriz de teatro y cine. Egresada EXPRESART 2024." maxlength="120">
+            </div>
+        </div>
+        <div class="field-row full">
+            <div class="field-group">
+                <label class="field-label">Biografía completa (para tu portafolio)</label>
+                <textarea id="bio" class="dash-textarea" rows="4" placeholder="Cuéntanos sobre ti, tu trayectoria, tus influencias artísticas…"></textarea>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="save-btn" id="saveBasicBtn"><i class="bx bx-save"></i> Guardar información</button>
+        </div>
+    </div>
+
+    <!-- ══ ESPECIALIDADES ══ -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-star"></i> Especialidades</h2>
+        <div class="tags-container" id="espTags"></div>
+        <div class="esp-add-row">
+            <input id="espInput" type="text" placeholder="Ej: Teatro Clásico, Stanislavski…" maxlength="50">
+            <button class="add-chip-btn" id="addEspBtn"><i class="bx bx-plus"></i> Agregar</button>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+            <button class="save-btn" id="saveEspBtn"><i class="bx bx-save"></i> Guardar especialidades</button>
+        </div>
+    </div>
+
+    <!-- ══ PRODUCCIONES ══ -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-mask"></i> Producciones</h2>
+        <div class="prod-list" id="prodList"></div>
+        <div class="btn-row">
+            <button class="add-btn" id="addProdBtn"><i class="bx bx-plus"></i> Agregar producción</button>
+            <button class="save-btn" id="saveProdBtn"><i class="bx bx-save"></i> Guardar producciones</button>
+        </div>
+    </div>
+
+    <!-- ══ VIDEOS ══ -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-play-circle"></i> Videos de obras</h2>
+        <div class="video-list" id="videoList"></div>
+        <h3 style="font-size:0.80rem;color:rgba(201,162,39,0.75);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Agregar video</h3>
+        <div class="video-add-row">
+            <div class="field-group">
+                <label class="field-label">Título</label>
+                <input id="vidTitle" class="dash-input" type="text" placeholder="La Casa de Bernarda Alba (2024)">
+            </div>
+            <div class="field-group">
+                <label class="field-label">URL (YouTube, Vimeo…)</label>
+                <input id="vidUrl" class="dash-input" type="url" placeholder="https://youtube.com/watch?v=…">
+            </div>
+            <div class="field-group">
+                <label class="field-label" style="opacity:0">—</label>
+                <button class="save-btn" id="addVideoBtn"><i class="bx bx-plus"></i> Agregar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('exp_token');
+let myUserId = '';
+let profile  = { displayName:'', bio:'', bio_short:'', photoUrl:'', especialidades:[], producciones:[], videos:[] };
+
+/* ── Auth ── */
+async function init() {
+    if (!TOKEN) return (location.href = 'login.html');
+    const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
+    const d = await r.json();
+    if (!d.ok || d.role === 'admin') {
+        localStorage.removeItem('exp_token');
+        return (location.href = 'login.html');
+    }
+    myUserId = d.userId;
+    document.getElementById('previewBtn').href = 'portafolio-alumno.html?id=' + myUserId;
+    await loadProfile();
+}
+init();
+
+/* ── Toast ── */
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── Logout ── */
+document.getElementById('logoutBtn').onclick = async () => {
+    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': TOKEN } });
+    localStorage.removeItem('exp_token');
+    location.href = 'login.html';
+};
+
+/* ── Cargar perfil ── */
+async function loadProfile() {
+    const r = await fetch('/api/my-profile', { headers: { 'x-session-token': TOKEN } });
+    const d = await r.json();
+    if (!d.ok) return;
+    profile = d.profile;
+    renderAll();
+}
+
+function renderAll() {
+    document.getElementById('dashSub').textContent = profile.displayName || myUserId;
+    document.getElementById('displayName').value = profile.displayName || '';
+    document.getElementById('bio_short').value   = profile.bio_short   || '';
+    document.getElementById('bio').value         = profile.bio         || '';
+    renderAvatar();
+    renderEsp();
+    renderProd();
+    renderVideos();
+}
+
+/* ── Avatar ── */
+function renderAvatar() {
+    const wrap = document.getElementById('avatarWrap');
+    if (profile.photoUrl) {
+        wrap.innerHTML = `<img class="current-avatar" src="${profile.photoUrl}" alt="Foto de perfil">`;
+    } else {
+        wrap.innerHTML = `<div class="avatar-placeholder-sm"><i class="bx bx-user"></i></div>`;
+    }
+}
+
+/* ── Subir foto ── */
+document.getElementById('photoBtn').onclick = () => document.getElementById('photoInput').click();
+document.getElementById('photoInput').onchange = async () => {
+    const file = document.getElementById('photoInput').files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('photo', file);
+    showToast('Subiendo foto…');
+    const r = await fetch('/api/upload-photo', { method:'POST', headers:{'x-session-token':TOKEN}, body: fd });
+    const d = await r.json();
+    if (d.ok) {
+        profile.photoUrl = d.url;
+        renderAvatar();
+        showToast('✓ Foto actualizada');
+    } else {
+        showToast(d.message || 'Error al subir foto', true);
+    }
+};
+
+/* ── Guardar información básica ── */
+document.getElementById('saveBasicBtn').onclick = async () => {
+    const btn = document.getElementById('saveBasicBtn');
+    btn.disabled = true;
+    const r = await fetch('/api/my-profile', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({
+            displayName: document.getElementById('displayName').value.trim(),
+            bio_short:   document.getElementById('bio_short').value.trim(),
+            bio:         document.getElementById('bio').value.trim()
+        })
+    });
+    const d = await r.json();
+    btn.disabled = false;
+    if (d.ok) {
+        profile.displayName = document.getElementById('displayName').value.trim();
+        document.getElementById('dashSub').textContent = profile.displayName || myUserId;
+        showToast('✓ Información guardada');
+    } else {
+        showToast(d.message || 'Error', true);
+    }
+};
+
+/* ══════════════════
+   ESPECIALIDADES
+   ══════════════════ */
+function renderEsp() {
+    const container = document.getElementById('espTags');
+    container.innerHTML = '';
+    (profile.especialidades || []).forEach((e, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'esp-chip';
+        chip.innerHTML = `${esc(e)}<button onclick="removeEsp(${i})" title="Quitar">×</button>`;
+        container.appendChild(chip);
+    });
+    if (!profile.especialidades || !profile.especialidades.length) {
+        container.innerHTML = '<span style="font-size:0.75rem;color:rgba(255,200,200,0.35);font-style:italic">Sin especialidades todavía</span>';
+    }
+}
+
+window.removeEsp = function(i) {
+    profile.especialidades.splice(i, 1);
+    renderEsp();
+};
+
+document.getElementById('espInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addEsp(); }
+});
+document.getElementById('addEspBtn').onclick = addEsp;
+function addEsp() {
+    const input = document.getElementById('espInput');
+    const val   = input.value.trim();
+    if (!val) return;
+    profile.especialidades = profile.especialidades || [];
+    if (!profile.especialidades.includes(val)) {
+        profile.especialidades.push(val);
+        renderEsp();
+    }
+    input.value = '';
+}
+
+document.getElementById('saveEspBtn').onclick = async () => {
+    const btn = document.getElementById('saveEspBtn');
+    btn.disabled = true;
+    const r = await fetch('/api/my-profile', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ especialidades: profile.especialidades })
+    });
+    const d = await r.json();
+    btn.disabled = false;
+    if (d.ok) showToast('✓ Especialidades guardadas');
+    else      showToast(d.message || 'Error', true);
+};
+
+/* ══════════════════
+   PRODUCCIONES
+   ══════════════════ */
+function renderProd() {
+    const list = document.getElementById('prodList');
+    list.innerHTML = '';
+    (profile.producciones || []).forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'prod-card';
+        card.innerHTML = `
+            <div class="prod-card-header">
+                <span class="prod-num">Producción ${i+1}</span>
+                <button class="del-btn" onclick="deleteProd(${i})"><i class="bx bx-trash"></i></button>
+            </div>
+
+            <div class="prod-photo-wrap">
+                ${p.photoUrl
+                    ? `<img class="prod-photo-preview" src="${esc(p.photoUrl)}" style="display:block" alt="Foto">`
+                    : ''
+                }
+                <div class="prod-photo-zone" id="prodZone${i}" style="${p.photoUrl?'display:none':''}">
+                    <i class="bx bx-image-add"></i> Subir foto de la producción
+                </div>
+                <input type="file" class="prod-photo-input" id="prodPhotoInput${i}" accept=".jpg,.jpeg,.png,.webp,.gif">
+            </div>
+
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Año</label>
+                    <input class="dash-input" data-prod="${i}" data-key="year" type="text" value="${esc(p.year||'')}" placeholder="2024">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Rol / Personaje</label>
+                    <input class="dash-input" data-prod="${i}" data-key="role" type="text" value="${esc(p.role||'')}" placeholder="Protagonista, Antígona…">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Título de la obra</label>
+                    <input class="dash-input" data-prod="${i}" data-key="title" type="text" value="${esc(p.title||'')}" placeholder="Nombre de la obra">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <textarea class="dash-textarea" data-prod="${i}" data-key="description" rows="2" placeholder="Teatro Municipal, director, notas…">${esc(p.description||'')}</textarea>
+                </div>
+            </div>`;
+        list.appendChild(card);
+
+        /* Eventos de foto */
+        const zone  = card.querySelector('#prodZone' + i);
+        const input = card.querySelector('#prodPhotoInput' + i);
+        zone.onclick  = () => input.click();
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('photo', file);
+            showToast('Subiendo imagen…');
+            const r = await fetch('/api/upload-prod-photo', { method:'POST', headers:{'x-session-token':TOKEN}, body:fd });
+            const d = await r.json();
+            if (d.ok) {
+                profile.producciones[i].photoUrl = d.url;
+                renderProd();
+                showToast('✓ Foto de producción subida');
+            } else {
+                showToast(d.message || 'Error', true);
+            }
+        };
+    });
+}
+
+window.deleteProd = function(i) {
+    profile.producciones.splice(i, 1);
+    renderProd();
+};
+
+document.getElementById('addProdBtn').onclick = () => {
+    profile.producciones = profile.producciones || [];
+    profile.producciones.push({ year:'', title:'', role:'', description:'', photoUrl:'' });
+    renderProd();
+};
+
+function collectProd() {
+    const cards = document.querySelectorAll('.prod-card');
+    const result = [];
+    cards.forEach((card, i) => {
+        const obj = { ...(profile.producciones[i] || {}) };
+        card.querySelectorAll('[data-key]').forEach(el => {
+            obj[el.dataset.key] = el.value;
+        });
+        result.push(obj);
+    });
+    return result;
+}
+
+document.getElementById('saveProdBtn').onclick = async () => {
+    const btn = document.getElementById('saveProdBtn');
+    btn.disabled = true;
+    const producciones = collectProd();
+    const r = await fetch('/api/my-profile', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ producciones })
+    });
+    const d = await r.json();
+    btn.disabled = false;
+    if (d.ok) { profile.producciones = producciones; showToast('✓ Producciones guardadas'); }
+    else      showToast(d.message || 'Error', true);
+};
+
+/* ══════════════════
+   VIDEOS
+   ══════════════════ */
+function renderVideos() {
+    const list = document.getElementById('videoList');
+    if (!profile.videos || !profile.videos.length) {
+        list.innerHTML = '<p style="font-size:0.78rem;color:rgba(255,200,200,0.35);font-style:italic">Sin videos todavía</p>';
+        return;
+    }
+    list.innerHTML = '';
+    profile.videos.forEach((v, i) => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `
+            <i class="bx bx-play-circle"></i>
+            <div class="video-card-info">
+                <div class="video-card-title">${esc(v.title || 'Video ' + (i+1))}</div>
+                <div class="video-card-url">${esc(v.url)}</div>
+            </div>
+            <button class="del-btn" onclick="deleteVideo(${i})"><i class="bx bx-trash"></i></button>`;
+        list.appendChild(card);
+    });
+}
+
+window.deleteVideo = async function(i) {
+    const r = await fetch('/api/video/' + i, { method: 'DELETE', headers: { 'x-session-token': TOKEN } });
+    const d = await r.json();
+    if (d.ok) {
+        profile.videos.splice(i, 1);
+        renderVideos();
+        showToast('✓ Video eliminado');
+    } else {
+        showToast(d.message || 'Error', true);
+    }
+};
+
+document.getElementById('addVideoBtn').onclick = async () => {
+    const url   = document.getElementById('vidUrl').value.trim();
+    const title = document.getElementById('vidTitle').value.trim();
+    if (!url) return showToast('Ingresa una URL de video', true);
+    const r = await fetch('/api/add-video', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ url, title })
+    });
+    const d = await r.json();
+    if (d.ok) {
+        profile.videos = profile.videos || [];
+        profile.videos.push({ url, title });
+        renderVideos();
+        document.getElementById('vidUrl').value   = '';
+        document.getElementById('vidTitle').value = '';
+        showToast('✓ Video agregado');
+    } else {
+        showToast(d.message || 'Error', true);
+    }
+};
+
+function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

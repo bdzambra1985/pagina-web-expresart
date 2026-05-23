@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPRESART — Teatro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     NAVBAR FLOTANTE GLASSMORPHISM
+     ══════════════════════════════ -->
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"    class="nav-link active">Inicio</a></li>
+            <li><a href="#"             class="nav-link">Cartelera</a></li>
+            <li><a href="agenda.html"   class="nav-link">Agenda</a></li>
+            <li><a href="nosotros.html"   class="nav-link">Nosotros</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="login.html" class="nav-link" id="navLoginLink">Login</a></li>
+            <li><a href="#"              class="nav-link nav-cta">Entradas</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="theater">
+
+    <!-- ══════════════════════════════
+         ZONA DEL ESCENARIO (60% top)
+         El telón solo cubre esta zona
+         ══════════════════════════════ -->
+    <section class="stage-area">
+
+        <!-- Fondo profundo del escenario -->
+        <div class="stage-backdrop"></div>
+
+        <!-- Cono de luz cenital -->
+        <div class="spotlight"></div>
+
+        <!-- Destello dramático al abrirse el telón -->
+        <div class="stage-flash"></div>
+
+        <!-- Polvo flotante del escenario -->
+        <div class="particles">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+        </div>
+
+        <!-- Tablones del escenario -->
+        <div class="stage-floor"></div>
+
+        <!-- Candilejas frontales -->
+        <div class="footlights">
+            <div class="light"></div>
+            <div class="light"></div>
+            <div class="light"></div>
+            <div class="light"></div>
+            <div class="light"></div>
+            <div class="light"></div>
+            <div class="light"></div>
+        </div>
+
+        <!-- Panel glassmorphism (se revela al abrirse el telón) -->
+        <div class="stage-content">
+            <div class="glass-panel">
+                <img src="logo.png" alt="EXPRESART" class="brand-logo">
+                <p class="brand-subtitle">Donde el Arte Cobra Vida</p>
+            </div>
+        </div>
+
+        <!-- Focos proyectados desde el techo del escenario -->
+        <div class="light-beams">
+            <div class="beam beam-1"></div>
+            <div class="beam beam-2"></div>
+            <div class="beam beam-3"></div>
+            <div class="beam beam-4"></div>
+            <div class="beam beam-5"></div>
+            <div class="beam beam-6"></div>
+            <div class="beam beam-7"></div>
+        </div>
+
+        <!-- Polvo que cae de la cenefa al abrirse el telón -->
+        <div class="curtain-dust">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <!-- ══ TELÓN — se abre desde el centro a los lados ══ -->
+        <div class="curtain-wrapper">
+            <div class="curtain curtain-left"></div>
+            <div class="curtain curtain-right"></div>
+        </div>
+
+        <!-- Gato derecho — abre el telón derecho caminando hacia la derecha -->
+        <div class="cat-stage cat-stage-right">
+            <div class="cat-visual cat-visual-right">
+                <div class="cat">
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="shake">
+                        <div class="tail"></div>
+                        <div class="main">
+                            <div class="head"></div>
+                            <div class="body"><div class="leg"></div></div>
+                            <div class="face">
+                                <div class="mustache_cont"><div class="mustache"></div><div class="mustache"></div></div>
+                                <div class="mustache_cont"><div class="mustache"></div><div class="mustache"></div></div>
+                                <div class="nose"></div>
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                                <div class="brow_cont"><div class="brow"></div><div class="brow"></div></div>
+                                <div class="brow_cont"><div class="brow"></div><div class="brow"></div></div>
+                                <div class="ear_l"><div class="inner"></div></div>
+                                <div class="ear_r"><div class="outer"></div><div class="inner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gato izquierdo — abre el telón izquierdo caminando hacia la izquierda -->
+        <div class="cat-stage cat-stage-left">
+            <div class="cat-visual">
+                <div class="cat">
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="paw"></div>
+                    <div class="shake">
+                        <div class="tail"></div>
+                        <div class="main">
+                            <div class="head"></div>
+                            <div class="body"><div class="leg"></div></div>
+                            <div class="face">
+                                <div class="mustache_cont"><div class="mustache"></div><div class="mustache"></div></div>
+                                <div class="mustache_cont"><div class="mustache"></div><div class="mustache"></div></div>
+                                <div class="nose"></div>
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                                <div class="brow_cont"><div class="brow"></div><div class="brow"></div></div>
+                                <div class="brow_cont"><div class="brow"></div><div class="brow"></div></div>
+                                <div class="ear_l"><div class="inner"></div></div>
+                                <div class="ear_r"><div class="outer"></div><div class="inner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra dorada del telón -->
+        <div class="curtain-rod"></div>
+
+        <!-- Cenefa de terciopelo con flecos dorados -->
+        <div class="valance">
+            <div class="valance-body"></div>
+            <div class="fringe"></div>
+        </div>
+
+    </section>
+
+    <!-- ══════════════════════════════
+         ZONA DE BUTACAS (40% bottom)
+         El telón NO llega aquí
+         ══════════════════════════════ -->
+    <section class="audience-area">
+
+        <!-- Sombra superior (proximidad al escenario) -->
+        <div class="stage-shadow"></div>
+
+        <!-- Paredes laterales del teatro -->
+        <div class="theater-wall wall-left"></div>
+        <div class="theater-wall wall-right"></div>
+
+        <!-- Contenedor en perspectiva de las filas -->
+        <div class="seats-perspective">
+            <div class="seats-rows" id="seatsContainer"></div>
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+    function buildSeats() {
+        const container = document.getElementById('seatsContainer');
+        container.innerHTML = '';
+
+        const isMobile = window.innerWidth < 520;
+        const totalRows = isMobile ? 18 : 6;
+
+        // Ancho disponible del contenedor padre
+        const wrapper  = container.closest('.seats-perspective') || container.parentElement;
+        const availW   = wrapper.offsetWidth * 0.97;
+
+        // En móvil las butacas son más grandes para llenar la sala
+        const seatW  = isMobile
+            ? Math.max(9,  Math.min(16, availW * 0.020))
+            : Math.max(5,  Math.min(10, availW * 0.0075));
+        const seatH  = Math.round(seatW * 1.5);
+        const gap    = Math.max(2, Math.floor(seatW * 0.20));
+        const aisleW = Math.max(18, Math.round(availW * 0.055));
+
+        // Aplicar variables CSS para que el estilo de .seat las use
+        container.style.setProperty('--sw', seatW  + 'px');
+        container.style.setProperty('--sh', seatH  + 'px');
+        container.style.setProperty('--sg', gap    + 'px');
+
+        // Cuántas butacas caben por lado en la primera fila
+        const sideW     = (availW - aisleW) / 2;
+        const baseSeats = Math.max(4, Math.floor(sideW / (seatW + gap)));
+
+        for (let r = 0; r < totalRows; r++) {
+            const row = document.createElement('div');
+            row.className = 'seat-row';
+
+            // Filas traseras tienen 1 butaca más por lado
+            const seatsPerSide = baseSeats + r;
+
+            const leftGroup = document.createElement('div');
+            leftGroup.className = 'seat-group';
+
+            const aisle = document.createElement('div');
+            aisle.className = 'row-aisle';
+            aisle.style.width = aisleW + 'px';
+
+            const rightGroup = document.createElement('div');
+            rightGroup.className = 'seat-group';
+
+            for (let s = 0; s < seatsPerSide; s++) {
+                const sL = document.createElement('div');
+                sL.className = 'seat';
+                leftGroup.appendChild(sL);
+
+                const sR = document.createElement('div');
+                sR.className = 'seat';
+                rightGroup.appendChild(sR);
+            }
+
+            row.appendChild(leftGroup);
+            row.appendChild(aisle);
+            row.appendChild(rightGroup);
+            container.appendChild(row);
+        }
+    }
+
+    buildSeats();
+
+    // Recalcula al cambiar el tamaño de ventana (debounce 200ms)
+    let _rt;
+    window.addEventListener('resize', function () {
+        clearTimeout(_rt);
+        _rt = setTimeout(buildSeats, 200);
+    });
+
+</script>
+</body>
+</html>
