@@ -339,6 +339,55 @@
         }
         .no-upcoming i { font-size: 3rem; display: block; margin-bottom: 12px; color: rgba(201,162,39,0.20); }
 
+        /* ── Banner de login para visitantes ── */
+        .login-banner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(201,162,39,0.08);
+            border: 1px solid rgba(201,162,39,0.22);
+            border-radius: 12px;
+            padding: 14px 20px;
+            margin-bottom: 24px;
+        }
+        .login-banner i {
+            font-size: 1.5rem;
+            color: rgba(201,162,39,0.80);
+            flex-shrink: 0;
+        }
+        .login-banner p {
+            font-size: 0.80em;
+            color: rgba(255,220,180,0.70);
+            line-height: 1.4;
+            margin: 0;
+        }
+        .login-banner a {
+            color: #c9a227;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .login-banner a:hover { text-decoration: underline; }
+
+        /* ── Pista de login en tarjeta pública ── */
+        .event-login-hint {
+            margin-top: 8px;
+            font-size: 0.70em;
+            color: rgba(201,162,39,0.50);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .uc-login-hint {
+            margin-top: 6px;
+            font-size: 0.70em;
+            color: rgba(201,162,39,0.50);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         /* ── Filtros de categoría ── */
         .cat-filters {
             display: flex;
@@ -488,22 +537,48 @@ let currentYear   = new Date().getFullYear();
 let currentMonth  = new Date().getMonth(); // 0-based
 let selectedDate  = null;
 let activeFilter  = 'all';
+let isLoggedIn    = false;
 
 const today = new Date();
 today.setHours(0,0,0,0);
 
 initNavAuth();
 
-/* ── Cargar eventos ── */
+/* ── Cargar eventos + estado de sesión en paralelo ── */
 async function loadEvents() {
+    const tok = localStorage.getItem('exp_token') || '';
     try {
-        const r = await fetch('/api/events');
-        allEvents = await r.json();
+        const [evRes, authRes] = await Promise.all([
+            fetch('/api/events'),
+            fetch('/api/auth', { headers: { 'x-session-token': tok } })
+        ]);
+        allEvents  = await evRes.json();
+        const auth = await authRes.json();
+        isLoggedIn = auth.ok;
     } catch (e) {
-        allEvents = [];
+        allEvents  = [];
+        isLoggedIn = false;
     }
+    renderLoginBanner();
     renderCalendar();
     renderUpcoming();
+}
+
+/* ── Banner informativo para visitantes sin sesión ── */
+function renderLoginBanner() {
+    const existing = document.getElementById('loginBanner');
+    if (isLoggedIn) {
+        if (existing) existing.remove();
+        return;
+    }
+    if (existing) return;
+    const banner = document.createElement('div');
+    banner.id        = 'loginBanner';
+    banner.className = 'login-banner';
+    banner.innerHTML = `
+        <i class="bx bx-info-circle"></i>
+        <p>Estás viendo la agenda pública. <a href="login.html">Inicia sesión</a> para ver todos los detalles de cada evento: horarios, descripciones y más.</p>`;
+    document.querySelector('.upcoming-section').prepend(banner);
 }
 
 /* ══════════════════════════════════════
@@ -615,6 +690,16 @@ function renderUpcoming() {
     list.innerHTML = filtered.map(ev => {
         const cat  = CATS[ev.category] || CATS.otro;
         const [y, m, d] = ev.date.split('-');
+        const detailRows = isLoggedIn
+            ? `<div class="uc-meta">
+                    ${ev.time     ? `<span><i class="bx bx-time"></i>${esc(ev.time)}</span>` : ''}
+                    ${ev.location ? `<span><i class="bx bx-map"></i>${esc(ev.location)}</span>` : ''}
+               </div>
+               ${ev.description ? `<div class="uc-desc">${esc(ev.description)}</div>` : ''}`
+            : `<div class="uc-meta">
+                    ${ev.location ? `<span><i class="bx bx-map"></i>${esc(ev.location)}</span>` : ''}
+               </div>
+               <div class="uc-login-hint"><i class="bx bx-lock-alt"></i><a href="login.html" style="color:inherit">Inicia sesión</a> para ver horario y detalles</div>`;
         return `
         <div class="upcoming-card" style="--cat-color:${cat.color}; --cat-rgb:${cat.rgb}"
              onclick="goToDate('${ev.date}')">
@@ -625,11 +710,7 @@ function renderUpcoming() {
             <div class="uc-body">
                 <div class="uc-cat">${cat.label}</div>
                 <div class="uc-title">${esc(ev.title)}</div>
-                <div class="uc-meta">
-                    ${ev.time     ? `<span><i class="bx bx-time"></i>${esc(ev.time)}</span>` : ''}
-                    ${ev.location ? `<span><i class="bx bx-map"></i>${esc(ev.location)}</span>` : ''}
-                </div>
-                ${ev.description ? `<div class="uc-desc">${esc(ev.description)}</div>` : ''}
+                ${detailRows}
             </div>
         </div>`;
     }).join('');
@@ -649,15 +730,26 @@ function goToDate(dateStr) {
 /* ── HTML de tarjeta de evento (panel lateral) ── */
 function eventCardHTML(ev) {
     const cat = CATS[ev.category] || CATS.otro;
+    if (isLoggedIn) {
+        return `
+        <div class="event-card" style="--cat-color:${cat.color}">
+            <span class="event-cat-badge">${cat.label}</span>
+            <div class="event-title">${esc(ev.title)}</div>
+            <div class="event-meta">
+                ${ev.time     ? `<span><i class="bx bx-time"></i>${esc(ev.time)}</span>` : ''}
+                ${ev.location ? `<span><i class="bx bx-map"></i>${esc(ev.location)}</span>` : ''}
+            </div>
+            ${ev.description ? `<div class="event-desc">${esc(ev.description)}</div>` : ''}
+        </div>`;
+    }
     return `
     <div class="event-card" style="--cat-color:${cat.color}">
         <span class="event-cat-badge">${cat.label}</span>
         <div class="event-title">${esc(ev.title)}</div>
         <div class="event-meta">
-            ${ev.time     ? `<span><i class="bx bx-time"></i>${esc(ev.time)}</span>` : ''}
             ${ev.location ? `<span><i class="bx bx-map"></i>${esc(ev.location)}</span>` : ''}
         </div>
-        ${ev.description ? `<div class="event-desc">${esc(ev.description)}</div>` : ''}
+        <div class="event-login-hint"><i class="bx bx-lock-alt"></i><a href="login.html" style="color:inherit">Inicia sesión</a> para ver hora y descripción</div>
     </div>`;
 }
 
