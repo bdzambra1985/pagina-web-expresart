@@ -1311,68 +1311,69 @@ body {
     box-sizing: border-box;
     box-shadow: inset -5px -5px 12px rgba(0,0,0,0.10);
 }
-/* Ceja izquierda (ceño) */
+/* Ceja izquierda (alegre — levantada hacia afuera) */
 .cat-stage .twin .twin-brow {
     position: absolute;
-    top: 22px; left: 10px;
-    width: 26px; height: 5px;
+    top: 20px; left: 10px;
+    width: 24px; height: 4px;
     background: #6a3a1a;
     border-radius: 3px;
-    transform: rotate(-12deg);
+    transform: rotate(8deg);
     transform-origin: right center;
 }
 /* Ceja derecha */
 .cat-stage .twin .twin-brow-r {
     left: auto; right: 10px;
-    transform: rotate(12deg);
+    transform: rotate(-8deg);
     transform-origin: left center;
 }
-/* Ojo izquierdo */
+/* Ojo izquierdo — más redondo y abierto */
 .cat-stage .twin .twin-eye {
     position: absolute;
-    top: 32px; left: 12px;
-    width: 16px; height: 11px;
+    top: 30px; left: 11px;
+    width: 16px; height: 16px;
     background: #1a1a1a;
-    border-radius: 40% 40% 50% 50%;
+    border-radius: 50%;
+    box-shadow: inset -3px -3px 0 rgba(255,255,255,0.25);
 }
 /* Ojo derecho */
 .cat-stage .twin .twin-eye-r {
-    left: auto; right: 12px;
+    left: auto; right: 11px;
 }
 /* Nariz */
 .cat-stage .twin .twin-nose {
     position: absolute;
-    top: 48px; left: 34px;
-    width: 20px; height: 12px;
+    top: 50px; left: 34px;
+    width: 18px; height: 11px;
     background: #c07850;
     border-radius: 50%;
 }
-/* Boca — línea curva hacia abajo (ceño) */
+/* Boca — sonrisa curva hacia arriba */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 62px; left: 22px;
-    width: 44px; height: 10px;
-    border-top: 3px solid #8a3a18;
-    border-radius: 50% 50% 0 0;
+    top: 58px; left: 20px;
+    width: 48px; height: 14px;
+    border-bottom: 3px solid #8a3a18;
+    border-radius: 0 0 50% 50%;
 }
 
-/* ── Cuerpo gran barril rojo ── */
+/* ── Cuerpo esbelto ── */
 .cat-stage .twin .twin-body {
     position: absolute;
-    top: 96px; left: 2px;
-    width: 116px; height: 84px;
+    top: 96px; left: 18px;
+    width: 84px; height: 72px;
     background: #c83020;
-    border-radius: 50%;
+    border-radius: 42px 42px 36px 36px;
     box-shadow:
-        inset 0 -12px 28px rgba(0,0,0,0.28),
-        inset 4px 4px 14px rgba(255,200,160,0.18);
+        inset 0 -10px 22px rgba(0,0,0,0.28),
+        inset 3px 3px 10px rgba(255,200,160,0.18);
 }
 /* Franja amarilla de camisa */
 .cat-stage .twin .twin-body::before {
     content: '';
     position: absolute;
-    top: 9px; left: 16px;
-    width: 84px; height: 16px;
+    top: 8px; left: 10px;
+    width: 64px; height: 14px;
     background: #e8c418;
     border-radius: 6px;
 }
@@ -1380,14 +1381,14 @@ body {
 /* ── Corbata de lazo azul ── */
 .cat-stage .twin .twin-bow {
     position: absolute;
-    top: 13px; left: 30px;
-    width: 56px; height: 18px;
+    top: 12px; left: 18px;
+    width: 48px; height: 16px;
 }
 .cat-stage .twin .twin-bow::before {
     content: '';
     position: absolute;
     top: 0; left: 0;
-    width: 24px; height: 18px;
+    width: 20px; height: 16px;
     background: #2a7ab4;
     clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
@@ -1395,14 +1396,14 @@ body {
     content: '';
     position: absolute;
     top: 0; right: 0;
-    width: 24px; height: 18px;
+    width: 20px; height: 16px;
     background: #2a7ab4;
     clip-path: polygon(100% 0, 0 50%, 100% 100%);
 }
 .cat-stage .twin .twin-bow-knot {
     position: absolute;
-    top: 4px; left: 24px;
-    width: 8px; height: 10px;
+    top: 4px; left: 20px;
+    width: 8px; height: 8px;
     background: #1a5a8a;
     border-radius: 50%;
 }
@@ -1412,16 +1413,16 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 24px; height: 30px;
+    width: 20px; height: 28px;
     background: #1a1a1a;
     border-radius: 4px 4px 0 0;
 }
 .cat-stage .twin .twin-leg-l {
-    left: 22px;
+    left: 28px;
     animation: twinLegL 0.46s infinite ease-in-out;
 }
 .cat-stage .twin .twin-leg-r {
-    right: 22px;
+    right: 28px;
     animation: twinLegR 0.46s infinite ease-in-out;
 }
 /* Pies */
