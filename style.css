@@ -1202,7 +1202,7 @@ body {
 .cat-visual {
     position: relative;
     width: 60px;
-    height: 90px;
+    height: 95px;
     overflow: visible;
 }
 
@@ -1243,18 +1243,17 @@ body {
 
 /* ══════════════════════════════════════════════════════════
    ░░  GEMELOS CSS — Tweedledee & Tweedledum  ░░
-   120×180px escalado al 50% → 60×90px visible
+   120×190px escalado al 50% → 60×95px visible
    ══════════════════════════════════════════════════════════ */
 
 .cat-stage .twin {
     position: absolute;
     bottom: 0; left: 0;
-    width: 120px; height: 180px;
+    width: 120px; height: 190px;
     transform: scale(0.5);
     transform-origin: bottom left;
 }
 
-/* Contenedor que realiza el vaivén lateral */
 .cat-stage .twin .twin-shake {
     position: absolute;
     inset: 0;
@@ -1265,115 +1264,135 @@ body {
 /* ── Sombrero rojo ── */
 .cat-stage .twin .twin-hat {
     position: absolute;
-    top: 2px; left: 34px;
-    width: 52px; height: 18px;
+    top: 0; left: 36px;
+    width: 48px; height: 16px;
     background: #b82020;
     border-radius: 5px 5px 0 0;
-    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.30);
+    box-shadow: inset 0 -3px 7px rgba(0,0,0,0.30);
 }
-/* Ala del sombrero */
-.cat-stage .twin .twin-hat::before {
+.cat-stage .twin .twin-hat::before {  /* ala */
     content: '';
     position: absolute;
-    bottom: -8px; left: -12px;
-    width: 76px; height: 8px;
+    bottom: -7px; left: -10px;
+    width: 68px; height: 7px;
     background: #b82020;
     border-radius: 4px;
 }
-/* Palito de la propela */
-.cat-stage .twin .twin-hat::after {
+.cat-stage .twin .twin-hat::after {  /* palito propela */
     content: '';
     position: absolute;
-    top: -14px; left: 50%;
+    top: -12px; left: 50%;
     transform: translateX(-50%);
-    width: 4px; height: 14px;
+    width: 3px; height: 12px;
     background: #999;
 }
-/* Pala de la propela */
 .cat-stage .twin .twin-prop {
     position: absolute;
-    top: -10px; left: 28px;
-    width: 16px; height: 5px;
+    top: -9px; left: 30px;
+    width: 14px; height: 5px;
     background: #22a855;
     border-radius: 3px;
     transform-origin: 3px 2.5px;
     animation: propSpin 0.7s linear infinite;
 }
 
-/* ── Cabeza ── */
+/* ── Cabeza — más pequeña que el cuerpo ── */
 .cat-stage .twin .twin-head {
     position: absolute;
-    top: 22px; left: 16px;
-    width: 88px; height: 82px;
+    top: 20px; left: 28px;
+    width: 64px; height: 58px;
     background: #f5c48a;
-    border-radius: 50% 50% 44% 44%;
+    border-radius: 50%;
     border: 2px solid #d4906a;
     box-sizing: border-box;
-    box-shadow: inset -5px -5px 12px rgba(0,0,0,0.10);
+    box-shadow: inset -4px -4px 10px rgba(0,0,0,0.10);
 }
-/* Ceja izquierda (alegre — levantada hacia afuera) */
 .cat-stage .twin .twin-brow {
     position: absolute;
-    top: 20px; left: 10px;
-    width: 24px; height: 4px;
+    top: 14px; left: 7px;
+    width: 18px; height: 3px;
     background: #6a3a1a;
-    border-radius: 3px;
+    border-radius: 2px;
     transform: rotate(8deg);
     transform-origin: right center;
 }
-/* Ceja derecha */
 .cat-stage .twin .twin-brow-r {
-    left: auto; right: 10px;
+    left: auto; right: 7px;
     transform: rotate(-8deg);
     transform-origin: left center;
 }
-/* Ojo izquierdo — más redondo y abierto */
 .cat-stage .twin .twin-eye {
     position: absolute;
-    top: 30px; left: 11px;
-    width: 16px; height: 16px;
+    top: 21px; left: 8px;
+    width: 13px; height: 13px;
     background: #1a1a1a;
     border-radius: 50%;
-    box-shadow: inset -3px -3px 0 rgba(255,255,255,0.25);
+    box-shadow: inset -2px -2px 0 rgba(255,255,255,0.28);
 }
-/* Ojo derecho */
 .cat-stage .twin .twin-eye-r {
-    left: auto; right: 11px;
+    left: auto; right: 8px;
 }
-/* Nariz */
 .cat-stage .twin .twin-nose {
     position: absolute;
-    top: 50px; left: 34px;
-    width: 18px; height: 11px;
+    top: 36px; left: 24px;
+    width: 14px; height: 9px;
     background: #c07850;
     border-radius: 50%;
 }
-/* Boca — sonrisa curva hacia arriba */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 58px; left: 20px;
-    width: 48px; height: 14px;
+    top: 44px; left: 12px;
+    width: 38px; height: 10px;
     border-bottom: 3px solid #8a3a18;
     border-radius: 0 0 50% 50%;
 }
 
-/* ── Cuerpo esbelto ── */
-.cat-stage .twin .twin-body {
+/* ── Brazos — salen desde los lados del cuerpo ── */
+.cat-stage .twin .twin-arm {
     position: absolute;
-    top: 96px; left: 18px;
-    width: 84px; height: 72px;
+    top: 92px;
+    width: 14px; height: 36px;
     background: #c83020;
-    border-radius: 42px 42px 36px 36px;
-    box-shadow:
-        inset 0 -10px 22px rgba(0,0,0,0.28),
-        inset 3px 3px 10px rgba(255,200,160,0.18);
+    border-radius: 7px;
 }
-/* Franja amarilla de camisa */
-.cat-stage .twin .twin-body::before {
+.cat-stage .twin .twin-arm-l {
+    left: 4px;
+    transform: rotate(18deg);
+    transform-origin: top center;
+    animation: twinArmL 0.46s infinite ease-in-out;
+}
+.cat-stage .twin .twin-arm-r {
+    right: 4px;
+    transform: rotate(-18deg);
+    transform-origin: top center;
+    animation: twinArmR 0.46s infinite ease-in-out;
+}
+/* Manitos */
+.cat-stage .twin .twin-arm::after {
     content: '';
     position: absolute;
-    top: 8px; left: 10px;
-    width: 64px; height: 14px;
+    bottom: -7px; left: -4px;
+    width: 22px; height: 14px;
+    background: #f5c48a;
+    border-radius: 50%;
+}
+
+/* ── Cuerpo oval grande ── */
+.cat-stage .twin .twin-body {
+    position: absolute;
+    top: 74px; left: 10px;
+    width: 100px; height: 88px;
+    background: #c83020;
+    border-radius: 50%;
+    box-shadow:
+        inset 0 -12px 26px rgba(0,0,0,0.28),
+        inset 4px 4px 12px rgba(255,200,160,0.18);
+}
+.cat-stage .twin .twin-body::before {  /* franja camisa */
+    content: '';
+    position: absolute;
+    top: 10px; left: 14px;
+    width: 72px; height: 14px;
     background: #e8c418;
     border-radius: 6px;
 }
@@ -1381,7 +1400,7 @@ body {
 /* ── Corbata de lazo azul ── */
 .cat-stage .twin .twin-bow {
     position: absolute;
-    top: 12px; left: 18px;
+    top: 14px; left: 26px;
     width: 48px; height: 16px;
 }
 .cat-stage .twin .twin-bow::before {
@@ -1408,35 +1427,34 @@ body {
     border-radius: 50%;
 }
 
-/* ── Piernas cortas ── */
+/* ── Piernas ── */
 .cat-stage .twin .twin-leg-l,
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 20px; height: 28px;
+    width: 20px; height: 26px;
     background: #1a1a1a;
     border-radius: 4px 4px 0 0;
 }
 .cat-stage .twin .twin-leg-l {
-    left: 28px;
+    left: 30px;
     animation: twinLegL 0.46s infinite ease-in-out;
 }
 .cat-stage .twin .twin-leg-r {
-    right: 28px;
+    right: 30px;
     animation: twinLegR 0.46s infinite ease-in-out;
 }
-/* Pies */
 .cat-stage .twin .twin-leg-l::after,
 .cat-stage .twin .twin-leg-r::after {
     content: '';
     position: absolute;
     bottom: -5px; left: -5px;
-    width: 34px; height: 10px;
+    width: 30px; height: 9px;
     background: #1a1a1a;
     border-radius: 5px 6px 8px 8px;
 }
 
-/* ── Animaciones de los gemelos ── */
+/* ── Animaciones ── */
 @keyframes twinWaddle {
     0%, 100% { transform: rotate(-2.5deg); }
     50%       { transform: rotate(2.5deg); }
@@ -1448,6 +1466,14 @@ body {
 @keyframes twinLegR {
     0%, 100% { transform: rotate(7deg); transform-origin: top center; }
     50%       { transform: rotate(-7deg); }
+}
+@keyframes twinArmL {
+    0%, 100% { transform: rotate(14deg); transform-origin: top center; }
+    50%       { transform: rotate(26deg); }
+}
+@keyframes twinArmR {
+    0%, 100% { transform: rotate(-26deg); transform-origin: top center; }
+    50%       { transform: rotate(-14deg); }
 }
 @keyframes propSpin {
     from { transform: rotate(0deg); }
