@@ -555,6 +555,9 @@ async function loadEvents() {
         allEvents  = await evRes.json();
         const auth = await authRes.json();
         isLoggedIn = auth.ok;
+        if (!isLoggedIn) {
+            allEvents = allEvents.filter(ev => (ev.audience || 'publico') !== 'alumnos');
+        }
     } catch (e) {
         allEvents  = [];
         isLoggedIn = false;

@@ -473,6 +473,15 @@
             </div>
             <div class="field-row">
                 <div class="field-group">
+                    <label class="field-label">Visibilidad</label>
+                    <select id="evtAudience" class="admin-input">
+                        <option value="publico">🌐 Público (todos)</option>
+                        <option value="alumnos">🔒 Solo alumnos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
                     <label class="field-label">Fecha</label>
                     <input id="evtDate" class="admin-input" type="date">
                 </div>
@@ -984,6 +993,7 @@ async function loadEvents() {
                     <th>Fecha</th>
                     <th>Título</th>
                     <th>Categoría</th>
+                    <th>Visibilidad</th>
                     <th>Lugar</th>
                     <th>Acciones</th>
                 </tr>
@@ -998,6 +1008,7 @@ async function loadEvents() {
                         <td>${dateLabel}${ev.time ? ' '+ev.time : ''}</td>
                         <td>${esc(ev.title)}</td>
                         <td><span style="color:${cat.color};font-size:0.80em;letter-spacing:1px;text-transform:uppercase">${cat.label}</span></td>
+                        <td style="font-size:0.80em">${ev.audience === 'alumnos' ? '🔒 Solo alumnos' : '🌐 Público'}</td>
                         <td style="font-size:0.78em;color:rgba(255,200,200,0.55)">${esc(ev.location)}</td>
                         <td style="display:flex;gap:6px;flex-wrap:wrap">
                             <button class="tbl-btn tbl-btn-view" onclick="editEvent(${JSON.stringify(ev).replace(/"/g,'&quot;')})">
@@ -1022,6 +1033,7 @@ function editEvent(ev) {
     document.getElementById('evtTime').value      = ev.time     || '';
     document.getElementById('evtLocation').value  = ev.location || '';
     document.getElementById('evtDesc').value      = ev.description || '';
+    document.getElementById('evtAudience').value  = ev.audience || 'publico';
     document.getElementById('evtFormTitle').textContent = 'Editar evento';
     document.getElementById('saveEvtLabel').textContent = 'Guardar cambios';
     document.getElementById('saveEvtBtn').querySelector('i').className = 'bx bx-save';
@@ -1039,6 +1051,7 @@ function resetEvtForm() {
     document.getElementById('evtTime').value      = '';
     document.getElementById('evtLocation').value  = '';
     document.getElementById('evtDesc').value      = '';
+    document.getElementById('evtAudience').value  = 'publico';
     document.getElementById('evtFormTitle').textContent = 'Crear evento';
     document.getElementById('saveEvtLabel').textContent = 'Crear evento';
     document.getElementById('saveEvtBtn').querySelector('i').className = 'bx bx-plus';
@@ -1052,12 +1065,13 @@ document.getElementById('saveEvtBtn').onclick = async () => {
     const date     = document.getElementById('evtDate').value;
     const time     = document.getElementById('evtTime').value;
     const location = document.getElementById('evtLocation').value.trim();
-    const category = document.getElementById('evtCat').value;
+    const category    = document.getElementById('evtCat').value;
     const description = document.getElementById('evtDesc').value.trim();
+    const audience    = document.getElementById('evtAudience').value;
 
     if (!title || !date) return showToast('Título y fecha son requeridos', true);
 
-    const body = { title, date, time, location, category, description };
+    const body = { title, date, time, location, category, description, audience };
 
     let r;
     if (editingEvtId) {

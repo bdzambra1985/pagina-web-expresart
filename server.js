@@ -385,9 +385,10 @@ app.get('/api/events', (req, res) => {
 });
 
 const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
+const VALID_AUDIENCES  = new Set(['publico', 'alumnos']);
 app.post('/api/events', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { title, date, time, location, description, category } = req.body;
+    const { title, date, time, location, description, category, audience } = req.body;
     if (!title || !date || typeof title !== 'string' || typeof date !== 'string') {
         return res.status(400).json({ ok: false, message: 'Título y fecha son requeridos' });
     }
@@ -403,6 +404,7 @@ app.post('/api/events', (req, res) => {
         location:    (location    || '').slice(0, 200),
         description: (description || '').slice(0, 1000),
         category:    VALID_CATEGORIES.has(category) ? category : 'otro',
+        audience:    VALID_AUDIENCES.has(audience)  ? audience  : 'publico',
         createdAt:   new Date().toISOString()
     };
     events.push(event);
@@ -415,13 +417,14 @@ app.put('/api/events/:id', (req, res) => {
     const events = readEvents();
     const idx    = events.findIndex(e => e.id === req.params.id);
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
-    const { title, date, time, location, description, category } = req.body;
+    const { title, date, time, location, description, category, audience } = req.body;
     if (title       !== undefined) events[idx].title       = title;
     if (date        !== undefined) events[idx].date        = date;
     if (time        !== undefined) events[idx].time        = time;
     if (location    !== undefined) events[idx].location    = location;
     if (description !== undefined) events[idx].description = description;
-    if (category    !== undefined) events[idx].category    = category;
+    if (category    !== undefined) events[idx].category    = VALID_CATEGORIES.has(category) ? category : 'otro';
+    if (audience    !== undefined) events[idx].audience    = VALID_AUDIENCES.has(audience)  ? audience  : 'publico';
     writeEvents(events);
     res.json({ ok: true });
 });
