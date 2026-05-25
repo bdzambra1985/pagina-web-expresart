@@ -1192,17 +1192,17 @@ body {
     animation: catWalkRight 6s linear 0.55s both;
 }
 
-/* Gato izquierdo: empieza en el centro, camina hacia la izquierda */
+/* Gemelo izquierdo: empieza en el centro, camina hacia la izquierda */
 .cat-stage-left {
-    left: calc(50% - 95px);
+    left: calc(50% - 60px);
     animation: catWalkLeft 6s linear 0.55s both;
 }
 
-/* Contenedor visual: escala el gato a tamaño de escenario */
+/* Contenedor visual: escala el gemelo a tamaño de escenario */
 .cat-visual {
     position: relative;
-    width: 95px;
-    height: 50px;
+    width: 60px;
+    height: 90px;
     overflow: visible;
 }
 
@@ -1241,298 +1241,214 @@ body {
     100%  { transform: translateX(-52.78vw);   }
 }
 
-/* ── Gato cuadrúpedo horizontal — vista 3/4 — 190×100px ── */
-.cat-stage .cat {
+/* ══════════════════════════════════════════════════════════
+   ░░  GEMELOS CSS — Tweedledee & Tweedledum  ░░
+   120×180px escalado al 50% → 60×90px visible
+   ══════════════════════════════════════════════════════════ */
+
+.cat-stage .twin {
     position: absolute;
     bottom: 0; left: 0;
-    top: auto;
-    width: 190px; height: 100px;
-    margin: 0;
-    color: #1e0008;
+    width: 120px; height: 180px;
     transform: scale(0.5);
     transform-origin: bottom left;
 }
 
-/* ── 4 patas ancladas al piso, ciclo diagonal ── */
-.cat-stage .cat .paw {
-    position: absolute;
-    bottom: 0; left: 28px;
-    top: auto;
-    width: 13px; height: 50px;
-    background: currentcolor;
-    border-radius: 5px 5px 8px 8px;
-    transform: none;
-    animation: catPawFL 0.44s infinite linear;
-}
-.cat-stage .cat .paw::after {
-    position: absolute;
-    content: "";
-    bottom: -3px; left: -3px;
-    width: 17px; height: 9px;
-    background: currentcolor;
-    border-radius: 50%;
-    transform: none;
-}
-/* Delantera derecha — par diagonal con trasera izquierda */
-.cat-stage .cat .paw:nth-child(2) {
-    left: 44px;
-    animation: catPawFR 0.44s infinite linear;
-}
-/* Trasera izquierda — par diagonal con delantera derecha */
-.cat-stage .cat .paw:nth-child(3) {
-    left: 110px;
-    animation: catBackPawL 0.44s infinite linear;
-}
-/* Trasera derecha — par diagonal con delantera izquierda */
-.cat-stage .cat .paw:nth-child(4) {
-    left: 126px;
-    animation: catBackPawR 0.44s infinite linear;
-}
-
-/* ── Bounce del cuerpo ── */
-.cat-stage .cat .shake {
+/* Contenedor que realiza el vaivén lateral */
+.cat-stage .twin .twin-shake {
     position: absolute;
     inset: 0;
-    animation: catShake 0.44s infinite linear;
+    transform-origin: bottom center;
+    animation: twinWaddle 0.46s infinite ease-in-out;
 }
 
-/* ── Cola: arco en la parte trasera (derecha del cuerpo) ── */
-.cat-stage .cat .tail {
+/* ── Sombrero rojo ── */
+.cat-stage .twin .twin-hat {
     position: absolute;
-    right: 10px; top: -30px;
-    width: 48px; height: 48px;
-    border: 13px solid currentcolor;
-    border-color: currentcolor currentcolor transparent transparent;
-    border-radius: 50%;
-    transform: rotate(22deg);
-    box-sizing: border-box;
-    animation: catTail 0.44s infinite linear;
+    top: 2px; left: 34px;
+    width: 52px; height: 18px;
+    background: #b82020;
+    border-radius: 5px 5px 0 0;
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.30);
 }
-.cat-stage .cat .tail::after { display: none; }
+/* Ala del sombrero */
+.cat-stage .twin .twin-hat::before {
+    content: '';
+    position: absolute;
+    bottom: -8px; left: -12px;
+    width: 76px; height: 8px;
+    background: #b82020;
+    border-radius: 4px;
+}
+/* Palito de la propela */
+.cat-stage .twin .twin-hat::after {
+    content: '';
+    position: absolute;
+    top: -14px; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 14px;
+    background: #999;
+}
+/* Pala de la propela */
+.cat-stage .twin .twin-prop {
+    position: absolute;
+    top: -10px; left: 28px;
+    width: 16px; height: 5px;
+    background: #22a855;
+    border-radius: 3px;
+    transform-origin: 3px 2.5px;
+    animation: propSpin 0.7s linear infinite;
+}
 
-/* ── Contenedor de cabeza + cuerpo ── */
-.cat-stage .cat .main {
+/* ── Cabeza ── */
+.cat-stage .twin .twin-head {
+    position: absolute;
+    top: 22px; left: 16px;
+    width: 88px; height: 82px;
+    background: #f5c48a;
+    border-radius: 50% 50% 44% 44%;
+    border: 2px solid #d4906a;
+    box-sizing: border-box;
+    box-shadow: inset -5px -5px 12px rgba(0,0,0,0.10);
+}
+/* Ceja izquierda (ceño) */
+.cat-stage .twin .twin-brow {
+    position: absolute;
+    top: 22px; left: 10px;
+    width: 26px; height: 5px;
+    background: #6a3a1a;
+    border-radius: 3px;
+    transform: rotate(-12deg);
+    transform-origin: right center;
+}
+/* Ceja derecha */
+.cat-stage .twin .twin-brow-r {
+    left: auto; right: 10px;
+    transform: rotate(12deg);
+    transform-origin: left center;
+}
+/* Ojo izquierdo */
+.cat-stage .twin .twin-eye {
+    position: absolute;
+    top: 32px; left: 12px;
+    width: 16px; height: 11px;
+    background: #1a1a1a;
+    border-radius: 40% 40% 50% 50%;
+}
+/* Ojo derecho */
+.cat-stage .twin .twin-eye-r {
+    left: auto; right: 12px;
+}
+/* Nariz */
+.cat-stage .twin .twin-nose {
+    position: absolute;
+    top: 48px; left: 34px;
+    width: 20px; height: 12px;
+    background: #c07850;
+    border-radius: 50%;
+}
+/* Boca — línea curva hacia abajo (ceño) */
+.cat-stage .twin .twin-mouth {
+    position: absolute;
+    top: 62px; left: 22px;
+    width: 44px; height: 10px;
+    border-top: 3px solid #8a3a18;
+    border-radius: 50% 50% 0 0;
+}
+
+/* ── Cuerpo gran barril rojo ── */
+.cat-stage .twin .twin-body {
+    position: absolute;
+    top: 96px; left: 2px;
+    width: 116px; height: 84px;
+    background: #c83020;
+    border-radius: 50%;
+    box-shadow:
+        inset 0 -12px 28px rgba(0,0,0,0.28),
+        inset 4px 4px 14px rgba(255,200,160,0.18);
+}
+/* Franja amarilla de camisa */
+.cat-stage .twin .twin-body::before {
+    content: '';
+    position: absolute;
+    top: 9px; left: 16px;
+    width: 84px; height: 16px;
+    background: #e8c418;
+    border-radius: 6px;
+}
+
+/* ── Corbata de lazo azul ── */
+.cat-stage .twin .twin-bow {
+    position: absolute;
+    top: 13px; left: 30px;
+    width: 56px; height: 18px;
+}
+.cat-stage .twin .twin-bow::before {
+    content: '';
     position: absolute;
     top: 0; left: 0;
-    width: 190px; height: 86px;
-    color: currentcolor;
+    width: 24px; height: 18px;
+    background: #2a7ab4;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-
-/* ── Torso: proporciones de gato, NO de salchicha ── */
-.cat-stage .cat .main .body {
+.cat-stage .twin .twin-bow::after {
+    content: '';
     position: absolute;
-    left: 40px; top: 16px;
-    right: auto;
-    width: 112px; height: 66px;
-    background: currentcolor;
-    border-radius: 33px 42px 42px 33px;
-    box-shadow: inset 0 -8px 18px rgba(0,0,0,0.22);
+    top: 0; right: 0;
+    width: 24px; height: 18px;
+    background: #2a7ab4;
+    clip-path: polygon(100% 0, 0 50%, 100% 100%);
 }
-.cat-stage .cat .main .body .leg,
-.cat-stage .cat .main .body .leg::before,
-.cat-stage .cat .main .body .leg::after { display: none; }
-
-/* ── Cabeza redonda grande al frente ── */
-.cat-stage .cat .main .head {
+.cat-stage .twin .twin-bow-knot {
     position: absolute;
-    left: 2px; top: 8px;
-    bottom: auto;
-    width: 76px; height: 74px;
-    background: currentcolor;
-    border-radius: 50%;
-    transform: none;
-}
-
-/* ── Cara: 2 ojos, nariz, bigotes y orejas ── */
-.cat-stage .cat .main .face {
-    position: absolute;
-    left: 4px; top: 4px;
-    width: 80px; height: 80px;
-}
-
-/* Bigotes como líneas finas a cada lado */
-.cat-stage .cat .main .face .mustache_cont {
-    display: block;
-    position: absolute;
-    bottom: 22px; left: 2px;
-    width: 26px; height: 10px;
-    animation: none;
-}
-.cat-stage .cat .main .face .mustache_cont:nth-child(2) {
-    left: auto; right: 2px;
-    animation: none;
-}
-.cat-stage .cat .main .face .mustache {
-    display: block;
-    position: absolute;
-    top: 0; width: 100%;
-    border: 1px solid rgba(200,140,140,0.65);
-    transform-origin: 100% 0;
-    transform: rotate(-8deg);
-}
-.cat-stage .cat .main .face .mustache:last-child {
-    top: 5px;
-    transform: rotate(-16deg);
-}
-.cat-stage .cat .main .face .mustache_cont:nth-child(2) .mustache {
-    transform-origin: 0% 0;
-    transform: rotate(8deg);
-}
-.cat-stage .cat .main .face .mustache_cont:nth-child(2) .mustache:last-child {
-    transform: rotate(16deg);
-}
-
-/* Cejas ocultas */
-.cat-stage .cat .main .face .brow_cont,
-.cat-stage .cat .main .face .brow { display: none; }
-
-/* Nariz pequeña centrada */
-.cat-stage .cat .main .face .nose {
-    position: absolute;
-    bottom: 20px; left: 34px;
-    width: 10px; height: 7px;
-    margin-left: 0;
-    background: #9c1b4d;
+    top: 4px; left: 24px;
+    width: 8px; height: 10px;
+    background: #1a5a8a;
     border-radius: 50%;
 }
 
-/* Ojo izquierdo */
-.cat-stage .cat .main .face .eye {
+/* ── Piernas cortas ── */
+.cat-stage .twin .twin-leg-l,
+.cat-stage .twin .twin-leg-r {
     position: absolute;
-    top: 22px; left: 12px;
-    width: 18px; height: 18px;
-    background: #fff;
-    border: 2px solid #1e0008;
-    border-radius: 50%;
-    box-sizing: border-box;
+    bottom: 0;
+    width: 24px; height: 30px;
+    background: #1a1a1a;
+    border-radius: 4px 4px 0 0;
 }
-/* Ojo derecho — visible en vista 3/4 */
-.cat-stage .cat .main .face .eye:nth-child(5) {
-    display: block;
-    top: 22px; left: 46px;
+.cat-stage .twin .twin-leg-l {
+    left: 22px;
+    animation: twinLegL 0.46s infinite ease-in-out;
 }
-.cat-stage .cat .main .face .eye::after {
+.cat-stage .twin .twin-leg-r {
+    right: 22px;
+    animation: twinLegR 0.46s infinite ease-in-out;
+}
+/* Pies */
+.cat-stage .twin .twin-leg-l::after,
+.cat-stage .twin .twin-leg-r::after {
+    content: '';
     position: absolute;
-    content: "";
-    width: 7px; height: 7px;
-    right: 2px; top: 3px;
-    background: #1e0008;
-    border-radius: 50%;
-    animation: catEye 0.44s infinite linear;
+    bottom: -5px; left: -5px;
+    width: 34px; height: 10px;
+    background: #1a1a1a;
+    border-radius: 5px 6px 8px 8px;
 }
 
-/* Oreja izquierda — punta triangular */
-.cat-stage .cat .main .face .ear_l {
-    position: absolute;
-    top: -22px; left: 8px;
-    width: 0; height: 0;
-    background: transparent;
-    border-radius: 0;
-    border-left: 11px solid transparent;
-    border-right: 11px solid transparent;
-    border-bottom: 26px solid currentcolor;
-    transform: rotate(-8deg);
-    transform-origin: 50% 100%;
-    overflow: visible;
-    animation: catEarL 0.44s infinite linear;
+/* ── Animaciones de los gemelos ── */
+@keyframes twinWaddle {
+    0%, 100% { transform: rotate(-2.5deg); }
+    50%       { transform: rotate(2.5deg); }
 }
-.cat-stage .cat .main .face .ear_l .inner { display: none; }
-
-/* Oreja derecha */
-.cat-stage .cat .main .face .ear_r {
-    position: absolute;
-    top: -20px; left: 44px;
-    right: auto; margin-top: 0;
-    width: 0; height: 0;
-    background: transparent;
-    border-radius: 0;
-    border-left: 11px solid transparent;
-    border-right: 11px solid transparent;
-    border-bottom: 26px solid currentcolor;
-    transform: rotate(8deg);
-    transform-origin: 50% 100%;
-    overflow: visible;
-    animation: catEarR 0.44s infinite linear;
+@keyframes twinLegL {
+    0%, 100% { transform: rotate(-7deg); transform-origin: top center; }
+    50%       { transform: rotate(7deg); }
 }
-.cat-stage .cat .main .face .ear_r .outer,
-.cat-stage .cat .main .face .ear_r .inner { display: none; }
-
-/* Quitar sombra y rastro */
-.cat-stage .cat::before,
-.cat-stage .cat::after { display: none; }
-
-/* ── Animaciones del gato cuadrúpedo ── */
-
-/* Bounce del cuerpo al caminar */
-@keyframes catShake {
-    0%, 100% { top: 0; }
-    50%      { top: 4px; }
+@keyframes twinLegR {
+    0%, 100% { transform: rotate(7deg); transform-origin: top center; }
+    50%       { transform: rotate(-7deg); }
 }
-
-/* Cola oscila suavemente */
-@keyframes catTail {
-    0%, 100% { transform: rotate(22deg); }
-    50%      { transform: rotate(38deg); }
-}
-
-/* Pupila se mueve */
-@keyframes catEye {
-    0%, 100% { top: 2px; }
-    50%      { top: 4px; }
-}
-
-/* Orejas se mueven con el trote */
-@keyframes catEarL {
-    0%, 100% { transform: rotate(-12deg); }
-    50%      { transform: rotate(-26deg); }
-}
-@keyframes catEarR {
-    0%, 100% { transform: rotate(12deg); }
-    50%      { transform: rotate(24deg); }
-}
-
-/*
-  Ciclo diagonal real de cuadrúpedo:
-  Par A (FL + BR): levantan juntos — fase 0%
-  Par B (FR + BL): levantan juntos — fase 50% (desfase medio ciclo)
-  "forward" = menor x (hacia la izquierda, dirección de marcha)
-  "back"    = mayor x (empuje, atrás)
-*/
-
-/* Delantera izquierda — par con Trasera derecha */
-@keyframes catPawFL {
-    0%   { bottom: 0;    left: 36px; }
-    18%  { bottom: 16px; left: 20px; }
-    36%  { bottom: 0;    left: 20px; }
-    72%  { bottom: 0;    left: 36px; }
-    100% { bottom: 0;    left: 36px; }
-}
-
-/* Trasera derecha — misma fase que FL */
-@keyframes catBackPawR {
-    0%   { bottom: 0;    left: 136px; }
-    18%  { bottom: 16px; left: 120px; }
-    36%  { bottom: 0;    left: 120px; }
-    72%  { bottom: 0;    left: 136px; }
-    100% { bottom: 0;    left: 136px; }
-}
-
-/* Delantera derecha — par con Trasera izquierda (50% desfase) */
-@keyframes catPawFR {
-    0%   { bottom: 0;    left: 36px; }
-    28%  { bottom: 0;    left: 52px; }
-    50%  { bottom: 0;    left: 52px; }
-    68%  { bottom: 16px; left: 36px; }
-    86%  { bottom: 0;    left: 36px; }
-    100% { bottom: 0;    left: 36px; }
-}
-
-/* Trasera izquierda — misma fase que FR */
-@keyframes catBackPawL {
-    0%   { bottom: 0;    left: 110px; }
-    28%  { bottom: 0;    left: 126px; }
-    50%  { bottom: 0;    left: 126px; }
-    68%  { bottom: 16px; left: 110px; }
-    86%  { bottom: 0;    left: 110px; }
-    100% { bottom: 0;    left: 110px; }
+@keyframes propSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
