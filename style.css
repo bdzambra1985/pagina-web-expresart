@@ -1379,7 +1379,7 @@ body {
 /* ── Torso amarillo (parte alta del cuerpo) ── */
 .cat-stage .twin .twin-torso {
     position: absolute;
-    top: 76px; left: 8px;
+    top: 60px; left: 8px;
     width: 104px; height: 50px;
     background: #e8c820;
     border-radius: 18px 18px 0 0;
@@ -1427,7 +1427,7 @@ body {
 /* ── Brazos amarillos gordos ── */
 .cat-stage .twin .twin-arm {
     position: absolute;
-    top: 88px;
+    top: 72px;
     width: 22px; height: 48px;
     background: #e8c820;
     border-radius: 11px;
@@ -1458,7 +1458,7 @@ body {
 /* ── Gran barriga roja esférica ── */
 .cat-stage .twin .twin-belly {
     position: absolute;
-    top: 96px; left: 0;
+    top: 78px; left: 0;
     width: 120px; height: 88px;
     background: #c82020;
     border-radius: 50%;
@@ -1472,7 +1472,7 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 20px; height: 50px;
+    width: 20px; height: 68px;
     background: #111;
     border-radius: 4px 4px 0 0;
 }
@@ -1501,12 +1501,12 @@ body {
     50%       { transform: rotate(2deg); }
 }
 @keyframes twinLegL {
-    0%, 100% { transform: rotate(-6deg); transform-origin: top center; }
-    50%       { transform: rotate(6deg); }
+    0%, 100% { transform: translateX(-7px) rotate(-5deg); }
+    50%       { transform: translateX(5px)  rotate(5deg); }
 }
 @keyframes twinLegR {
-    0%, 100% { transform: rotate(6deg); transform-origin: top center; }
-    50%       { transform: rotate(-6deg); }
+    0%, 100% { transform: translateX(7px)  rotate(5deg); }
+    50%       { transform: translateX(-5px) rotate(-5deg); }
 }
 @keyframes twinArmL {
     0%, 100% { transform: rotate(12deg); transform-origin: top center; }
