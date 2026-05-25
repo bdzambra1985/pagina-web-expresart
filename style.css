@@ -1295,11 +1295,11 @@ body {
     animation: propSpin 0.65s linear infinite;
 }
 
-/* ── Cabeza ovalada vertical (más alta que ancha) ── */
+/* ── Cabeza ovalada (oval moderado, no tan alargado) ── */
 .cat-stage .twin .twin-head {
     position: absolute;
     top: 16px; left: 25px;
-    width: 70px; height: 82px;
+    width: 70px; height: 66px;
     background: #f0b470;
     border-radius: 50%;
     box-shadow: inset -5px -5px 12px rgba(0,0,0,0.12);
@@ -1360,7 +1360,7 @@ body {
 /* Boca abierta con sonrisa y lengua */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 58px; left: 14px;
+    top: 47px; left: 14px;
     width: 40px; height: 16px;
     background: #7a2808;
     border-radius: 0 0 20px 20px;
@@ -1379,7 +1379,7 @@ body {
 /* ── Torso amarillo (parte alta del cuerpo) ── */
 .cat-stage .twin .twin-torso {
     position: absolute;
-    top: 88px; left: 8px;
+    top: 76px; left: 8px;
     width: 104px; height: 50px;
     background: #e8c820;
     border-radius: 18px 18px 0 0;
@@ -1427,7 +1427,7 @@ body {
 /* ── Brazos amarillos gordos ── */
 .cat-stage .twin .twin-arm {
     position: absolute;
-    top: 100px;
+    top: 88px;
     width: 22px; height: 48px;
     background: #e8c820;
     border-radius: 11px;
@@ -1458,7 +1458,7 @@ body {
 /* ── Gran barriga roja esférica ── */
 .cat-stage .twin .twin-belly {
     position: absolute;
-    top: 110px; left: 0;
+    top: 96px; left: 0;
     width: 120px; height: 88px;
     background: #c82020;
     border-radius: 50%;
