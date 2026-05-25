@@ -1202,7 +1202,7 @@ body {
 .cat-visual {
     position: relative;
     width: 60px;
-    height: 100px;
+    height: 110px;
     overflow: visible;
 }
 
@@ -1249,7 +1249,7 @@ body {
 .cat-stage .twin {
     position: absolute;
     bottom: 0; left: 0;
-    width: 120px; height: 200px;
+    width: 120px; height: 220px;
     transform: scale(0.5);
     transform-origin: bottom left;
 }
@@ -1263,8 +1263,8 @@ body {
 /* ── Gorrito rojo pequeño ── */
 .cat-stage .twin .twin-hat {
     position: absolute;
-    top: 0; left: 44px;
-    width: 32px; height: 20px;
+    top: 0; left: 45px;
+    width: 30px; height: 18px;
     background: #c82020;
     border-radius: 10px 10px 3px 3px;
     box-shadow: inset 0 -4px 8px rgba(0,0,0,0.25);
@@ -1295,21 +1295,21 @@ body {
     animation: propSpin 0.65s linear infinite;
 }
 
-/* ── Cabeza grande y redonda ── */
+/* ── Cabeza ovalada vertical (más alta que ancha) ── */
 .cat-stage .twin .twin-head {
     position: absolute;
-    top: 14px; left: 12px;
-    width: 96px; height: 88px;
+    top: 16px; left: 25px;
+    width: 70px; height: 82px;
     background: #f0b470;
     border-radius: 50%;
-    box-shadow: inset -6px -6px 14px rgba(0,0,0,0.12);
+    box-shadow: inset -5px -5px 12px rgba(0,0,0,0.12);
 }
 /* Pelo naranja izquierdo */
 .cat-stage .twin .twin-head::before {
     content: '';
     position: absolute;
-    top: 2px; left: -10px;
-    width: 26px; height: 18px;
+    top: 4px; left: -12px;
+    width: 22px; height: 16px;
     background: #e07020;
     border-radius: 50%;
 }
@@ -1317,69 +1317,69 @@ body {
 .cat-stage .twin .twin-head::after {
     content: '';
     position: absolute;
-    top: 2px; right: -10px;
-    width: 26px; height: 18px;
+    top: 4px; right: -12px;
+    width: 22px; height: 16px;
     background: #e07020;
     border-radius: 50%;
 }
-/* Cejas (alegres, arqueadas) */
+/* Cejas alegres */
 .cat-stage .twin .twin-brow {
     position: absolute;
-    top: 22px; left: 14px;
-    width: 22px; height: 4px;
+    top: 20px; left: 9px;
+    width: 18px; height: 3px;
     background: #7a4010;
     border-radius: 2px;
     transform: rotate(8deg);
     transform-origin: right center;
 }
 .cat-stage .twin .twin-brow-r {
-    left: auto; right: 14px;
+    left: auto; right: 9px;
     transform: rotate(-8deg);
     transform-origin: left center;
 }
-/* Ojos redondos felices */
+/* Ojos */
 .cat-stage .twin .twin-eye {
     position: absolute;
-    top: 32px; left: 16px;
-    width: 18px; height: 14px;
+    top: 28px; left: 10px;
+    width: 15px; height: 12px;
     background: #1a1a1a;
     border-radius: 50%;
-    box-shadow: inset -3px -2px 0 rgba(255,255,255,0.30);
+    box-shadow: inset -2px -2px 0 rgba(255,255,255,0.30);
 }
 .cat-stage .twin .twin-eye-r {
-    left: auto; right: 16px;
+    left: auto; right: 10px;
 }
-/* Nariz bulbosa */
+/* Nariz */
 .cat-stage .twin .twin-nose {
     position: absolute;
-    top: 50px; left: 36px;
-    width: 22px; height: 14px;
+    top: 44px; left: 26px;
+    width: 18px; height: 11px;
     background: #c07850;
     border-radius: 50%;
 }
-/* Boca abierta feliz con lengua */
+/* Boca abierta con sonrisa y lengua */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 62px; left: 28px;
-    width: 40px; height: 18px;
+    top: 58px; left: 14px;
+    width: 40px; height: 16px;
     background: #7a2808;
     border-radius: 0 0 20px 20px;
     overflow: hidden;
 }
-.cat-stage .twin .twin-mouth::after { /* lengua */
+.cat-stage .twin .twin-mouth::after {
     content: '';
     position: absolute;
     bottom: 0; left: 50%;
     transform: translateX(-50%);
-    width: 22px; height: 13px;
+    width: 20px; height: 11px;
     background: #e05060;
-    border-radius: 11px 11px 0 0;
+    border-radius: 10px 10px 0 0;
 }
 
 /* ── Torso amarillo (parte alta del cuerpo) ── */
 .cat-stage .twin .twin-torso {
     position: absolute;
-    top: 92px; left: 8px;
+    top: 88px; left: 8px;
     width: 104px; height: 50px;
     background: #e8c820;
     border-radius: 18px 18px 0 0;
@@ -1427,7 +1427,7 @@ body {
 /* ── Brazos amarillos gordos ── */
 .cat-stage .twin .twin-arm {
     position: absolute;
-    top: 104px;
+    top: 100px;
     width: 22px; height: 48px;
     background: #e8c820;
     border-radius: 11px;
@@ -1458,8 +1458,8 @@ body {
 /* ── Gran barriga roja esférica ── */
 .cat-stage .twin .twin-belly {
     position: absolute;
-    top: 118px; left: 0;
-    width: 120px; height: 92px;
+    top: 110px; left: 0;
+    width: 120px; height: 88px;
     background: #c82020;
     border-radius: 50%;
     box-shadow:
@@ -1467,12 +1467,12 @@ body {
         inset 5px 5px 14px rgba(255,190,150,0.20);
 }
 
-/* ── Piernas cortas oscuras ── */
+/* ── Piernas largas oscuras ── */
 .cat-stage .twin .twin-leg-l,
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 20px; height: 24px;
+    width: 20px; height: 50px;
     background: #111;
     border-radius: 4px 4px 0 0;
 }
@@ -1489,8 +1489,8 @@ body {
 .cat-stage .twin .twin-leg-r::after {
     content: '';
     position: absolute;
-    bottom: -6px; left: -7px;
-    width: 34px; height: 10px;
+    bottom: -6px; left: -8px;
+    width: 36px; height: 11px;
     background: #111;
     border-radius: 5px 8px 8px 5px;
 }
