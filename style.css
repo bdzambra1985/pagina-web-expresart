@@ -1379,8 +1379,8 @@ body {
 /* ── Torso amarillo (parte alta del cuerpo) ── */
 .cat-stage .twin .twin-torso {
     position: absolute;
-    top: 60px; left: 8px;
-    width: 104px; height: 50px;
+    top: 42px; left: 6px;
+    width: 108px; height: 52px;
     background: #e8c820;
     border-radius: 18px 18px 0 0;
     z-index: 3;
@@ -1428,7 +1428,7 @@ body {
 /* ── Brazos amarillos gordos ── */
 .cat-stage .twin .twin-arm {
     position: absolute;
-    top: 72px;
+    top: 54px;
     width: 22px; height: 48px;
     background: #e8c820;
     border-radius: 11px;
@@ -1459,8 +1459,8 @@ body {
 /* ── Gran barriga roja esférica ── */
 .cat-stage .twin .twin-belly {
     position: absolute;
-    top: 78px; left: 0;
-    width: 120px; height: 88px;
+    top: 58px; left: 0;
+    width: 120px; height: 100px;
     background: #c82020;
     border-radius: 50%;
     box-shadow:
@@ -1474,17 +1474,17 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 20px; height: 96px;
+    width: 28px; height: 96px;
     background: #111;
     border-radius: 4px 4px 0 0;
     z-index: 1;
 }
 .cat-stage .twin .twin-leg-l {
-    left: 32px;
+    left: 26px;
     animation: twinLegL 0.46s infinite ease-in-out;
 }
 .cat-stage .twin .twin-leg-r {
-    right: 32px;
+    right: 26px;
     animation: twinLegR 0.46s infinite ease-in-out;
 }
 /* Zapatos planos */
@@ -1493,7 +1493,7 @@ body {
     content: '';
     position: absolute;
     bottom: -6px; left: -8px;
-    width: 36px; height: 11px;
+    width: 42px; height: 12px;
     background: #111;
     border-radius: 5px 8px 8px 5px;
 }
