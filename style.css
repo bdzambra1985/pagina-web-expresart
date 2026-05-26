@@ -1398,6 +1398,29 @@ body {
     border-radius: 18px 18px 0 0;
     z-index: 3;
 }
+/* Tirante izquierdo */
+.cat-stage .twin .twin-torso::before {
+    content: '';
+    position: absolute;
+    top: 2px; left: 10px;
+    width: 9px; height: 60px;
+    background: #1a3a8a;
+    border-radius: 4px;
+    transform: rotate(26deg);
+    transform-origin: top center;
+}
+/* Tirante derecho */
+.cat-stage .twin .twin-torso::after {
+    content: '';
+    position: absolute;
+    top: 2px; right: 10px;
+    width: 9px; height: 60px;
+    background: #1a3a8a;
+    border-radius: 4px;
+    transform: rotate(-26deg);
+    transform-origin: top center;
+    z-index: 0;
+}
 
 /* ── Babero blanco ── */
 .cat-stage .twin .twin-bib {
@@ -1406,6 +1429,7 @@ body {
     width: 52px; height: 26px;
     background: #f4f4ee;
     border-radius: 6px 6px 26px 26px;
+    z-index: 1;
 }
 
 /* ── Corbata de lazo azul ── */
