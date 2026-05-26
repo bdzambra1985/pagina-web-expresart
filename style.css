@@ -1194,15 +1194,15 @@ body {
 
 /* Gemelo izquierdo: empieza en el centro, camina hacia la izquierda */
 .cat-stage-left {
-    left: calc(50% - 36px);
+    left: calc(50% - 29px);
     animation: catWalkLeft 6s linear 0.55s both;
 }
 
 /* Contenedor visual: escala el gemelo a tamaño de escenario */
 .cat-visual {
     position: relative;
-    width: 36px;
-    height: 66px;
+    width: 29px;
+    height: 53px;
     overflow: visible;
 }
 
@@ -1250,7 +1250,7 @@ body {
     position: absolute;
     bottom: 0; left: 0;
     width: 120px; height: 220px;
-    transform: scale(0.30);
+    transform: scale(0.24);
     transform-origin: bottom left;
 }
 .cat-stage .twin .twin-shake {
