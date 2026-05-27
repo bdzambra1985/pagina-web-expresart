@@ -1296,16 +1296,16 @@ body {
     animation: propSpin 0.65s linear infinite;
 }
 
-/* ── Cabeza ovalada (oval moderado, no tan alargado) ── */
+/* ── Cabeza ancha y achatada (como en la imagen referencia) ── */
 .cat-stage .twin .twin-head {
     position: absolute;
-    top: 24px; left: 25px;
-    width: 70px; height: 60px;
+    top: 26px; left: 15px;
+    width: 90px; height: 52px;
     background:
-        radial-gradient(circle at 20% 68%, rgba(240,100,60,0.28) 0%, transparent 40%),
-        radial-gradient(circle at 80% 68%, rgba(240,100,60,0.28) 0%, transparent 40%),
+        radial-gradient(circle at 16% 70%, rgba(240,100,60,0.32) 0%, transparent 36%),
+        radial-gradient(circle at 84% 70%, rgba(240,100,60,0.32) 0%, transparent 36%),
         #f0b470;
-    border-radius: 50%;
+    border-radius: 50% 50% 48% 48% / 42% 42% 58% 58%;
     box-shadow: inset -4px -4px 10px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.10);
     z-index: 4;
 }
@@ -1313,8 +1313,8 @@ body {
 .cat-stage .twin .twin-head::before {
     content: '';
     position: absolute;
-    top: 4px; left: -12px;
-    width: 22px; height: 16px;
+    top: 2px; left: -16px;
+    width: 28px; height: 22px;
     background: #e07020;
     border-radius: 50%;
 }
@@ -1322,31 +1322,31 @@ body {
 .cat-stage .twin .twin-head::after {
     content: '';
     position: absolute;
-    top: 4px; right: -12px;
-    width: 22px; height: 16px;
+    top: 2px; right: -16px;
+    width: 28px; height: 22px;
     background: #e07020;
     border-radius: 50%;
 }
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
     position: absolute;
-    top: 20px; left: 9px;
-    width: 18px; height: 3px;
+    top: 13px; left: 11px;
+    width: 22px; height: 3px;
     background: #7a4010;
     border-radius: 2px;
     transform: rotate(8deg);
     transform-origin: right center;
 }
 .cat-stage .twin .twin-brow-r {
-    left: auto; right: 9px;
+    left: auto; right: 11px;
     transform: rotate(-8deg);
     transform-origin: left center;
 }
-/* Ojos */
+/* Ojos pequeños y levemente cerrados (expresión alegre) */
 .cat-stage .twin .twin-eye {
     position: absolute;
-    top: 26px; left: 8px;
-    width: 18px; height: 16px;
+    top: 20px; left: 9px;
+    width: 20px; height: 12px;
     background: #1a1a1a;
     border-radius: 50%;
     box-shadow: inset -2px -2px 0 rgba(255,255,255,0.20);
@@ -1354,27 +1354,27 @@ body {
 .cat-stage .twin .twin-eye::after {
     content: '';
     position: absolute;
-    top: 3px; left: 4px;
+    top: 2px; left: 4px;
     width: 6px; height: 5px;
     background: rgba(255,255,255,0.70);
     border-radius: 50%;
 }
 .cat-stage .twin .twin-eye-r {
-    left: auto; right: 10px;
+    left: auto; right: 9px;
 }
-/* Nariz */
+/* Nariz ancha y plana */
 .cat-stage .twin .twin-nose {
     position: absolute;
-    top: 44px; left: 26px;
-    width: 18px; height: 11px;
+    top: 32px; left: 31px;
+    width: 26px; height: 9px;
     background: #c07850;
     border-radius: 50%;
 }
-/* Boca abierta con sonrisa y lengua */
+/* Boca abierta ancha con lengua */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 47px; left: 14px;
-    width: 40px; height: 16px;
+    top: 40px; left: 9px;
+    width: 54px; height: 12px;
     background: #7a2808;
     border-radius: 0 0 20px 20px;
     overflow: hidden;
@@ -1384,7 +1384,7 @@ body {
     position: absolute;
     bottom: 0; left: 50%;
     transform: translateX(-50%);
-    width: 20px; height: 11px;
+    width: 30px; height: 9px;
     background: #e05060;
     border-radius: 10px 10px 0 0;
 }
