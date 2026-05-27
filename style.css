@@ -1299,8 +1299,8 @@ body {
 /* ── Cabeza ancha y achatada (como en la imagen referencia) ── */
 .cat-stage .twin .twin-head {
     position: absolute;
-    top: 26px; left: 15px;
-    width: 90px; height: 52px;
+    top: 26px; left: 21px;
+    width: 78px; height: 52px;
     background:
         radial-gradient(circle at 16% 70%, rgba(240,100,60,0.32) 0%, transparent 36%),
         radial-gradient(circle at 84% 70%, rgba(240,100,60,0.32) 0%, transparent 36%),
@@ -1309,36 +1309,44 @@ body {
     box-shadow: inset -4px -4px 10px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.10);
     z-index: 4;
 }
-/* Pelo naranja izquierdo */
+/* Pelo naranja izquierdo — cluster de tufos superpuestos */
 .cat-stage .twin .twin-head::before {
     content: '';
     position: absolute;
-    top: 2px; left: -16px;
-    width: 28px; height: 22px;
+    top: -12px; left: -10px;
+    width: 18px; height: 18px;
     background: #e07020;
     border-radius: 50%;
+    box-shadow:
+        14px  2px 0 7px #e07020,
+        20px -8px 0 5px #d06010,
+         6px -10px 0 6px #e88030;
 }
-/* Pelo naranja derecho */
+/* Pelo naranja derecho — cluster de tufos superpuestos */
 .cat-stage .twin .twin-head::after {
     content: '';
     position: absolute;
-    top: 2px; right: -16px;
-    width: 28px; height: 22px;
+    top: -12px; right: -10px;
+    width: 18px; height: 18px;
     background: #e07020;
     border-radius: 50%;
+    box-shadow:
+        -14px  2px 0 7px #e07020,
+        -20px -8px 0 5px #d06010,
+         -6px -10px 0 6px #e88030;
 }
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
     position: absolute;
-    top: 13px; left: 11px;
-    width: 22px; height: 3px;
+    top: 13px; left: 8px;
+    width: 20px; height: 3px;
     background: #7a4010;
     border-radius: 2px;
     transform: rotate(8deg);
     transform-origin: right center;
 }
 .cat-stage .twin .twin-brow-r {
-    left: auto; right: 11px;
+    left: auto; right: 8px;
     transform: rotate(-8deg);
     transform-origin: left center;
 }
@@ -1365,7 +1373,7 @@ body {
 /* Nariz ancha y plana */
 .cat-stage .twin .twin-nose {
     position: absolute;
-    top: 32px; left: 31px;
+    top: 32px; left: 25px;
     width: 26px; height: 9px;
     background: #c07850;
     border-radius: 50%;
@@ -1373,8 +1381,8 @@ body {
 /* Boca abierta ancha con lengua */
 .cat-stage .twin .twin-mouth {
     position: absolute;
-    top: 40px; left: 9px;
-    width: 54px; height: 12px;
+    top: 40px; left: 11px;
+    width: 50px; height: 12px;
     background: #7a2808;
     border-radius: 0 0 20px 20px;
     overflow: hidden;
