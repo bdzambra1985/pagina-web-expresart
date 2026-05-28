@@ -1313,26 +1313,26 @@ body {
 .cat-stage .twin .twin-head::before {
     content: '';
     position: absolute;
-    top: -15px; left: 10px;
-    width: 8px; height: 24px;
-    background: linear-gradient(to bottom, #e88030 0%, #e07020 60%, #c85010 100%);
-    border-radius: 3px 2px 1px 1px;
+    top: 9px; left: 2px;
+    width: 12px; height: 18px;
+    background: linear-gradient(to bottom, #e07020 0%, #c85010 100%);
+    border-radius: 2px 1px 1px 2px;
     box-shadow:
-        -5px  3px 0 2px #e07020,
-        -8px  9px 0 2px #d06010,
-        -4px 16px 0 1px #e07020;
+        -5px  2px 0 2px #e07020,
+        -7px  8px 0 1px #d06010,
+        -3px 13px 0 1px #e07020;
 }
 .cat-stage .twin .twin-head::after {
     content: '';
     position: absolute;
-    top: -15px; right: 10px;
-    width: 8px; height: 24px;
-    background: linear-gradient(to bottom, #e88030 0%, #e07020 60%, #c85010 100%);
-    border-radius: 2px 3px 1px 1px;
+    top: 9px; right: 2px;
+    width: 12px; height: 18px;
+    background: linear-gradient(to bottom, #e07020 0%, #c85010 100%);
+    border-radius: 1px 2px 2px 1px;
     box-shadow:
-        5px  3px 0 2px #e07020,
-        8px  9px 0 2px #d06010,
-        4px 16px 0 1px #e07020;
+        5px  2px 0 2px #e07020,
+        7px  8px 0 1px #d06010,
+        3px 13px 0 1px #e07020;
 }
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
@@ -1503,7 +1503,7 @@ body {
 /* ── Gran barriga roja esférica — domina el cuerpo ── */
 .cat-stage .twin .twin-belly {
     position: absolute;
-    top: 60px; left: 5px;
+    top: 60px; left: 1px;
     width: 110px; height: 110px;
     background: radial-gradient(circle at 35% 30%, #e84040 0%, #c82020 55%, #8a0a0a 100%);
     border-radius: 50%;
@@ -1518,7 +1518,7 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 26px; height: 96px;
+    width: 16px; height: 96px;
     background: #c82020;
     border-radius: 4px 4px 0 0;
     z-index: 1;
