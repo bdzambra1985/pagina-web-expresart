@@ -1531,6 +1531,38 @@ body {
                ropeFade  0.6s ease-out  6.6s  forwards;
 }
 
+/* ══ PILA DE CUERDA EN EL PISO ══ */
+.twin-rope-pile {
+    position: absolute;
+    bottom: 3px;
+    z-index: 26;
+    pointer-events: none;
+    width: 0; height: 0;
+    border-radius: 50% 50% 40% 40%;
+    background:
+        radial-gradient(ellipse 45% 35% at 38% 32%,
+            rgba(255,240,120,0.50) 0%, transparent 65%),
+        repeating-linear-gradient(
+            -28deg,
+            #5a3200 0px, #c9a227 3px,
+            #f0d870 5px, #c9a227 8px,
+            #5a3200 11px
+        );
+    box-shadow:
+        inset 0 -2px 6px rgba(0,0,0,0.55),
+        0 3px 6px rgba(0,0,0,0.45);
+}
+.twin-rope-pile-l {
+    left: 30px;
+    animation: ropePileGrow 6s ease-in 0.55s forwards,
+               ropeFade    0.6s ease-out 6.6s forwards;
+}
+.twin-rope-pile-r {
+    right: 30px;
+    animation: ropePileGrow 6s ease-in 0.55s forwards,
+               ropeFade    0.6s ease-out 6.6s forwards;
+}
+
 /* ── Animaciones ── */
 
 /* Cuerpo con esfuerzo real — 3 ciclos de jalada en 6s */
@@ -1645,6 +1677,14 @@ body {
     68%  { transform: skewX(0deg);    }
     94%  { transform: skewX(1.5deg);  }
     100% { transform: skewX(1deg);    }
+}
+/* Pila crece en el piso con cada jalón — escalones reflejan los 3 ciclos */
+@keyframes ropePileGrow {
+    0%   { width: 0;    height: 0;    opacity: 0; }
+    5%   { width: 5px;  height: 3px;  opacity: 1; }  /* primer hilo cae */
+    33%  { width: 13px; height: 9px;  }               /* tras ciclo 1 */
+    66%  { width: 19px; height: 15px; }               /* tras ciclo 2 */
+    100% { width: 25px; height: 21px; }               /* montón completo */
 }
 /* Cuerda desaparece cuando los gemelos se van */
 @keyframes ropeFade {
