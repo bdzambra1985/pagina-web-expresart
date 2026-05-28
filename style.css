@@ -1529,16 +1529,6 @@ body {
     right: 28px;
     animation: twinLegR 0.46s infinite ease-in-out;
 }
-/* Pantalón redondo en la cintura (burbuja sobre la pierna) */
-.cat-stage .twin .twin-leg-l::before,
-.cat-stage .twin .twin-leg-r::before {
-    content: '';
-    position: absolute;
-    top: 28px; left: -12px;
-    width: 40px; height: 40px;
-    background: #c82020;
-    border-radius: 50%;
-}
 /* Zapatos planos */
 .cat-stage .twin .twin-leg-l::after,
 .cat-stage .twin .twin-leg-r::after {
