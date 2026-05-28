@@ -1309,30 +1309,9 @@ body {
     box-shadow: inset -4px -4px 10px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.10);
     z-index: 4;
 }
-/* Pelo naranja izquierdo — asoma por debajo del sombrero */
-.cat-stage .twin .twin-head::before {
-    content: '';
-    position: absolute;
-    top: -4px; left: -14px;
-    width: 22px; height: 22px;
-    background: #e07020;
-    border-radius: 50% 40% 50% 50%;
-    box-shadow:
-        16px -6px 0 8px #e07020,
-         8px -14px 0 5px #d06010;
-}
-/* Pelo naranja derecho — asoma por debajo del sombrero */
-.cat-stage .twin .twin-head::after {
-    content: '';
-    position: absolute;
-    top: -4px; right: -14px;
-    width: 22px; height: 22px;
-    background: #e07020;
-    border-radius: 40% 50% 50% 50%;
-    box-shadow:
-        -16px -6px 0 8px #e07020,
-         -8px -14px 0 5px #d06010;
-}
+/* Sin cabello */
+.cat-stage .twin .twin-head::before,
+.cat-stage .twin .twin-head::after { display: none; }
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
     position: absolute;
