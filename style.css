@@ -1309,24 +1309,30 @@ body {
     box-shadow: inset -4px -4px 10px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.10);
     z-index: 4;
 }
-/* Pelo naranja — solo a los lados del sombrero */
+/* Pelo naranja — mechones finos al lado del sombrero */
 .cat-stage .twin .twin-head::before {
     content: '';
     position: absolute;
-    top: -12px; left: 4px;
-    width: 18px; height: 20px;
-    background: #e07020;
-    border-radius: 50%;
-    box-shadow: 6px -8px 0 5px #e07020, -2px 6px 0 4px #d06010;
+    top: -15px; left: 10px;
+    width: 8px; height: 24px;
+    background: linear-gradient(to bottom, #e88030 0%, #e07020 60%, #c85010 100%);
+    border-radius: 3px 2px 1px 1px;
+    box-shadow:
+        -5px  3px 0 2px #e07020,
+        -8px  9px 0 2px #d06010,
+        -4px 16px 0 1px #e07020;
 }
 .cat-stage .twin .twin-head::after {
     content: '';
     position: absolute;
-    top: -12px; right: 4px;
-    width: 18px; height: 20px;
-    background: #e07020;
-    border-radius: 50%;
-    box-shadow: -6px -8px 0 5px #e07020, 2px 6px 0 4px #d06010;
+    top: -15px; right: 10px;
+    width: 8px; height: 24px;
+    background: linear-gradient(to bottom, #e88030 0%, #e07020 60%, #c85010 100%);
+    border-radius: 2px 3px 1px 1px;
+    box-shadow:
+        5px  3px 0 2px #e07020,
+        8px  9px 0 2px #d06010,
+        4px 16px 0 1px #e07020;
 }
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
@@ -1512,7 +1518,7 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 26px; height: 62px;
+    width: 26px; height: 96px;
     background: #c82020;
     border-radius: 4px 4px 0 0;
     z-index: 1;
