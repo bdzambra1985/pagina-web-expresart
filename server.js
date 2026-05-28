@@ -8,7 +8,6 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const cloudinary  = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { pool, initDB } = require('./db');
 
 const app  = express();
@@ -86,43 +85,37 @@ function requireAdmin(req, res) {
     return sess;
 }
 
-/* ── Multer por usuario (Cloudinary en producción, disco en local) ── */
-function uploaderFor(userId) {
-    if (USE_CLOUDINARY) {
-        const storage = new CloudinaryStorage({
-            cloudinary,
-            params: {
-                folder:          'expresart/' + userId,
-                allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-                transformation:  [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
-            }
-        });
-        return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+/* ── Multer — siempre usa memoria; el destino lo decide saveFile() ── */
+const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+const uploader = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        cb(null, ALLOWED_EXTS.has(path.extname(file.originalname).toLowerCase()));
     }
-    /* Fallback: disco local para desarrollo sin Cloudinary */
+});
+
+/* Sube el buffer a Cloudinary o lo guarda en disco según el entorno */
+async function saveFile(buffer, originalname, userId) {
+    if (USE_CLOUDINARY) {
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                {
+                    folder:         'expresart/' + userId,
+                    transformation: [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
+                },
+                (err, result) => err ? reject(err) : resolve(result.secure_url)
+            ).end(buffer);
+        });
+    }
+    /* Fallback disco local */
     const dest = path.join(UPLOADS_DIR, userId);
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-    return multer({
-        storage: multer.diskStorage({
-            destination: (req, file, cb) => cb(null, dest),
-            filename:    (req, file, cb) => {
-                const ext = path.extname(file.originalname).toLowerCase();
-                cb(null, 'foto-' + Date.now() + ext);
-            }
-        }),
-        limits: { fileSize: 10 * 1024 * 1024 },
-        fileFilter: (req, file, cb) => {
-            cb(null, ['.jpg','.jpeg','.png','.webp','.gif'].includes(
-                path.extname(file.originalname).toLowerCase()
-            ));
-        }
-    });
-}
-
-function fileUrl(req, userId) {
-    return USE_CLOUDINARY
-        ? req.file.path
-        : '/uploads/' + userId + '/' + req.file.filename;
+    const ext      = path.extname(originalname).toLowerCase();
+    const filename = 'foto-' + Date.now() + ext;
+    fs.writeFileSync(path.join(dest, filename), buffer);
+    return '/uploads/' + userId + '/' + filename;
 }
 
 /* ── Helpers de perfil vacío ── */
@@ -274,10 +267,10 @@ app.post('/api/my-profile', async (req, res) => {
 app.post('/api/upload-photo', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
-    uploaderFor(sess.userId).single('photo')(req, res, async (err) => {
+    uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = fileUrl(req, sess.userId);
+        const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
         await pool.query(`
             INSERT INTO profiles (user_id, photo_url) VALUES ($1,$2)
             ON CONFLICT (user_id) DO UPDATE SET photo_url=$2
@@ -290,10 +283,11 @@ app.post('/api/upload-photo', (req, res) => {
 app.post('/api/upload-prod-photo', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
-    uploaderFor(sess.userId).single('photo')(req, res, (err) => {
+    uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        res.json({ ok: true, url: fileUrl(req, sess.userId) });
+        const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
+        res.json({ ok: true, url });
     });
 });
 
@@ -514,10 +508,10 @@ app.post('/api/content', async (req, res) => {
 
 app.post('/api/upload', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    uploaderFor('admin').single('photo')(req, res, async (err) => {
+    uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = fileUrl(req, 'admin');
+        const url = await saveFile(req.file.buffer, req.file.originalname, 'admin');
         const { rows } = await pool.query("SELECT value FROM site_content WHERE key='global'");
         const data = rows[0]?.value || {};
         data.destacada       = data.destacada || {};
