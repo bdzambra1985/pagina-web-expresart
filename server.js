@@ -489,6 +489,188 @@ app.post('/api/upload', (req, res) => {
 });
 
 /* ══════════════════════════════════════════
+   PAGOS / TRANSFERENCIAS BANCARIAS
+   ══════════════════════════════════════════ */
+const ORDERS_FILE   = path.join(DATA_DIR, 'orders.json');
+const BANKINFO_FILE = path.join(DATA_DIR, 'bank-info.json');
+
+function readOrders()     { return readJSON(ORDERS_FILE, []); }
+function writeOrders(d)   { writeJSON(ORDERS_FILE, d); }
+function readBankInfo()   { return readJSON(BANKINFO_FILE, {}); }
+function writeBankInfo(d) { writeJSON(BANKINFO_FILE, d); }
+
+function nextInvoiceNumber() {
+    const count = readOrders().filter(o => o.invoiceNumber).length + 1;
+    return '001-001-' + String(count).padStart(9, '0');
+}
+
+function generateComprobanteHTML(order, info) {
+    const fecha = new Date(order.confirmedAt).toLocaleDateString('es-EC',
+        { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Comprobante ${order.invoiceNumber}</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#222}
+.no-print{text-align:right;margin-bottom:16px}
+.print-btn{background:#333;color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:.9rem}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c9a227;padding-bottom:16px;margin-bottom:24px;gap:16px}
+.company h1{font-size:1.5rem;margin:0 0 4px;color:#111}.company p{margin:2px 0;font-size:.82rem;color:#555}
+.inv-info{text-align:right;min-width:200px}.inv-info h2{font-size:.85rem;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;color:#777}
+.inv-info p{margin:2px 0;font-size:.88rem}.badge{display:inline-block;background:#2a7a2a;color:#fff;padding:4px 12px;border-radius:4px;font-size:.78rem;font-weight:600;margin-top:6px}
+.section{margin-bottom:22px}.section h3{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #eee}
+table{width:100%;border-collapse:collapse}th{background:#f7f7f7;padding:8px 12px;text-align:left;font-size:.82rem;color:#555}
+td{padding:8px 12px;font-size:.9rem;border-bottom:1px solid #f0f0f0}.totals td{border:none;padding:5px 12px}
+.total-final td{font-size:1.05rem;font-weight:700;border-top:2px solid #333;padding-top:10px}
+.footer{margin-top:32px;text-align:center;font-size:.72rem;color:#bbb;border-top:1px solid #eee;padding-top:16px}
+.note{background:#fffbec;border-left:3px solid #c9a227;padding:8px 12px;font-size:.83rem;color:#666;margin-top:8px;border-radius:0 4px 4px 0}
+@media print{.no-print{display:none}body{margin:0}}
+</style></head><body>
+<div class="no-print"><button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button></div>
+<div class="header">
+  <div class="company">
+    <h1>EXPRESART</h1>
+    <p>Escuela de Actuación</p>
+    ${info.ruc     ? `<p><strong>RUC:</strong> ${info.ruc}</p>`   : ''}
+    ${info.address ? `<p>${info.address}</p>`                     : ''}
+    ${info.email   ? `<p>${info.email}</p>`                       : ''}
+    ${info.phone   ? `<p>${info.phone}</p>`                       : ''}
+  </div>
+  <div class="inv-info">
+    <h2>Comprobante de Pago</h2>
+    <p><strong>No.</strong> ${order.invoiceNumber}</p>
+    <p><strong>Fecha:</strong> ${fecha}</p>
+    <span class="badge">✓ PAGO CONFIRMADO</span>
+  </div>
+</div>
+<div class="section">
+  <h3>Datos del cliente</h3>
+  <table><tr><td><strong>Nombre:</strong></td><td>${order.customerName}</td></tr>
+  <tr><td><strong>RUC / Cédula:</strong></td><td>${order.customerDoc}</td></tr>
+  <tr><td><strong>Correo:</strong></td><td>${order.customerEmail}</td></tr></table>
+</div>
+<div class="section">
+  <h3>Detalle del servicio</h3>
+  <table><thead><tr><th>Concepto</th><th style="text-align:right">Subtotal sin IVA</th></tr></thead>
+  <tbody><tr><td>${order.concept}</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr></tbody></table>
+</div>
+<div class="section">
+  <table class="totals">
+    <tr><td>Subtotal (tarifa ${order.ivaRate}% IVA)</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr>
+    <tr><td>IVA ${order.ivaRate}%</td><td style="text-align:right">$${order.iva.toFixed(2)}</td></tr>
+    <tr class="total-final"><td>TOTAL PAGADO</td><td style="text-align:right">$${order.amount.toFixed(2)}</td></tr>
+  </table>
+</div>
+<div class="section">
+  <h3>Forma de pago</h3>
+  <p>Transferencia bancaria · ${info.bankName || ''} · ${info.accountType || ''} No. ${info.accountNumber || ''}</p>
+  ${order.notes ? `<div class="note">Nota: ${order.notes}</div>` : ''}
+</div>
+<div class="footer">
+  <p>Este comprobante es un documento de respaldo de pago.</p>
+  <p>La factura electrónica autorizada por el SRI será enviada a su correo una vez disponible.</p>
+  <p><strong>EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</strong></p>
+</div>
+</body></html>`;
+}
+
+/* Datos bancarios públicos */
+app.get('/api/bank-info', (req, res) => res.json(readBankInfo()));
+
+/* Guardar datos bancarios (admin) */
+app.post('/api/bank-info', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const { bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services } = req.body;
+    writeBankInfo({ bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services: services || [] });
+    res.json({ ok: true });
+});
+
+/* Crear orden de pago (público) */
+app.post('/api/orders', (req, res) => {
+    uploader.single('receipt')(req, res, async (err) => {
+        if (err) return res.status(400).json({ ok: false, message: err.message });
+        const { customerName, customerDoc, customerEmail, concept, amount, notes } = req.body;
+        if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
+            return res.status(400).json({ ok: false, message: 'Todos los campos son requeridos' });
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum) || amountNum <= 0)
+            return res.status(400).json({ ok: false, message: 'Monto inválido' });
+        const receiptUrl = req.file
+            ? await saveFile(req.file.buffer, req.file.originalname, 'receipts')
+            : '';
+        const subtotal = Math.round((amountNum / 1.15) * 100) / 100;
+        const iva      = Math.round((amountNum - subtotal) * 100) / 100;
+        const order = {
+            id:              'ord_' + Date.now(),
+            token:           crypto.randomBytes(16).toString('hex'),
+            status:          'pendiente',
+            customerName:    customerName.trim().slice(0, 200),
+            customerDoc:     customerDoc.trim().slice(0, 20),
+            customerEmail:   customerEmail.trim().slice(0, 200),
+            concept:         concept.trim().slice(0, 300),
+            amount:          amountNum,
+            subtotal,
+            iva,
+            ivaRate:         15,
+            receiptUrl,
+            notes:           (notes || '').trim().slice(0, 500),
+            invoiceNumber:   null,
+            rejectionReason: '',
+            createdAt:       new Date().toISOString(),
+            confirmedAt:     null
+        };
+        const orders = readOrders();
+        orders.push(order);
+        writeOrders(orders);
+        res.json({ ok: true, orderId: order.id, token: order.token });
+    });
+});
+
+/* Listar órdenes (admin) */
+app.get('/api/orders', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    res.json(readOrders().sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+});
+
+/* Confirmar pago (admin) */
+app.put('/api/orders/:id/confirm', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const orders = readOrders();
+    const idx    = orders.findIndex(o => o.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
+    if (orders[idx].status === 'confirmado') return res.json({ ok: true, invoiceNumber: orders[idx].invoiceNumber });
+    orders[idx].status        = 'confirmado';
+    orders[idx].invoiceNumber = nextInvoiceNumber();
+    orders[idx].confirmedAt   = new Date().toISOString();
+    writeOrders(orders);
+    res.json({ ok: true, invoiceNumber: orders[idx].invoiceNumber });
+});
+
+/* Rechazar pago (admin) */
+app.put('/api/orders/:id/reject', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const orders = readOrders();
+    const idx    = orders.findIndex(o => o.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
+    orders[idx].status          = 'rechazado';
+    orders[idx].rejectionReason = (req.body.reason || '').trim().slice(0, 300);
+    writeOrders(orders);
+    res.json({ ok: true });
+});
+
+/* Ver comprobante */
+app.get('/factura/:id', (req, res) => {
+    const order = readOrders().find(o => o.id === req.params.id);
+    if (!order) return res.status(404).send('<h2>Comprobante no encontrado</h2>');
+    const sess    = getSession(req);
+    const isAdmin = sess && sess.role === 'admin';
+    if (!isAdmin && req.query.token !== order.token)
+        return res.status(403).send('<h2>Acceso no autorizado</h2>');
+    if (order.status !== 'confirmado')
+        return res.status(400).send('<h2>El pago aún no ha sido confirmado por EXPRESART.</h2>');
+    res.send(generateComprobanteHTML(order, readBankInfo()));
+});
+
+/* ══════════════════════════════════════════
    CATCH-ALL
    ══════════════════════════════════════════ */
 app.use((req, res) => {

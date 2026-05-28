@@ -409,6 +409,9 @@
         <button class="tab-btn" data-tab="contenido">
             <i class="bx bx-edit-alt"></i> Contenido
         </button>
+        <button class="tab-btn" data-tab="pagos">
+            <i class="bx bx-credit-card"></i> Pagos
+        </button>
     </div>
 
     <!-- ══════════════ TAB ALUMNOS ══════════════ -->
@@ -604,6 +607,86 @@
         </div>
 
     </div><!-- /tab-contenido -->
+
+    <!-- ══════════════ TAB PAGOS ══════════════ -->
+    <div class="tab-panel" id="tab-pagos">
+
+        <!-- Configurar datos bancarios -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-bank"></i> Datos bancarios para transferencias</h2>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Banco</label>
+                    <input id="bkBank" class="admin-input" type="text" placeholder="Banco Pichincha">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Tipo de cuenta</label>
+                    <select id="bkType" class="admin-input">
+                        <option>Ahorros</option>
+                        <option>Corriente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Número de cuenta</label>
+                    <input id="bkAccount" class="admin-input" type="text" placeholder="2200123456">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Titular de la cuenta</label>
+                    <input id="bkHolder" class="admin-input" type="text" placeholder="EXPRESART">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">RUC / Cédula del titular</label>
+                    <input id="bkRuc" class="admin-input" type="text" placeholder="1712345678001">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Correo de contacto</label>
+                    <input id="bkEmail" class="admin-input" type="email" placeholder="info@expresart.com">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Dirección</label>
+                    <input id="bkAddress" class="admin-input" type="text" placeholder="Quito, Ecuador">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Teléfono</label>
+                    <input id="bkPhone" class="admin-input" type="text" placeholder="0999 999 999">
+                </div>
+            </div>
+            <!-- Servicios / Precios -->
+            <div class="field-row full" style="margin-top:8px">
+                <div class="field-group">
+                    <label class="field-label">Servicios y precios (aparecen en el formulario de pago)</label>
+                    <div id="servicesList" style="margin-bottom:10px"></div>
+                    <div style="display:flex;gap:10px">
+                        <input id="svcName" class="admin-input" type="text" placeholder="Ej: Actuación Básica" style="margin:0;flex:2">
+                        <input id="svcPrice" class="admin-input" type="number" placeholder="Precio $" style="margin:0;flex:1">
+                        <button class="add-btn" id="addServiceBtn" style="margin:0"><i class="bx bx-plus"></i> Agregar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" id="saveBankBtn"><i class="bx bx-save"></i> Guardar configuración</button>
+            </div>
+        </div>
+
+        <!-- Lista de pagos -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-receipt"></i> Pagos recibidos</h2>
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                <button class="add-btn filter-btn active" data-filter="todos">Todos</button>
+                <button class="add-btn filter-btn" data-filter="pendiente" style="border-color:rgba(201,162,39,.4);color:#c9a227">🟡 Pendientes</button>
+                <button class="add-btn filter-btn" data-filter="confirmado" style="border-color:rgba(40,160,40,.4);color:#5d5">✅ Confirmados</button>
+                <button class="add-btn filter-btn" data-filter="rechazado" style="border-color:rgba(220,40,40,.4);color:#f66">❌ Rechazados</button>
+            </div>
+            <div id="ordersWrap"><p class="no-users">Cargando…</p></div>
+        </div>
+
+    </div><!-- /tab-pagos -->
 
 </div>
 
@@ -1109,6 +1192,151 @@ async function deleteEvent(id, title) {
 
 
 loadEvents();
+
+/* ══════════════════════════════
+   TAB PAGOS
+   ══════════════════════════════ */
+let bankServices = [];
+let allOrders    = [];
+let currentFilter = 'todos';
+
+/* Cargar y mostrar configuración bancaria */
+async function loadBankInfo() {
+    const r    = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } });
+    const info = await r.json();
+    document.getElementById('bkBank').value    = info.bankName      || '';
+    document.getElementById('bkType').value    = info.accountType   || 'Ahorros';
+    document.getElementById('bkAccount').value = info.accountNumber || '';
+    document.getElementById('bkHolder').value  = info.accountHolder || '';
+    document.getElementById('bkRuc').value     = info.ruc           || '';
+    document.getElementById('bkEmail').value   = info.email         || '';
+    document.getElementById('bkAddress').value = info.address       || '';
+    document.getElementById('bkPhone').value   = info.phone         || '';
+    bankServices = info.services || [];
+    renderServices();
+}
+
+function renderServices() {
+    document.getElementById('servicesList').innerHTML = bankServices.map((s, i) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px">
+            <span style="flex:1;font-size:.85em;color:rgba(255,235,235,.85)">${s.name}</span>
+            <span style="color:#c9a227;font-size:.85em;font-weight:600">$${parseFloat(s.price||0).toFixed(2)}</span>
+            <button onclick="removeService(${i})" style="background:rgba(220,40,40,.2);border:none;color:#f88;border-radius:5px;padding:2px 7px;cursor:pointer">✕</button>
+        </div>
+    `).join('') || '<p style="font-size:.8em;color:rgba(255,200,200,.4);margin:0 0 8px">Sin servicios configurados.</p>';
+}
+
+document.getElementById('addServiceBtn').onclick = () => {
+    const name  = document.getElementById('svcName').value.trim();
+    const price = document.getElementById('svcPrice').value;
+    if (!name) return;
+    bankServices.push({ name, price: parseFloat(price) || 0 });
+    renderServices();
+    document.getElementById('svcName').value  = '';
+    document.getElementById('svcPrice').value = '';
+};
+
+window.removeService = (i) => {
+    bankServices.splice(i, 1);
+    renderServices();
+};
+
+document.getElementById('saveBankBtn').onclick = async () => {
+    const body = {
+        bankName:      document.getElementById('bkBank').value.trim(),
+        accountType:   document.getElementById('bkType').value,
+        accountNumber: document.getElementById('bkAccount').value.trim(),
+        accountHolder: document.getElementById('bkHolder').value.trim(),
+        ruc:           document.getElementById('bkRuc').value.trim(),
+        email:         document.getElementById('bkEmail').value.trim(),
+        address:       document.getElementById('bkAddress').value.trim(),
+        phone:         document.getElementById('bkPhone').value.trim(),
+        services:      bankServices
+    };
+    const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.ok) showToast('✓ Configuración guardada'); else showToast('Error al guardar', true);
+};
+
+/* Cargar órdenes */
+async function loadOrders() {
+    const r = await fetch('/api/orders', { headers: { 'x-session-token': TOKEN } });
+    allOrders = await r.json();
+    renderOrders();
+}
+
+function renderOrders() {
+    const wrap = document.getElementById('ordersWrap');
+    const list = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
+    if (!list.length) { wrap.innerHTML = '<p class="no-users">Sin pagos en esta categoría.</p>'; return; }
+
+    wrap.innerHTML = `<table class="user-table">
+        <thead><tr>
+            <th>Fecha</th><th>Cliente</th><th>Concepto</th>
+            <th>Total</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody>${list.map(o => {
+            const fecha  = new Date(o.createdAt).toLocaleDateString('es-EC');
+            const badge  = o.status === 'confirmado'
+                ? '<span style="color:#5d5;font-size:.8em">✅ Confirmado</span>'
+                : o.status === 'rechazado'
+                ? '<span style="color:#f66;font-size:.8em">❌ Rechazado</span>'
+                : '<span style="color:#c9a227;font-size:.8em">🟡 Pendiente</span>';
+            const actions = o.status === 'pendiente' ? `
+                ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎 Comprobante</a>` : ''}
+                <button onclick="confirmOrder('${o.id}')" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px">✅ Confirmar</button>
+                <button onclick="rejectOrder('${o.id}')" class="del-btn" style="padding:4px 10px;font-size:.78em">❌ Rechazar</button>
+            ` : o.status === 'confirmado' ? `
+                ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎</a>` : ''}
+                <a href="/factura/${o.id}" target="_blank" class="edit-btn">🧾 Ver factura</a>
+            ` : `
+                <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
+            `;
+            return `<tr>
+                <td style="font-size:.8em">${fecha}</td>
+                <td><strong style="font-size:.88em">${o.customerName}</strong><br><small style="color:rgba(255,200,200,.5)">${o.customerEmail}</small></td>
+                <td style="font-size:.82em;max-width:180px">${o.concept}</td>
+                <td style="font-size:.88em;color:#c9a227;font-weight:600">$${parseFloat(o.amount).toFixed(2)}</td>
+                <td>${badge}</td>
+                <td>${actions}</td>
+            </tr>`;
+        }).join('')}</tbody>
+    </table>`;
+}
+
+window.confirmOrder = async (id) => {
+    if (!confirm('¿Confirmar este pago y generar el comprobante?')) return;
+    const r = await fetch(`/api/orders/${id}/confirm`, { method: 'PUT', headers: { 'x-session-token': TOKEN } });
+    const d = await r.json();
+    if (d.ok) { showToast('✓ Pago confirmado — No. ' + d.invoiceNumber); loadOrders(); }
+    else showToast('Error: ' + d.message, true);
+};
+
+window.rejectOrder = async (id) => {
+    const reason = prompt('Motivo del rechazo (opcional):') ?? '';
+    const r = await fetch(`/api/orders/${id}/reject`, { method: 'PUT', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+    const d = await r.json();
+    if (d.ok) { showToast('Pago rechazado'); loadOrders(); }
+    else showToast('Error: ' + d.message, true);
+};
+
+/* Filtros */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderOrders();
+    };
+});
+
+/* Cargar al abrir el tab */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    const orig = btn.onclick;
+    btn.addEventListener('click', () => {
+        if (btn.dataset.tab === 'pagos') { loadBankInfo(); loadOrders(); }
+    });
+});
 </script>
 </body>
 </html>

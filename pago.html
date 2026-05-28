@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPRESART — Pago</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { overflow-y: auto; overflow-x: hidden; background: #060002; }
+
+        .pago-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* ── Cabecera ── */
+        .pago-heading {
+            text-align: center;
+            padding: 8px 0 4px;
+        }
+        .pago-heading h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 24px rgba(220,30,30,.4);
+            margin-bottom: 8px;
+        }
+        .pago-heading h1 span { color: #c9a227; }
+        .pago-heading p {
+            font-family: 'Poppins', sans-serif;
+            font-size: .82em;
+            color: rgba(255,210,210,.65);
+            font-weight: 300;
+        }
+
+        /* ── Grid 2 columnas ── */
+        .pago-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* ── Card glass ── */
+        .glass-card {
+            background: rgba(255,255,255,.055);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,.12);
+            border-top: 1px solid rgba(255,255,255,.22);
+            padding: 28px 26px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.13);
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title .icon {
+            font-size: 1.3rem;
+            filter: drop-shadow(0 0 8px rgba(201,162,39,.6));
+        }
+
+        /* ── Datos bancarios ── */
+        .bank-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            font-family: 'Poppins', sans-serif;
+        }
+        .bank-row:last-child { border-bottom: none; }
+        .bank-label {
+            font-size: .72em;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,.85);
+        }
+        .bank-value {
+            font-size: .88em;
+            font-weight: 500;
+            color: rgba(255,235,235,.9);
+        }
+
+        .copy-btn {
+            background: rgba(201,162,39,.15);
+            border: 1px solid rgba(201,162,39,.35);
+            color: #c9a227;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: .7em;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: background .2s;
+        }
+        .copy-btn:hover { background: rgba(201,162,39,.28); }
+
+        /* ── Formulario ── */
+        .f-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: .72em;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(201,162,39,.85);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .f-input, .f-select, .f-textarea {
+            width: 100%;
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: rgba(255,235,235,.92);
+            font-family: 'Poppins', sans-serif;
+            font-size: .88em;
+            outline: none;
+            transition: border-color .2s, background .2s;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+        }
+        .f-input:focus, .f-select:focus, .f-textarea:focus {
+            border-color: rgba(201,162,39,.55);
+            background: rgba(255,255,255,.10);
+        }
+        .f-select option { background: #1a0005; color: #fff; }
+        .f-textarea { resize: vertical; min-height: 72px; }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed rgba(201,162,39,.35);
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.has-file {
+            border-color: rgba(201,162,39,.7);
+            background: rgba(201,162,39,.06);
+        }
+        .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .upload-icon { font-size: 1.8rem; margin-bottom: 6px; display: block; }
+        .upload-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: .78em;
+            color: rgba(255,210,210,.6);
+        }
+        .upload-name {
+            font-family: 'Poppins', sans-serif;
+            font-size: .82em;
+            color: #c9a227;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* IVA preview */
+        .iva-preview {
+            background: rgba(201,162,39,.08);
+            border: 1px solid rgba(201,162,39,.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .iva-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: .8em;
+            color: rgba(255,210,210,.7);
+            padding: 2px 0;
+        }
+        .iva-row.total {
+            font-weight: 600;
+            color: #fff;
+            font-size: .9em;
+            border-top: 1px solid rgba(255,255,255,.12);
+            margin-top: 6px;
+            padding-top: 8px;
+        }
+
+        /* Submit */
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #a00a0a, #c9a227 120%);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: .92em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+        }
+        .submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+        .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* Success panel */
+        .success-panel {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .success-icon { font-size: 3.5rem; margin-bottom: 16px; display: block; }
+        .success-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .success-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: .85em;
+            color: rgba(255,210,210,.7);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        .success-id {
+            display: inline-block;
+            background: rgba(201,162,39,.12);
+            border: 1px solid rgba(201,162,39,.3);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: .82em;
+            color: #c9a227;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 28px;
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 10px;
+            color: rgba(255,235,235,.8);
+            font-family: 'Poppins', sans-serif;
+            font-size: .82em;
+            text-decoration: none;
+            transition: background .2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,.06); }
+
+        /* Sin datos bancarios */
+        .no-bank {
+            font-family: 'Poppins', sans-serif;
+            font-size: .83em;
+            color: rgba(255,200,200,.5);
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        @media (max-width: 680px) {
+            .pago-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html"      class="nav-link">Inicio</a></li>
+            <li><a href="nosotros.html"   class="nav-link">Nosotros</a></li>
+            <li><a href="cartelera.html"  class="nav-link">Cartelera</a></li>
+            <li><a href="agenda.html"     class="nav-link">Agenda</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="login.html"      class="nav-link" id="navLoginLink">Login</a></li>
+            <li><a href="pago.html"       class="nav-link nav-cta active">Entradas</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="page-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-curtain-l"></div>
+    <div class="hero-curtain-r"></div>
+    <div class="hero-light"></div>
+    <div class="hero-content">
+        <h1 class="hero-title">Pago</h1>
+        <div class="hero-rule"></div>
+    </div>
+</section>
+
+<div class="pago-wrap">
+
+    <div class="pago-heading">
+        <h1>Inscripción y <span>Entradas</span></h1>
+        <p>Realiza tu transferencia bancaria y envía el comprobante. Confirmamos en menos de 24 horas.</p>
+    </div>
+
+    <!-- ── Grid principal ── -->
+    <div class="pago-grid">
+
+        <!-- Columna izquierda: datos bancarios -->
+        <div class="glass-card">
+            <div class="card-title">
+                <span class="icon">🏦</span> Datos para transferencia
+            </div>
+            <div id="bankData"><p class="no-bank">Cargando datos bancarios…</p></div>
+        </div>
+
+        <!-- Columna derecha: formulario -->
+        <div class="glass-card">
+            <div class="card-title">
+                <span class="icon">📋</span> Datos del pago
+            </div>
+
+            <div id="formPanel">
+                <label class="f-label">Nombre completo</label>
+                <input id="fName" class="f-input" type="text" placeholder="Ej: María García López">
+
+                <label class="f-label">RUC o Cédula</label>
+                <input id="fDoc" class="f-input" type="text" placeholder="Ej: 1712345678 o 1712345678001">
+
+                <label class="f-label">Correo electrónico</label>
+                <input id="fEmail" class="f-input" type="email" placeholder="tu@correo.com">
+
+                <label class="f-label">Concepto / Servicio</label>
+                <select id="fConcept" class="f-select">
+                    <option value="">— Selecciona un servicio —</option>
+                </select>
+
+                <label class="f-label">Monto en USD</label>
+                <input id="fAmount" class="f-input" type="number" min="1" step="0.01" placeholder="0.00">
+
+                <div class="iva-preview" id="ivaPreview" style="display:none">
+                    <div class="iva-row"><span>Subtotal (sin IVA)</span><span id="ivaSubtotal">$0.00</span></div>
+                    <div class="iva-row"><span>IVA 15%</span><span id="ivaAmount">$0.00</span></div>
+                    <div class="iva-row total"><span>Total</span><span id="ivaTotal">$0.00</span></div>
+                </div>
+
+                <label class="f-label">Comprobante de transferencia</label>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fReceipt" accept="image/*,.pdf">
+                    <span class="upload-icon">📎</span>
+                    <div class="upload-text">Haz clic para subir el comprobante<br><small>(JPG, PNG o PDF)</small></div>
+                    <div class="upload-name" id="uploadName"></div>
+                </div>
+
+                <label class="f-label">Notas adicionales (opcional)</label>
+                <textarea id="fNotes" class="f-textarea" placeholder="Ej: Pago para el nivel 2, grupo tarde…"></textarea>
+
+                <button class="submit-btn" id="submitBtn">Enviar comprobante</button>
+            </div>
+
+            <!-- Panel de éxito -->
+            <div class="success-panel" id="successPanel">
+                <span class="success-icon">✅</span>
+                <div class="success-title">¡Comprobante enviado!</div>
+                <p class="success-text">
+                    Hemos recibido tu comprobante.<br>
+                    EXPRESART lo revisará y confirmará tu pago en <strong>menos de 24 horas</strong>.<br>
+                    Guarda tu número de referencia:
+                </p>
+                <div class="success-id" id="successId"></div>
+                <br>
+                <a href="index.html" class="back-btn">← Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+initNavAuth();
+
+let bankInfo = {};
+
+/* Cargar datos bancarios */
+async function loadBankInfo() {
+    try {
+        const r = await fetch('/api/bank-info');
+        bankInfo = await r.json();
+        renderBank(bankInfo);
+        loadServices(bankInfo.services || []);
+    } catch {
+        document.getElementById('bankData').innerHTML = '<p class="no-bank">No se pudieron cargar los datos bancarios.</p>';
+    }
+}
+
+function renderBank(info) {
+    const container = document.getElementById('bankData');
+    if (!info.bankName && !info.accountNumber) {
+        container.innerHTML = '<p class="no-bank">Los datos bancarios aún no han sido configurados.<br>Contáctanos directamente.</p>';
+        return;
+    }
+    const rows = [
+        { label: 'Banco',         value: info.bankName        || '—' },
+        { label: 'Tipo de cuenta', value: info.accountType    || '—' },
+        { label: 'No. de cuenta', value: info.accountNumber   || '—', copy: true },
+        { label: 'Titular',       value: info.accountHolder   || '—' },
+        { label: 'RUC / Cédula',  value: info.ruc             || '—' },
+    ].filter(r => r.value !== '—');
+
+    container.innerHTML = rows.map(r => `
+        <div class="bank-row">
+            <span class="bank-label">${r.label}</span>
+            <span class="bank-value">
+                ${r.value}
+                ${r.copy ? `<button class="copy-btn" onclick="copyText('${r.value}')">Copiar</button>` : ''}
+            </span>
+        </div>
+    `).join('');
+}
+
+function loadServices(services) {
+    const sel = document.getElementById('fConcept');
+    if (services.length) {
+        services.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name + (s.price ? ` — $${s.price}` : '');
+            opt.textContent = s.name + (s.price ? ` — $${parseFloat(s.price).toFixed(2)}` : '');
+            if (s.price) opt.dataset.price = s.price;
+            sel.appendChild(opt);
+        });
+    }
+    const other = document.createElement('option');
+    other.value = 'Otro';
+    other.textContent = 'Otro (especificar en notas)';
+    sel.appendChild(other);
+}
+
+/* Autocompletar monto al seleccionar servicio */
+document.getElementById('fConcept').addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    if (opt && opt.dataset.price) {
+        document.getElementById('fAmount').value = parseFloat(opt.dataset.price).toFixed(2);
+        updateIVA();
+    }
+});
+
+/* Preview IVA */
+function updateIVA() {
+    const amount = parseFloat(document.getElementById('fAmount').value);
+    const preview = document.getElementById('ivaPreview');
+    if (!amount || amount <= 0) { preview.style.display = 'none'; return; }
+    const subtotal = (amount / 1.15).toFixed(2);
+    const iva      = (amount - subtotal).toFixed(2);
+    document.getElementById('ivaSubtotal').textContent = '$' + subtotal;
+    document.getElementById('ivaAmount').textContent   = '$' + iva;
+    document.getElementById('ivaTotal').textContent    = '$' + amount.toFixed(2);
+    preview.style.display = 'block';
+}
+document.getElementById('fAmount').addEventListener('input', updateIVA);
+
+/* Nombre del archivo subido */
+document.getElementById('fReceipt').addEventListener('change', function () {
+    const zone = document.getElementById('uploadZone');
+    const name = document.getElementById('uploadName');
+    if (this.files[0]) {
+        name.textContent = '✓ ' + this.files[0].name;
+        zone.classList.add('has-file');
+    } else {
+        name.textContent = '';
+        zone.classList.remove('has-file');
+    }
+});
+
+/* Copiar al portapapeles */
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        /* feedback visual mínimo */
+    });
+}
+
+/* Enviar formulario */
+document.getElementById('submitBtn').addEventListener('click', async () => {
+    const name    = document.getElementById('fName').value.trim();
+    const doc     = document.getElementById('fDoc').value.trim();
+    const email   = document.getElementById('fEmail').value.trim();
+    const concept = document.getElementById('fConcept').value;
+    const amount  = document.getElementById('fAmount').value;
+    const notes   = document.getElementById('fNotes').value.trim();
+    const receipt = document.getElementById('fReceipt').files[0];
+
+    if (!name || !doc || !email || !concept || !amount) {
+        alert('Por favor completa todos los campos obligatorios.');
+        return;
+    }
+    if (!receipt) {
+        alert('Por favor adjunta el comprobante de transferencia.');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    const fd = new FormData();
+    fd.append('customerName',  name);
+    fd.append('customerDoc',   doc);
+    fd.append('customerEmail', email);
+    fd.append('concept',       concept);
+    fd.append('amount',        amount);
+    fd.append('notes',         notes);
+    fd.append('receipt',       receipt);
+
+    try {
+        const r    = await fetch('/api/orders', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.message);
+        document.getElementById('successId').textContent = 'Ref: ' + data.orderId;
+        document.getElementById('formPanel').style.display   = 'none';
+        document.getElementById('successPanel').style.display = 'block';
+    } catch (e) {
+        alert('Error al enviar: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Enviar comprobante';
+    }
+});
+
+loadBankInfo();
+</script>
+</body>
+</html>
