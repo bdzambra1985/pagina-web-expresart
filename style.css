@@ -1309,9 +1309,25 @@ body {
     box-shadow: inset -4px -4px 10px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.10);
     z-index: 4;
 }
-/* Sin cabello */
-.cat-stage .twin .twin-head::before,
-.cat-stage .twin .twin-head::after { display: none; }
+/* Pelo naranja — solo a los lados del sombrero */
+.cat-stage .twin .twin-head::before {
+    content: '';
+    position: absolute;
+    top: -12px; left: 4px;
+    width: 18px; height: 20px;
+    background: #e07020;
+    border-radius: 50%;
+    box-shadow: 6px -8px 0 5px #e07020, -2px 6px 0 4px #d06010;
+}
+.cat-stage .twin .twin-head::after {
+    content: '';
+    position: absolute;
+    top: -12px; right: 4px;
+    width: 18px; height: 20px;
+    background: #e07020;
+    border-radius: 50%;
+    box-shadow: -6px -8px 0 5px #e07020, 2px 6px 0 4px #d06010;
+}
 /* Cejas alegres */
 .cat-stage .twin .twin-brow {
     position: absolute;
@@ -1496,7 +1512,7 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 26px; height: 38px;
+    width: 26px; height: 62px;
     background: #c82020;
     border-radius: 4px 4px 0 0;
     z-index: 1;
