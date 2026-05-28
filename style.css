@@ -1496,31 +1496,30 @@ body {
     border-radius: 6px 10px 10px 6px;
 }
 
-/* ══ CUERDAS — conectan la mano del gemelo al telón ══ */
+/* ══ CUERDAS VERTICALES — como en un teatro real ══ */
 .twin-rope {
     position: absolute;
-    height: 3px;
+    width: 4px;
+    top: 0;
+    bottom: 30px;
+    border-radius: 2px;
     background: repeating-linear-gradient(
-        90deg,
+        180deg,
         #c9a227 0px, #a07010 5px,
         #e8d060 5px, #c9a227 10px
     );
-    border-radius: 2px;
     z-index: 25;
-    bottom: 44px;
     pointer-events: none;
 }
 .twin-rope-l {
-    left: 36px;
-    width: calc(52% - 36px);
-    transform-origin: left center;
-    animation: ropeRetractL 6s linear 0.55s forwards;
+    left: 28px;
+    animation: ropeSwayL 0.4s ease-in-out 0.55s infinite alternate,
+               ropeFade  0.6s ease-out   6.6s  forwards;
 }
 .twin-rope-r {
-    right: 36px;
-    width: calc(52% - 36px);
-    transform-origin: right center;
-    animation: ropeRetractR 6s linear 0.55s forwards;
+    right: 28px;
+    animation: ropeSwayR 0.4s ease-in-out 0.55s infinite alternate,
+               ropeFade  0.6s ease-out   6.6s  forwards;
 }
 
 /* ── Animaciones ── */
@@ -1531,24 +1530,24 @@ body {
     50%       { transform: rotate(3deg); }
 }
 
-/* Brazo que JALA el telón — sincronizado con openCurtain (6s, delay 0.55s) */
+/* Brazo que JALA la cuerda vertical — sube y baja repetidamente */
 @keyframes twinPullArm {
-    0%    { transform: rotate(62deg);  } /* extendido hacia el telón */
-    8%    { transform: rotate(65deg);  } /* agarra */
-    80%   { transform: rotate(-38deg); } /* jalado completamente */
-    92%   { transform: rotate(-32deg); } /* pequeño rebote */
-    100%  { transform: rotate(-35deg); } /* sostiene */
+    0%    { transform: rotate(-72deg); } /* brazo arriba, agarra la cuerda */
+    40%   { transform: rotate(58deg);  } /* jala fuerte hacia abajo */
+    55%   { transform: rotate(-68deg); } /* sube para agarrar más cuerda */
+    90%   { transform: rotate(54deg);  } /* segunda jalada */
+    100%  { transform: rotate(52deg);  } /* sostiene al final */
 }
 /* Idle del brazo jalador tras abrir el telón */
 @keyframes twinPullArmIdle {
-    0%, 100% { transform: rotate(-35deg); }
-    50%       { transform: rotate(-28deg); }
+    0%, 100% { transform: rotate(52deg); }
+    50%       { transform: rotate(45deg); }
 }
 
-/* Brazo de balance — oscila suavemente todo el tiempo */
+/* Brazo de balance — empuja contra el cuerpo para dar fuerza */
 @keyframes twinBraceArm {
-    0%, 100% { transform: rotate(-22deg); }
-    50%       { transform: rotate(-12deg); }
+    0%, 100% { transform: rotate(18deg); }
+    50%       { transform: rotate(28deg); }
 }
 
 /* Piernas — caminan al salir */
@@ -1571,16 +1570,19 @@ body {
     100% { transform: translateX(60px); }
 }
 
-/* Cuerda que se retrae con el telón */
-@keyframes ropeRetractL {
-    0%   { transform: scaleX(1);    opacity: 1; }
-    80%  { transform: scaleX(0.04); opacity: 1; }
-    100% { transform: scaleX(0);    opacity: 0; }
+/* Cuerda vertical: balanceo lateral mientras se jala */
+@keyframes ropeSwayL {
+    from { transform: translateX(0);    }
+    to   { transform: translateX(-2px); }
 }
-@keyframes ropeRetractR {
-    0%   { transform: scaleX(1);    opacity: 1; }
-    80%  { transform: scaleX(0.04); opacity: 1; }
-    100% { transform: scaleX(0);    opacity: 0; }
+@keyframes ropeSwayR {
+    from { transform: translateX(0);   }
+    to   { transform: translateX(2px); }
+}
+/* Cuerda desaparece cuando los gemelos se van */
+@keyframes ropeFade {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 @keyframes propSpin {
