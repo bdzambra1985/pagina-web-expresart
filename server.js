@@ -7,6 +7,8 @@ const crypto      = require('crypto');
 const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
+const cloudinary  = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { pool, initDB } = require('./db');
 
 const app  = express();
@@ -14,6 +16,20 @@ const PORT = process.env.PORT || 9090;
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+/* ── Cloudinary (activo si las variables de entorno están definidas) ── */
+const USE_CLOUDINARY = !!(
+    process.env.CLOUDINARY_NAME &&
+    process.env.CLOUDINARY_KEY  &&
+    process.env.CLOUDINARY_SECRET
+);
+if (USE_CLOUDINARY) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_NAME,
+        api_key:    process.env.CLOUDINARY_KEY,
+        api_secret: process.env.CLOUDINARY_SECRET
+    });
+}
 
 /* ── Contraseñas ── */
 const PW_SALT = process.env.EXP_SALT || 'expresart_salt_2025';
@@ -70,8 +86,20 @@ function requireAdmin(req, res) {
     return sess;
 }
 
-/* ── Multer por usuario ── */
+/* ── Multer por usuario (Cloudinary en producción, disco en local) ── */
 function uploaderFor(userId) {
+    if (USE_CLOUDINARY) {
+        const storage = new CloudinaryStorage({
+            cloudinary,
+            params: {
+                folder:          'expresart/' + userId,
+                allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+                transformation:  [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
+            }
+        });
+        return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+    }
+    /* Fallback: disco local para desarrollo sin Cloudinary */
     const dest = path.join(UPLOADS_DIR, userId);
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     return multer({
@@ -89,6 +117,12 @@ function uploaderFor(userId) {
             ));
         }
     });
+}
+
+function fileUrl(req, userId) {
+    return USE_CLOUDINARY
+        ? req.file.path
+        : '/uploads/' + userId + '/' + req.file.filename;
 }
 
 /* ── Helpers de perfil vacío ── */
@@ -243,7 +277,7 @@ app.post('/api/upload-photo', (req, res) => {
     uploaderFor(sess.userId).single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = '/uploads/' + sess.userId + '/' + req.file.filename;
+        const url = fileUrl(req, sess.userId);
         await pool.query(`
             INSERT INTO profiles (user_id, photo_url) VALUES ($1,$2)
             ON CONFLICT (user_id) DO UPDATE SET photo_url=$2
@@ -259,7 +293,7 @@ app.post('/api/upload-prod-photo', (req, res) => {
     uploaderFor(sess.userId).single('photo')(req, res, (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        res.json({ ok: true, url: '/uploads/' + sess.userId + '/' + req.file.filename });
+        res.json({ ok: true, url: fileUrl(req, sess.userId) });
     });
 });
 
@@ -358,10 +392,17 @@ app.delete('/api/users/:userId', async (req, res) => {
     if (!rows.length) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
     if (rows[0].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede eliminar el admin' });
     await pool.query('DELETE FROM users WHERE user_id=$1', [req.params.userId]);
-    const uploadDir = path.join(UPLOADS_DIR, req.params.userId);
-    if (fs.existsSync(uploadDir)) {
-        fs.readdirSync(uploadDir).forEach(f => fs.unlinkSync(path.join(uploadDir, f)));
-        fs.rmdirSync(uploadDir);
+    if (USE_CLOUDINARY) {
+        try {
+            await cloudinary.api.delete_resources_by_prefix('expresart/' + req.params.userId + '/');
+            await cloudinary.api.delete_folder('expresart/' + req.params.userId);
+        } catch (_) { /* la carpeta puede no existir */ }
+    } else {
+        const uploadDir = path.join(UPLOADS_DIR, req.params.userId);
+        if (fs.existsSync(uploadDir)) {
+            fs.readdirSync(uploadDir).forEach(f => fs.unlinkSync(path.join(uploadDir, f)));
+            fs.rmdirSync(uploadDir);
+        }
     }
     res.json({ ok: true });
 });
@@ -476,7 +517,7 @@ app.post('/api/upload', (req, res) => {
     uploaderFor('admin').single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = '/uploads/admin/' + req.file.filename;
+        const url = fileUrl(req, 'admin');
         const { rows } = await pool.query("SELECT value FROM site_content WHERE key='global'");
         const data = rows[0]?.value || {};
         data.destacada       = data.destacada || {};
@@ -526,7 +567,8 @@ async function start() {
         console.log('  Usuario admin creado: admin / expresart2025');
     }
     app.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}\n`);
+        console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}`);
+        console.log(`  Imágenes: ${USE_CLOUDINARY ? 'Cloudinary (CDN)' : 'disco local (dev)'}\n`);
     });
 }
 
