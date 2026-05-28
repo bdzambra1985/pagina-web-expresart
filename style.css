@@ -1676,26 +1676,30 @@ body {
 }
 
 @keyframes ropeSwayL {
+    /* sincronizado exactamente con twinPullArm:
+       agarra en 18/52/84% → jalón en 30/62/94% → suelta en 36/68% */
     0%   { transform: skewX(0deg);    }
-    30%  { transform: skewX(-1.5deg); }   /* leve comba al jalar */
-    33%  { transform: skewX(-1deg);   }
-    36%  { transform: skewX(0deg);    }
-    62%  { transform: skewX(-1.5deg); }
-    65%  { transform: skewX(-1deg);   }
+    18%  { transform: skewX(-0.4deg); }   /* brazo agarra: cuerda empieza a tensarse */
+    30%  { transform: skewX(-0.7deg); }   /* brazo al fondo: máxima comba */
+    36%  { transform: skewX(0deg);    }   /* brazo sube: cuerda se libera */
+    52%  { transform: skewX(-0.4deg); }
+    62%  { transform: skewX(-0.7deg); }
     68%  { transform: skewX(0deg);    }
-    94%  { transform: skewX(-1.5deg); }
-    100% { transform: skewX(-1deg);   }
+    84%  { transform: skewX(-0.4deg); }
+    94%  { transform: skewX(-0.7deg); }
+    100% { transform: skewX(-0.5deg); }
 }
 @keyframes ropeSwayR {
-    0%   { transform: skewX(0deg);    }
-    30%  { transform: skewX(1.5deg);  }
-    33%  { transform: skewX(1deg);    }
-    36%  { transform: skewX(0deg);    }
-    62%  { transform: skewX(1.5deg);  }
-    65%  { transform: skewX(1deg);    }
-    68%  { transform: skewX(0deg);    }
-    94%  { transform: skewX(1.5deg);  }
-    100% { transform: skewX(1deg);    }
+    0%   { transform: skewX(0deg);   }
+    18%  { transform: skewX(0.4deg); }
+    30%  { transform: skewX(0.7deg); }
+    36%  { transform: skewX(0deg);   }
+    52%  { transform: skewX(0.4deg); }
+    62%  { transform: skewX(0.7deg); }
+    68%  { transform: skewX(0deg);   }
+    84%  { transform: skewX(0.4deg); }
+    94%  { transform: skewX(0.7deg); }
+    100% { transform: skewX(0.5deg); }
 }
 /* Pila crece en el piso con cada jalón — escalones reflejan los 3 ciclos */
 @keyframes ropePileGrow {
