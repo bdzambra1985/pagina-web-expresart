@@ -1186,21 +1186,23 @@ body {
     overflow: visible;
 }
 
-/* Gemelo derecho: fijo en borde derecho de la pantalla */
+/* Gemelo derecho: fijo en borde derecho, se va a la derecha al terminar */
 .cat-stage-right {
-    left: calc(100% - 54px);
+    left: calc(100% - 36px);
+    animation: twinWalkOffR 1.4s ease-in 6.6s forwards;
 }
 
-/* Gemelo izquierdo: fijo en borde izquierdo de la pantalla */
+/* Gemelo izquierdo: fijo en borde izquierdo, se va a la izquierda al terminar */
 .cat-stage-left {
     left: 0;
+    animation: twinWalkOffL 1.4s ease-in 6.6s forwards;
 }
 
 /* Contenedor visual: escala el gemelo a tamaño visible en bordes */
 .cat-visual {
     position: relative;
-    width: 54px;
-    height: 99px;
+    width: 36px;
+    height: 66px;
     overflow: visible;
 }
 
@@ -1219,7 +1221,7 @@ body {
     position: absolute;
     bottom: 0; left: 0;
     width: 120px; height: 220px;
-    transform: scale(0.45);
+    transform: scale(0.30);
     transform-origin: bottom left;
 }
 .cat-stage .twin .twin-shake {
@@ -1477,9 +1479,11 @@ body {
 }
 .cat-stage .twin .twin-leg-l {
     left: 28px;
+    animation: twinLegL 0.38s ease-in-out 6.6s infinite;
 }
 .cat-stage .twin .twin-leg-r {
     right: 28px;
+    animation: twinLegR 0.38s ease-in-out 6.6s infinite;
 }
 /* Zapatos planos */
 .cat-stage .twin .twin-leg-l::after,
@@ -1490,6 +1494,33 @@ body {
     width: 46px; height: 14px;
     background: #111;
     border-radius: 6px 10px 10px 6px;
+}
+
+/* ══ CUERDAS — conectan la mano del gemelo al telón ══ */
+.twin-rope {
+    position: absolute;
+    height: 3px;
+    background: repeating-linear-gradient(
+        90deg,
+        #c9a227 0px, #a07010 5px,
+        #e8d060 5px, #c9a227 10px
+    );
+    border-radius: 2px;
+    z-index: 25;
+    bottom: 44px;
+    pointer-events: none;
+}
+.twin-rope-l {
+    left: 36px;
+    width: calc(52% - 36px);
+    transform-origin: left center;
+    animation: ropeRetractL 6s linear 0.55s forwards;
+}
+.twin-rope-r {
+    right: 36px;
+    width: calc(52% - 36px);
+    transform-origin: right center;
+    animation: ropeRetractR 6s linear 0.55s forwards;
 }
 
 /* ── Animaciones ── */
@@ -1518,6 +1549,38 @@ body {
 @keyframes twinBraceArm {
     0%, 100% { transform: rotate(-22deg); }
     50%       { transform: rotate(-12deg); }
+}
+
+/* Piernas — caminan al salir */
+@keyframes twinLegL {
+    0%, 100% { transform: rotate(-6deg); }
+    50%       { transform: rotate(6deg);  }
+}
+@keyframes twinLegR {
+    0%, 100% { transform: rotate(6deg);  }
+    50%       { transform: rotate(-6deg); }
+}
+
+/* Salida de los gemelos (se van hacia los bordes) */
+@keyframes twinWalkOffL {
+    0%   { transform: translateX(0);     }
+    100% { transform: translateX(-60px); }
+}
+@keyframes twinWalkOffR {
+    0%   { transform: translateX(0);    }
+    100% { transform: translateX(60px); }
+}
+
+/* Cuerda que se retrae con el telón */
+@keyframes ropeRetractL {
+    0%   { transform: scaleX(1);    opacity: 1; }
+    80%  { transform: scaleX(0.04); opacity: 1; }
+    100% { transform: scaleX(0);    opacity: 0; }
+}
+@keyframes ropeRetractR {
+    0%   { transform: scaleX(1);    opacity: 1; }
+    80%  { transform: scaleX(0.04); opacity: 1; }
+    100% { transform: scaleX(0);    opacity: 0; }
 }
 
 @keyframes propSpin {
