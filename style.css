@@ -1404,27 +1404,9 @@ body {
     z-index: 3;
 }
 /* Tirante izquierdo */
-.cat-stage .twin .twin-torso::before {
-    content: '';
-    position: absolute;
-    top: 2px; left: 22px;
-    width: 18px; height: 64px;
-    background: #111;
-    border-radius: 6px;
-    transform: rotate(20deg);
-    transform-origin: top center;
-}
-/* Tirante derecho */
+.cat-stage .twin .twin-torso::before,
 .cat-stage .twin .twin-torso::after {
-    content: '';
-    position: absolute;
-    top: 2px; right: 22px;
-    width: 18px; height: 64px;
-    background: #111;
-    border-radius: 6px;
-    transform: rotate(-20deg);
-    transform-origin: top center;
-    z-index: 0;
+    content: none;
 }
 
 /* ── Babero blanco ── */
