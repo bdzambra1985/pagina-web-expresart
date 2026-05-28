@@ -1516,17 +1516,17 @@ body {
 .cat-stage .twin .twin-leg-r {
     position: absolute;
     bottom: 0;
-    width: 16px; height: 96px;
+    width: 38px; height: 42px;
     background: #c82020;
-    border-radius: 4px 4px 0 0;
+    border-radius: 50% 50% 30% 30%;
     z-index: 1;
 }
 .cat-stage .twin .twin-leg-l {
-    left: 28px;
+    left: 14px;
     animation: twinLegL 0.46s infinite ease-in-out;
 }
 .cat-stage .twin .twin-leg-r {
-    right: 28px;
+    right: 14px;
     animation: twinLegR 0.46s infinite ease-in-out;
 }
 /* Zapatos planos */
@@ -1534,7 +1534,7 @@ body {
 .cat-stage .twin .twin-leg-r::after {
     content: '';
     position: absolute;
-    bottom: -6px; left: -10px;
+    bottom: -6px; left: -4px;
     width: 46px; height: 14px;
     background: #111;
     border-radius: 6px 10px 10px 6px;
