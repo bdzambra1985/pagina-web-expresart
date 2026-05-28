@@ -8,15 +8,23 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const cloudinary  = require('cloudinary').v2;
-const { pool, initDB } = require('./db');
 
 const app  = express();
 const PORT = process.env.PORT || 9090;
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+/* ── Rutas de datos ── */
+const DATA_DIR     = path.join(__dirname, 'data');
+const USERS_FILE   = path.join(DATA_DIR, 'users.json');
+const PROFILES_DIR = path.join(DATA_DIR, 'profiles');
+const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
+const EVENTS_FILE  = path.join(DATA_DIR, 'events.json');
+const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 
-/* ── Cloudinary (activo si las variables de entorno están definidas) ── */
+[DATA_DIR, PROFILES_DIR, UPLOADS_DIR].forEach(d => {
+    if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+});
+
+/* ── Cloudinary (activo solo si las tres variables están definidas) ── */
 const USE_CLOUDINARY = !!(
     process.env.CLOUDINARY_NAME &&
     process.env.CLOUDINARY_KEY  &&
@@ -39,6 +47,35 @@ function verifyPassword(pw, hash) {
     return crypto.timingSafeEqual(Buffer.from(hashPassword(pw), 'hex'), Buffer.from(hash, 'hex'));
 }
 
+/* ── Helpers JSON ── */
+function readJSON(file, fallback) {
+    try {
+        if (!fs.existsSync(file)) return fallback;
+        return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+        console.error('readJSON error:', file, e.message);
+        return fallback;
+    }
+}
+function writeJSON(file, data) {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+function readUsers()   { return readJSON(USERS_FILE, []); }
+function writeUsers(d) { writeJSON(USERS_FILE, d); }
+function readProfile(userId) {
+    if (!/^[\w-]+$/.test(userId)) return null;
+    return readJSON(path.join(PROFILES_DIR, userId + '.json'), null);
+}
+function writeProfile(userId, data) {
+    if (!/^[\w-]+$/.test(userId)) return;
+    writeJSON(path.join(PROFILES_DIR, userId + '.json'), data);
+}
+function readContent()   { return readJSON(CONTENT_FILE, {}); }
+function writeContent(d) { writeJSON(CONTENT_FILE, d); }
+function readEvents()    { return readJSON(EVENTS_FILE, []); }
+function writeEvents(d)  { writeJSON(EVENTS_FILE, d); }
+
 /* ── Rate limiting ── */
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -48,7 +85,6 @@ const loginLimiter = rateLimit({
     keyGenerator: (req) => req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
     message: { ok: false, message: 'Demasiados intentos. Intenta en 15 minutos.' }
 });
-
 const apiLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 120,
@@ -57,13 +93,25 @@ const apiLimiter = rateLimit({
     skip: (req) => !req.path.startsWith('/api/')
 });
 
+/* ── Admin inicial ── */
+function initAdmin() {
+    const users = readUsers();
+    if (!users.find(u => u.role === 'admin')) {
+        users.push({
+            userId: 'admin', username: 'admin',
+            passwordHash: hashPassword(process.env.EXP_ADMIN_PW || 'expresart2025'),
+            role: 'admin', active: true, createdAt: new Date().toISOString()
+        });
+        writeUsers(users);
+        console.log('  Usuario admin creado: admin / expresart2025');
+    }
+}
+
 /* ── Sesiones en memoria ── */
 const sessions    = new Map();
 const SESSION_TTL = 8 * 60 * 60 * 1000;
 
-function newToken() {
-    return crypto.randomBytes(32).toString('hex');
-}
+function newToken() { return crypto.randomBytes(32).toString('hex'); }
 function getSession(req) {
     const token = req.headers['x-session-token'] || req.query.token;
     if (!token) return null;
@@ -85,9 +133,8 @@ function requireAdmin(req, res) {
     return sess;
 }
 
-/* ── Multer — siempre usa memoria; el destino lo decide saveFile() ── */
+/* ── Multer + Cloudinary ── */
 const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
-
 const uploader = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
@@ -96,7 +143,6 @@ const uploader = multer({
     }
 });
 
-/* Sube el buffer a Cloudinary o lo guarda en disco según el entorno */
 async function saveFile(buffer, originalname, userId) {
     if (USE_CLOUDINARY) {
         return new Promise((resolve, reject) => {
@@ -109,7 +155,7 @@ async function saveFile(buffer, originalname, userId) {
             ).end(buffer);
         });
     }
-    /* Fallback disco local */
+    /* Fallback: disco local */
     const dest = path.join(UPLOADS_DIR, userId);
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     const ext      = path.extname(originalname).toLowerCase();
@@ -118,31 +164,30 @@ async function saveFile(buffer, originalname, userId) {
     return '/uploads/' + userId + '/' + filename;
 }
 
-/* ── Helpers de perfil vacío ── */
+/* ── Perfil vacío ── */
 const emptyProfile = (userId) => ({
     userId, displayName: '', bio: '', bio_short: '',
     photoUrl: '', especialidades: [], producciones: [], videos: []
 });
 
-/* ── Middleware ── */
+/* ══════════════════════════════════════════
+   MIDDLEWARE
+   ══════════════════════════════════════════ */
 app.use(compression());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(apiLimiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const ONE_WEEK = 7 * 24 * 60 * 60;
 app.use(express.static(__dirname, {
     setHeaders(res, filePath) {
-        if (/\.(css|js|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath)) {
+        if (/\.(css|js|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath))
             res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}, stale-while-revalidate=86400`);
-        } else if (filePath.endsWith('.html')) {
+        else if (filePath.endsWith('.html'))
             res.setHeader('Cache-Control', 'no-cache');
-        }
     }
 }));
 app.use('/uploads', express.static(UPLOADS_DIR, {
@@ -152,24 +197,17 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
 /* ══════════════════════════════════════════
    AUTENTICACIÓN
    ══════════════════════════════════════════ */
-app.post('/api/login', loginLimiter, async (req, res) => {
+app.post('/api/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string')
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
-    }
-    const { rows } = await pool.query(
-        'SELECT user_id, username, password_hash, role, active FROM users WHERE username = $1',
-        [username.trim()]
-    );
-    const user = rows[0];
-    if (!user || !verifyPassword(password, user.password_hash)) {
+    const user = readUsers().find(u => u.username === username.trim());
+    if (!user || !verifyPassword(password, user.passwordHash))
         return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos' });
-    }
-    if (!user.active) {
+    if (!user.active)
         return res.status(403).json({ ok: false, message: 'Cuenta inactiva — contacta a EXPRESART' });
-    }
     const token = newToken();
-    sessions.set(token, { ts: Date.now(), userId: user.user_id, role: user.role });
+    sessions.set(token, { ts: Date.now(), userId: user.userId, role: user.role });
     res.json({ ok: true, token, role: user.role });
 });
 
@@ -186,80 +224,50 @@ app.get('/api/auth', (req, res) => {
 });
 
 /* ══════════════════════════════════════════
-   PERFILES PÚBLICOS DE ALUMNOS
+   PERFILES PÚBLICOS
    ══════════════════════════════════════════ */
-app.get('/api/profiles', async (req, res) => {
-    const { rows } = await pool.query(`
-        SELECT u.user_id AS "userId", u.username,
-               COALESCE(p.display_name, u.username) AS "displayName",
-               COALESCE(p.bio_short, '')  AS bio_short,
-               COALESCE(p.photo_url, '')  AS "photoUrl",
-               COALESCE(p.especialidades, '[]') AS especialidades,
-               jsonb_array_length(COALESCE(p.producciones, '[]')) AS producciones,
-               jsonb_array_length(COALESCE(p.videos, '[]'))       AS videos
-        FROM users u
-        LEFT JOIN profiles p ON p.user_id = u.user_id
-        WHERE u.role = 'alumno' AND u.active = true
-    `);
-    res.json(rows);
+app.get('/api/profiles', (req, res) => {
+    const profiles = readUsers()
+        .filter(u => u.role === 'alumno' && u.active)
+        .map(u => {
+            const p = readProfile(u.userId) || {};
+            return {
+                userId:         u.userId,
+                displayName:    p.displayName    || u.username,
+                bio_short:      p.bio_short      || '',
+                especialidades: p.especialidades || [],
+                photoUrl:       p.photoUrl       || '',
+                producciones:   (p.producciones  || []).length,
+                videos:         (p.videos        || []).length
+            };
+        });
+    res.json(profiles);
 });
 
-app.get('/api/profile/:userId', async (req, res) => {
-    const { rows: users } = await pool.query(
-        "SELECT user_id FROM users WHERE user_id=$1 AND role='alumno' AND active=true",
-        [req.params.userId]
-    );
-    if (!users.length) return res.status(404).json({ ok: false, message: 'Perfil no encontrado' });
-
-    const { rows } = await pool.query(`
-        SELECT user_id AS "userId", display_name AS "displayName", bio, bio_short,
-               photo_url AS "photoUrl", especialidades, producciones, videos
-        FROM profiles WHERE user_id=$1
-    `, [req.params.userId]);
-
-    const profile = rows[0] || emptyProfile(req.params.userId);
-    res.json({ ok: true, profile });
+app.get('/api/profile/:userId', (req, res) => {
+    const user = readUsers().find(u => u.userId === req.params.userId);
+    if (!user || !user.active || user.role !== 'alumno')
+        return res.status(404).json({ ok: false, message: 'Perfil no encontrado' });
+    res.json({ ok: true, profile: readProfile(user.userId) || {} });
 });
 
 /* ══════════════════════════════════════════
    MI PERFIL (alumno autenticado)
    ══════════════════════════════════════════ */
-app.get('/api/my-profile', async (req, res) => {
+app.get('/api/my-profile', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
-    const { rows } = await pool.query(`
-        SELECT user_id AS "userId", display_name AS "displayName", bio, bio_short,
-               photo_url AS "photoUrl", especialidades, producciones, videos
-        FROM profiles WHERE user_id=$1
-    `, [sess.userId]);
-    res.json({ ok: true, profile: rows[0] || emptyProfile(sess.userId) });
+    res.json({ ok: true, profile: readProfile(sess.userId) || emptyProfile(sess.userId) });
 });
 
-app.post('/api/my-profile', async (req, res) => {
+app.post('/api/my-profile', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
-    const b = req.body;
-    await pool.query(`
-        INSERT INTO profiles (user_id, display_name, bio, bio_short, photo_url, especialidades, producciones, videos)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-        ON CONFLICT (user_id) DO UPDATE SET
-            display_name   = COALESCE($2, profiles.display_name),
-            bio            = COALESCE($3, profiles.bio),
-            bio_short      = COALESCE($4, profiles.bio_short),
-            photo_url      = COALESCE($5, profiles.photo_url),
-            especialidades = COALESCE($6, profiles.especialidades),
-            producciones   = COALESCE($7, profiles.producciones),
-            videos         = COALESCE($8, profiles.videos)
-    `, [
-        sess.userId,
-        b.displayName   ?? null,
-        b.bio           ?? null,
-        b.bio_short     ?? null,
-        b.photoUrl      ?? null,
-        b.especialidades !== undefined ? JSON.stringify(b.especialidades) : null,
-        b.producciones   !== undefined ? JSON.stringify(b.producciones)   : null,
-        b.videos         !== undefined ? JSON.stringify(b.videos)         : null
-    ]);
+    const current = readProfile(sess.userId) || emptyProfile(sess.userId);
+    ['displayName', 'bio', 'bio_short', 'especialidades', 'producciones', 'videos'].forEach(k => {
+        if (req.body[k] !== undefined) current[k] = req.body[k];
+    });
+    writeProfile(sess.userId, current);
     res.json({ ok: true });
 });
 
@@ -271,10 +279,9 @@ app.post('/api/upload-photo', (req, res) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
         const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
-        await pool.query(`
-            INSERT INTO profiles (user_id, photo_url) VALUES ($1,$2)
-            ON CONFLICT (user_id) DO UPDATE SET photo_url=$2
-        `, [sess.userId, url]);
+        const p   = readProfile(sess.userId) || emptyProfile(sess.userId);
+        p.photoUrl = url;
+        writeProfile(sess.userId, p);
         res.json({ ok: true, url });
     });
 });
@@ -292,107 +299,90 @@ app.post('/api/upload-prod-photo', (req, res) => {
 });
 
 /* ── Agregar video ── */
-app.post('/api/add-video', async (req, res) => {
+app.post('/api/add-video', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
     const { url, title } = req.body;
     if (!url) return res.status(400).json({ ok: false, message: 'URL requerida' });
-    await pool.query(`
-        INSERT INTO profiles (user_id, videos) VALUES ($1, $2)
-        ON CONFLICT (user_id) DO UPDATE
-        SET videos = profiles.videos || $2::jsonb
-    `, [sess.userId, JSON.stringify([{ url, title: title || '' }])]);
+    const p = readProfile(sess.userId) || emptyProfile(sess.userId);
+    if (!p.videos) p.videos = [];
+    p.videos.push({ url, title: title || '' });
+    writeProfile(sess.userId, p);
     res.json({ ok: true });
 });
 
 /* ── Eliminar video ── */
-app.delete('/api/video/:idx', async (req, res) => {
+app.delete('/api/video/:idx', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
+    const p   = readProfile(sess.userId);
     const idx = parseInt(req.params.idx);
-    if (isNaN(idx) || idx < 0) return res.status(400).json({ ok: false, message: 'Índice inválido' });
-    const { rows } = await pool.query('SELECT videos FROM profiles WHERE user_id=$1', [sess.userId]);
-    if (!rows.length) return res.status(400).json({ ok: false, message: 'Perfil no encontrado' });
-    const videos = rows[0].videos || [];
-    if (idx >= videos.length) return res.status(400).json({ ok: false, message: 'Índice inválido' });
-    videos.splice(idx, 1);
-    await pool.query('UPDATE profiles SET videos=$1 WHERE user_id=$2', [JSON.stringify(videos), sess.userId]);
+    if (!p || !p.videos || isNaN(idx) || idx < 0 || idx >= p.videos.length)
+        return res.status(400).json({ ok: false, message: 'Índice inválido' });
+    p.videos.splice(idx, 1);
+    writeProfile(sess.userId, p);
     res.json({ ok: true });
 });
 
 /* ══════════════════════════════════════════
-   GESTIÓN DE USUARIOS (solo admin)
+   GESTIÓN DE USUARIOS (admin)
    ══════════════════════════════════════════ */
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { rows } = await pool.query(
-        "SELECT user_id AS \"userId\", username, role, active, created_at AS \"createdAt\" FROM users ORDER BY created_at"
-    );
-    res.json(rows);
+    res.json(readUsers().map(u => ({
+        userId: u.userId, username: u.username,
+        role: u.role, active: u.active, createdAt: u.createdAt
+    })));
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', (req, res) => {
     if (!requireAdmin(req, res)) return;
     const { username, password, displayName } = req.body;
-    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string')
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
-    }
-    if (username.trim().length < 3 || username.trim().length > 40) {
+    if (username.trim().length < 3 || username.trim().length > 40)
         return res.status(400).json({ ok: false, message: 'Usuario debe tener entre 3 y 40 caracteres' });
-    }
-    if (password.length < 6) {
+    if (password.length < 6)
         return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 6 caracteres' });
-    }
+    const users = readUsers();
+    if (users.find(u => u.username === username.trim()))
+        return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
     const userId = 'alu_' + Date.now();
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        await client.query(
-            "INSERT INTO users (user_id, username, password_hash, role, active) VALUES ($1,$2,$3,'alumno',true)",
-            [userId, username.trim(), hashPassword(password)]
-        );
-        await client.query(
-            'INSERT INTO profiles (user_id, display_name) VALUES ($1,$2)',
-            [userId, displayName || username.trim()]
-        );
-        await client.query('COMMIT');
-        res.json({ ok: true, userId });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        if (err.code === '23505') return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
-        throw err;
-    } finally {
-        client.release();
-    }
+    users.push({ userId, username: username.trim(), passwordHash: hashPassword(password), role: 'alumno', active: true, createdAt: new Date().toISOString() });
+    writeUsers(users);
+    writeProfile(userId, { ...emptyProfile(userId), displayName: displayName || username.trim() });
+    res.json({ ok: true, userId });
 });
 
-app.put('/api/users/:userId', async (req, res) => {
+app.put('/api/users/:userId', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { rows } = await pool.query("SELECT role FROM users WHERE user_id=$1", [req.params.userId]);
-    if (!rows.length) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
-    if (rows[0].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede modificar el admin' });
-    if (req.body.active !== undefined) {
-        await pool.query('UPDATE users SET active=$1 WHERE user_id=$2', [Boolean(req.body.active), req.params.userId]);
-    }
-    if (req.body.password) {
-        await pool.query('UPDATE users SET password_hash=$1 WHERE user_id=$2', [hashPassword(req.body.password), req.params.userId]);
-    }
+    const users = readUsers();
+    const idx   = users.findIndex(u => u.userId === req.params.userId);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    if (users[idx].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede modificar el admin' });
+    if (req.body.active !== undefined) users[idx].active = Boolean(req.body.active);
+    if (req.body.password) users[idx].passwordHash = hashPassword(req.body.password);
+    writeUsers(users);
     res.json({ ok: true });
 });
 
-app.delete('/api/users/:userId', async (req, res) => {
+app.delete('/api/users/:userId', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { rows } = await pool.query("SELECT role FROM users WHERE user_id=$1", [req.params.userId]);
-    if (!rows.length) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
-    if (rows[0].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede eliminar el admin' });
-    await pool.query('DELETE FROM users WHERE user_id=$1', [req.params.userId]);
+    const users = readUsers();
+    const idx   = users.findIndex(u => u.userId === req.params.userId);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    if (users[idx].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede eliminar el admin' });
+    const userId = users[idx].userId;
+    users.splice(idx, 1);
+    writeUsers(users);
+    const profileFile = path.join(PROFILES_DIR, userId + '.json');
+    if (fs.existsSync(profileFile)) fs.unlinkSync(profileFile);
     if (USE_CLOUDINARY) {
-        try {
-            await cloudinary.api.delete_resources_by_prefix('expresart/' + req.params.userId + '/');
-            await cloudinary.api.delete_folder('expresart/' + req.params.userId);
-        } catch (_) { /* la carpeta puede no existir */ }
+        cloudinary.api.delete_resources_by_prefix('expresart/' + userId + '/')
+            .then(() => cloudinary.api.delete_folder('expresart/' + userId))
+            .catch(() => {});
     } else {
-        const uploadDir = path.join(UPLOADS_DIR, req.params.userId);
+        const uploadDir = path.join(UPLOADS_DIR, userId);
         if (fs.existsSync(uploadDir)) {
             fs.readdirSync(uploadDir).forEach(f => fs.unlinkSync(path.join(uploadDir, f)));
             fs.rmdirSync(uploadDir);
@@ -402,108 +392,86 @@ app.delete('/api/users/:userId', async (req, res) => {
 });
 
 /* ══════════════════════════════════════════
-   AGENDA / EVENTOS
+   EVENTOS
    ══════════════════════════════════════════ */
-app.get('/api/events', async (req, res) => {
-    const { rows } = await pool.query(`
-        SELECT id, title,
-               event_date::text AS date,
-               event_time       AS time,
-               location, description, category, audience,
-               created_at AS "createdAt"
-        FROM events
-        ORDER BY event_date ASC
-    `);
-    res.json(rows);
+app.get('/api/events', (req, res) => {
+    res.json(readEvents().sort((a, b) => a.date.localeCompare(b.date)));
 });
 
 const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
 const VALID_AUDIENCES  = new Set(['publico', 'alumnos']);
 
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', (req, res) => {
     if (!requireAdmin(req, res)) return;
     const { title, date, time, location, description, category, audience } = req.body;
-    if (!title || !date || typeof title !== 'string' || typeof date !== 'string') {
+    if (!title || !date || typeof title !== 'string' || typeof date !== 'string')
         return res.status(400).json({ ok: false, message: 'Título y fecha son requeridos' });
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()))
         return res.status(400).json({ ok: false, message: 'Formato de fecha inválido (YYYY-MM-DD)' });
-    }
-    const id = 'evt_' + Date.now();
-    const { rows } = await pool.query(`
-        INSERT INTO events (id, title, event_date, event_time, location, description, category, audience)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-        RETURNING id, title, event_date::text AS date, event_time AS time, location, description, category, audience
-    `, [
-        id,
-        title.trim().slice(0, 200),
-        date.trim(),
-        (time        || '').slice(0, 10),
-        (location    || '').slice(0, 200),
-        (description || '').slice(0, 1000),
-        VALID_CATEGORIES.has(category) ? category : 'otro',
-        VALID_AUDIENCES.has(audience)  ? audience  : 'publico'
-    ]);
-    res.json({ ok: true, event: rows[0] });
+    const events = readEvents();
+    const event  = {
+        id: 'evt_' + Date.now(),
+        title:       title.trim().slice(0, 200),
+        date:        date.trim(),
+        time:        (time        || '').slice(0, 10),
+        location:    (location    || '').slice(0, 200),
+        description: (description || '').slice(0, 1000),
+        category:    VALID_CATEGORIES.has(category) ? category : 'otro',
+        audience:    VALID_AUDIENCES.has(audience)  ? audience : 'publico',
+        createdAt:   new Date().toISOString()
+    };
+    events.push(event);
+    writeEvents(events);
+    res.json({ ok: true, event });
 });
 
-app.put('/api/events/:id', async (req, res) => {
+app.put('/api/events/:id', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { rows } = await pool.query('SELECT id FROM events WHERE id=$1', [req.params.id]);
-    if (!rows.length) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
+    const events = readEvents();
+    const idx    = events.findIndex(e => e.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
     const { title, date, time, location, description, category, audience } = req.body;
-    await pool.query(`
-        UPDATE events SET
-            title       = COALESCE($1, title),
-            event_date  = COALESCE($2::date, event_date),
-            event_time  = COALESCE($3, event_time),
-            location    = COALESCE($4, location),
-            description = COALESCE($5, description),
-            category    = COALESCE($6, category),
-            audience    = COALESCE($7, audience)
-        WHERE id=$8
-    `, [
-        title       ?? null,
-        date        ?? null,
-        time        ?? null,
-        location    ?? null,
-        description ?? null,
-        category !== undefined ? (VALID_CATEGORIES.has(category) ? category : 'otro') : null,
-        audience !== undefined ? (VALID_AUDIENCES.has(audience)  ? audience  : 'publico') : null,
-        req.params.id
-    ]);
+    if (title       !== undefined) events[idx].title       = title;
+    if (date        !== undefined) events[idx].date        = date;
+    if (time        !== undefined) events[idx].time        = time;
+    if (location    !== undefined) events[idx].location    = location;
+    if (description !== undefined) events[idx].description = description;
+    if (category    !== undefined) events[idx].category    = VALID_CATEGORIES.has(category) ? category : 'otro';
+    if (audience    !== undefined) events[idx].audience    = VALID_AUDIENCES.has(audience)  ? audience : 'publico';
+    writeEvents(events);
     res.json({ ok: true });
 });
 
-app.delete('/api/events/:id', async (req, res) => {
+app.delete('/api/events/:id', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { rowCount } = await pool.query('DELETE FROM events WHERE id=$1', [req.params.id]);
-    if (!rowCount) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
+    const events = readEvents();
+    const idx    = events.findIndex(e => e.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
+    events.splice(idx, 1);
+    writeEvents(events);
     res.json({ ok: true });
 });
 
 /* ══════════════════════════════════════════
    CONTENIDO GLOBAL (admin)
    ══════════════════════════════════════════ */
-app.get('/api/content', async (req, res) => {
-    const { rows } = await pool.query("SELECT value FROM site_content WHERE key='global'");
-    res.json(rows[0]?.value || {});
-});
+app.get('/api/content', (req, res) => res.json(readContent()));
 
-app.post('/api/content', async (req, res) => {
-    const { rows } = await pool.query("SELECT value FROM site_content WHERE key='global'");
-    const data = rows[0]?.value || {};
-    const body = req.body;
-    if (body.section === 'profile')        data.profile        = body.data;
-    if (body.section === 'destacada')      data.destacada      = { ...data.destacada, ...body.data };
-    if (body.section === 'producciones')   data.producciones   = body.data;
-    if (body.section === 'formacion')      data.formacion      = body.data;
-    if (body.section === 'especialidades') data.especialidades = body.data;
-    await pool.query(
-        "INSERT INTO site_content (key,value) VALUES ('global',$1) ON CONFLICT (key) DO UPDATE SET value=$1",
-        [JSON.stringify(data)]
-    );
-    res.json({ ok: true });
+app.post('/api/content', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+        const data = readContent();
+        const body = req.body;
+        if (body.section === 'profile')        data.profile        = body.data;
+        if (body.section === 'destacada')      data.destacada      = { ...data.destacada, ...body.data };
+        if (body.section === 'producciones')   data.producciones   = body.data;
+        if (body.section === 'formacion')      data.formacion      = body.data;
+        if (body.section === 'especialidades') data.especialidades = body.data;
+        writeContent(data);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ ok: false, message: e.message });
+    }
 });
 
 app.post('/api/upload', (req, res) => {
@@ -511,15 +479,11 @@ app.post('/api/upload', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = await saveFile(req.file.buffer, req.file.originalname, 'admin');
-        const { rows } = await pool.query("SELECT value FROM site_content WHERE key='global'");
-        const data = rows[0]?.value || {};
+        const url  = await saveFile(req.file.buffer, req.file.originalname, 'admin');
+        const data = readContent();
         data.destacada       = data.destacada || {};
         data.destacada.photo = url;
-        await pool.query(
-            "INSERT INTO site_content (key,value) VALUES ('global',$1) ON CONFLICT (key) DO UPDATE SET value=$1",
-            [JSON.stringify(data)]
-        );
+        writeContent(data);
         res.json({ ok: true, url });
     });
 });
@@ -528,46 +492,15 @@ app.post('/api/upload', (req, res) => {
    CATCH-ALL
    ══════════════════════════════════════════ */
 app.use((req, res) => {
-    if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/')) {
+    if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/'))
         res.redirect('/');
-    } else {
+    else
         res.status(404).json({ ok: false, message: 'No encontrado' });
-    }
 });
 
-/* ── Error handler global (Express 5 captura errores async automáticamente) ── */
-app.use((err, req, res, _next) => {
-    console.error('Error:', err.message);
-    res.status(500).json({ ok: false, message: 'Error interno del servidor' });
-});
-
-/* ══════════════════════════════════════════
-   Iniciar servidor
-   ══════════════════════════════════════════ */
-async function start() {
-    if (!process.env.DATABASE_URL) {
-        console.error('\n  ERROR: DATABASE_URL no está definida.');
-        console.error('  Crea un archivo .env basado en .env.example y define DATABASE_URL.\n');
-        process.exit(1);
-    }
-    await initDB();
-    const { rows } = await pool.query("SELECT 1 FROM users WHERE role='admin' LIMIT 1");
-    if (!rows.length) {
-        await pool.query(
-            "INSERT INTO users (user_id,username,password_hash,role,active) VALUES ('admin','admin',$1,'admin',true)",
-            [hashPassword(process.env.EXP_ADMIN_PW || 'expresart2025')]
-        );
-        await pool.query("INSERT INTO profiles (user_id, display_name) VALUES ('admin','Administrador')");
-        console.log('  Usuario admin creado: admin / expresart2025');
-    }
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}`);
-        console.log(`  Imágenes: ${USE_CLOUDINARY ? 'Cloudinary (CDN)' : 'disco local (dev)'}\n`);
-    });
-}
-
-start().catch(err => {
-    console.error('Error al iniciar:', err.message || err);
-    console.error(err.stack || err);
-    process.exit(1);
+/* ── Iniciar ── */
+initAdmin();
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}`);
+    console.log(`  Imágenes: ${USE_CLOUDINARY ? 'Cloudinary (CDN)' : 'disco local'}\n`);
 });
