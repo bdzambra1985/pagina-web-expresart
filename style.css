@@ -1502,33 +1502,46 @@ body {
     position: absolute;
     width: 7px;
     top: 0;
-    bottom: 38px;
+    bottom: 3px;          /* llega hasta el piso */
     border-radius: 3px;
-    /* Aspecto cilíndrico trenzado */
+    /* Capa 1: sombra estática (más oscuro arriba y abajo)
+       Capa 2: textura trenzada que fluye hacia abajo */
     background:
+        linear-gradient(180deg,
+            rgba(0,0,0,0.30) 0%,
+            transparent      18%,
+            transparent      78%,
+            rgba(0,0,0,0.50) 100%
+        ),
         repeating-linear-gradient(
             180deg,
-            #7a4d00 0px,  #c9a227 4px,
-            #f0d870 6px,  #c9a227 8px,
-            #7a4d00 12px
+            #5a3200 0px,  #c9a227 3px,
+            #f0d870 5px,  #c9a227 8px,
+            #5a3200 11px
         );
+    background-size: 100% 100%, 100% 11px;
     box-shadow:
-        inset  2px 0 3px rgba(255,240,160,0.45),
-        inset -2px 0 3px rgba(0,0,0,0.55),
-        2px 0 6px rgba(0,0,0,0.50);
+        inset  2px 0 3px rgba(255,240,160,0.50),
+        inset -2px 0 3px rgba(0,0,0,0.60),
+        3px 0 8px  rgba(0,0,0,0.55),
+       -1px 0 4px  rgba(0,0,0,0.30);
     z-index: 25;
     pointer-events: none;
     transform-origin: top center;
 }
 .twin-rope-l {
     left: 38px;
-    animation: ropeSwayL 6s ease-in-out 0.55s forwards,
-               ropeFade  0.6s ease-out  6.6s  forwards;
+    animation:
+        ropeFlow  0.35s linear     0.55s infinite,
+        ropeSwayL 6s   ease-in-out 0.55s forwards,
+        ropeFade  0.6s ease-out    6.6s  forwards;
 }
 .twin-rope-r {
     right: 38px;
-    animation: ropeSwayR 6s ease-in-out 0.55s forwards,
-               ropeFade  0.6s ease-out  6.6s  forwards;
+    animation:
+        ropeFlow  0.35s linear     0.55s infinite,
+        ropeSwayR 6s   ease-in-out 0.55s forwards,
+        ropeFade  0.6s ease-out    6.6s  forwards;
 }
 
 /* ══ PILA DE CUERDA EN EL PISO ══ */
@@ -1656,6 +1669,12 @@ body {
 }
 
 /* Cuerda: vibración sutil en cada jalón */
+/* Textura de la cuerda fluye hacia abajo — simula cuerda bajando */
+@keyframes ropeFlow {
+    from { background-position: 0 0, 0 0;    }
+    to   { background-position: 0 0, 0 11px; }
+}
+
 @keyframes ropeSwayL {
     0%   { transform: skewX(0deg);    }
     30%  { transform: skewX(-1.5deg); }   /* leve comba al jalar */
