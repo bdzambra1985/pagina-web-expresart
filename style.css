@@ -1228,7 +1228,7 @@ body {
     position: absolute;
     inset: 0;
     transform-origin: bottom center;
-    animation: twinPullBody 6s ease-in-out 0.55s both,
+    animation: twinPullBody 6s linear 0.55s both,
                twinWaddle  0.5s ease-in-out 6.6s infinite;
 }
 
@@ -1434,14 +1434,14 @@ body {
 .cat-stage .twin .twin-arm-l {
     left: -12px;
     transform-origin: top center;
-    animation: twinBraceArm  6s ease-in-out 0.55s both,
+    animation: twinBraceArm  6s linear 0.55s both,
                twinBraceIdle 1.8s ease-in-out 6.6s infinite;
 }
 /* Brazo interno — 3 jaladas a la cuerda, sincronizado con apertura (6s) */
 .cat-stage .twin .twin-arm-r {
     right: -12px;
     transform-origin: top center;
-    animation: twinPullArm  6s ease-in-out 0.55s both,
+    animation: twinPullArm  6s linear 0.55s both,
                twinPullIdle 1.8s ease-in-out 6.6s infinite;
 }
 /* Manitos color piel */
@@ -1533,15 +1533,15 @@ body {
     left: 38px;
     animation:
         ropeFlow  0.35s linear     0.55s infinite,
-        ropeSwayL 6s   ease-in-out 0.55s forwards,
-        ropeFade  0.6s ease-out    6.6s  forwards;
+        ropeSwayL 6s   linear   0.55s forwards,
+        ropeFade  0.6s ease-out 6.6s  forwards;
 }
 .twin-rope-r {
     right: 38px;
     animation:
-        ropeFlow  0.35s linear     0.55s infinite,
-        ropeSwayR 6s   ease-in-out 0.55s forwards,
-        ropeFade  0.6s ease-out    6.6s  forwards;
+        ropeFlow  0.35s linear   0.55s infinite,
+        ropeSwayR 6s   linear   0.55s forwards,
+        ropeFade  0.6s ease-out 6.6s  forwards;
 }
 
 /* ══ PILA DE CUERDA EN EL PISO ══ */
@@ -1676,29 +1676,46 @@ body {
 }
 
 @keyframes ropeSwayL {
-    /* sincronizado exactamente con twinPullArm:
-       agarra en 18/52/84% → jalón en 30/62/94% → suelta en 36/68% */
+    /* Espejo exacto de twinPullArm (linear):
+       0-18%  = brazo subiendo → cuerda suelta
+       18%    = agarra → cuerda empieza a tensarse
+       30%    = jalón pleno → máxima comba
+       33%    = mantiene → igual
+       36%    = suelta → cuerda regresa a 0 de golpe
+       (mismo patrón para ciclos 2 y 3) */
     0%   { transform: skewX(0deg);    }
-    18%  { transform: skewX(-0.4deg); }   /* brazo agarra: cuerda empieza a tensarse */
-    30%  { transform: skewX(-0.7deg); }   /* brazo al fondo: máxima comba */
-    36%  { transform: skewX(0deg);    }   /* brazo sube: cuerda se libera */
+    17%  { transform: skewX(0deg);    }   /* todavía subiendo, cuerda floja */
+    18%  { transform: skewX(-0.4deg); }   /* agarra: tensión inmediata */
+    30%  { transform: skewX(-0.8deg); }   /* jalón: máxima comba */
+    33%  { transform: skewX(-0.8deg); }   /* mantiene al fondo */
+    35%  { transform: skewX(0deg);    }   /* suelta: regresa instantáneo */
+    51%  { transform: skewX(0deg);    }
     52%  { transform: skewX(-0.4deg); }
-    62%  { transform: skewX(-0.7deg); }
-    68%  { transform: skewX(0deg);    }
+    62%  { transform: skewX(-0.8deg); }
+    65%  { transform: skewX(-0.8deg); }
+    67%  { transform: skewX(0deg);    }
+    83%  { transform: skewX(0deg);    }
     84%  { transform: skewX(-0.4deg); }
-    94%  { transform: skewX(-0.7deg); }
+    94%  { transform: skewX(-0.8deg); }
+    97%  { transform: skewX(-0.8deg); }
     100% { transform: skewX(-0.5deg); }
 }
 @keyframes ropeSwayR {
     0%   { transform: skewX(0deg);   }
+    17%  { transform: skewX(0deg);   }
     18%  { transform: skewX(0.4deg); }
-    30%  { transform: skewX(0.7deg); }
-    36%  { transform: skewX(0deg);   }
+    30%  { transform: skewX(0.8deg); }
+    33%  { transform: skewX(0.8deg); }
+    35%  { transform: skewX(0deg);   }
+    51%  { transform: skewX(0deg);   }
     52%  { transform: skewX(0.4deg); }
-    62%  { transform: skewX(0.7deg); }
-    68%  { transform: skewX(0deg);   }
+    62%  { transform: skewX(0.8deg); }
+    65%  { transform: skewX(0.8deg); }
+    67%  { transform: skewX(0deg);   }
+    83%  { transform: skewX(0deg);   }
     84%  { transform: skewX(0.4deg); }
-    94%  { transform: skewX(0.7deg); }
+    94%  { transform: skewX(0.8deg); }
+    97%  { transform: skewX(0.8deg); }
     100% { transform: skewX(0.5deg); }
 }
 /* Pila crece en el piso con cada jalón — escalones reflejan los 3 ciclos */
