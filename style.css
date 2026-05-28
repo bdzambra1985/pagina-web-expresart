@@ -1558,28 +1558,28 @@ body {
     50%       { transform: rotate(2deg); }
 }
 
-/* ── Brazo jalador: 3 ciclos sube-agarra-jala en 6s ── */
+/* ── Brazo jalador: sube despacio, jala rápido — 3 ciclos en 6s ── */
 @keyframes twinPullArm {
-    /* ciclo 1: alcanza arriba → jala abajo */
-    0%   { transform: rotate(-84deg); }   /* brazo bien alto, listo */
-    5%   { transform: rotate(-88deg); }   /* agarra firme la cuerda */
-    28%  { transform: rotate(74deg);  }   /* jala con todo el brazo */
-    33%  { transform: rotate(70deg);  }   /* fondo del jalón */
+    /* ciclo 1 */
+    0%   { transform: rotate(-65deg); }   /* sube a agarrar la cuerda */
+    18%  { transform: rotate(-68deg); }   /* agarra en lo alto */
+    30%  { transform: rotate(52deg);  }   /* JALÓN rápido hacia abajo */
+    33%  { transform: rotate(50deg);  }   /* fondo del jalón */
     /* ciclo 2 */
-    36%  { transform: rotate(-82deg); }   /* suelta y sube rápido */
-    41%  { transform: rotate(-86deg); }   /* vuelve a agarrar */
-    62%  { transform: rotate(72deg);  }   /* segundo jalón */
-    66%  { transform: rotate(68deg);  }
+    36%  { transform: rotate(-63deg); }   /* sube de nuevo */
+    52%  { transform: rotate(-66deg); }   /* agarra */
+    62%  { transform: rotate(50deg);  }   /* jalón */
+    65%  { transform: rotate(48deg);  }
     /* ciclo 3 */
-    70%  { transform: rotate(-80deg); }   /* tercer alcance */
-    75%  { transform: rotate(-84deg); }
-    94%  { transform: rotate(70deg);  }   /* jalón final */
-    100% { transform: rotate(66deg);  }   /* sostiene */
+    68%  { transform: rotate(-62deg); }   /* sube */
+    84%  { transform: rotate(-64deg); }   /* agarra */
+    94%  { transform: rotate(50deg);  }   /* jalón final */
+    100% { transform: rotate(48deg);  }
 }
 /* Brazo jalador en reposo tras abrir */
 @keyframes twinPullIdle {
-    0%, 100% { transform: rotate(66deg); }
-    50%       { transform: rotate(60deg); }
+    0%, 100% { transform: rotate(48deg); }
+    50%       { transform: rotate(42deg); }
 }
 
 /* ── Brazo de contrapeso — fase opuesta al jalador ── */
@@ -1623,37 +1623,28 @@ body {
     100% { transform: translateX(60px); }
 }
 
-/* Cuerda vibra con tensión en cada jalón (sincronizado con los 3 ciclos) */
+/* Cuerda: vibración sutil en cada jalón */
 @keyframes ropeSwayL {
-    /* ciclo 1 */
-    0%   { transform: skewX(1deg);    }
-    5%   { transform: skewX(2deg);    }   /* tensa al agarrar */
-    28%  { transform: skewX(-5deg);   }   /* jalón: cuerda se comba */
-    33%  { transform: skewX(-4deg);   }
-    /* ciclo 2 */
-    36%  { transform: skewX(1deg);    }   /* suelta: regresa */
-    41%  { transform: skewX(2deg);    }
-    62%  { transform: skewX(-4deg);   }
-    66%  { transform: skewX(-3deg);   }
-    /* ciclo 3 */
-    70%  { transform: skewX(1deg);    }
-    75%  { transform: skewX(2deg);    }
-    94%  { transform: skewX(-4deg);   }
-    100% { transform: skewX(-3deg);   }
+    0%   { transform: skewX(0deg);    }
+    30%  { transform: skewX(-1.5deg); }   /* leve comba al jalar */
+    33%  { transform: skewX(-1deg);   }
+    36%  { transform: skewX(0deg);    }
+    62%  { transform: skewX(-1.5deg); }
+    65%  { transform: skewX(-1deg);   }
+    68%  { transform: skewX(0deg);    }
+    94%  { transform: skewX(-1.5deg); }
+    100% { transform: skewX(-1deg);   }
 }
 @keyframes ropeSwayR {
-    0%   { transform: skewX(-1deg);   }
-    5%   { transform: skewX(-2deg);   }
-    28%  { transform: skewX(5deg);    }
-    33%  { transform: skewX(4deg);    }
-    36%  { transform: skewX(-1deg);   }
-    41%  { transform: skewX(-2deg);   }
-    62%  { transform: skewX(4deg);    }
-    66%  { transform: skewX(3deg);    }
-    70%  { transform: skewX(-1deg);   }
-    75%  { transform: skewX(-2deg);   }
-    94%  { transform: skewX(4deg);    }
-    100% { transform: skewX(3deg);    }
+    0%   { transform: skewX(0deg);    }
+    30%  { transform: skewX(1.5deg);  }
+    33%  { transform: skewX(1deg);    }
+    36%  { transform: skewX(0deg);    }
+    62%  { transform: skewX(1.5deg);  }
+    65%  { transform: skewX(1deg);    }
+    68%  { transform: skewX(0deg);    }
+    94%  { transform: skewX(1.5deg);  }
+    100% { transform: skewX(1deg);    }
 }
 /* Cuerda desaparece cuando los gemelos se van */
 @keyframes ropeFade {
