@@ -1186,71 +1186,40 @@ body {
     overflow: visible;
 }
 
-/* Gato derecho: empieza en el centro, camina hacia la derecha */
+/* Gemelo derecho: fijo en borde derecho de la pantalla */
 .cat-stage-right {
-    left: 50%;
-    animation: catWalkRight 6s linear 0.55s both;
+    left: calc(100% - 54px);
 }
 
-/* Gemelo izquierdo: empieza en el centro, camina hacia la izquierda */
+/* Gemelo izquierdo: fijo en borde izquierdo de la pantalla */
 .cat-stage-left {
-    left: calc(50% - 29px);
-    animation: catWalkLeft 6s linear 0.55s both;
+    left: 0;
 }
 
-/* Contenedor visual: escala el gemelo a tamaño de escenario */
+/* Contenedor visual: escala el gemelo a tamaño visible en bordes */
 .cat-visual {
     position: relative;
-    width: 29px;
-    height: 53px;
+    width: 54px;
+    height: 99px;
     overflow: visible;
 }
 
-/* Espejo horizontal para el gato derecho (que mira hacia la derecha) */
+/* Espejo horizontal para el gemelo derecho (mira hacia el centro) */
 .cat-visual-right {
     transform: scaleX(-1);
     transform-origin: center top;
 }
 
-/* ── Movimiento sincronizado con el telón (11s) ── */
-@keyframes catWalkRight {
-    0%    { transform: translateX(0);         }
-    5%    { transform: translateX(2.08vw);    }
-    14%   { transform: translateX(7.28vw);    }
-    28%   { transform: translateX(18.72vw);   }
-    45%   { transform: translateX(32.24vw);   }
-    60%   { transform: translateX(41.60vw);   }
-    74%   { transform: translateX(47.84vw);   }
-    85%   { transform: translateX(51.48vw);   }
-    92%   { transform: translateX(53.82vw);   }
-    97%   { transform: translateX(52.26vw);   }
-    100%  { transform: translateX(52.78vw);   }
-}
-
-@keyframes catWalkLeft {
-    0%    { transform: translateX(0);          }
-    5%    { transform: translateX(-2.08vw);    }
-    14%   { transform: translateX(-7.28vw);    }
-    28%   { transform: translateX(-18.72vw);   }
-    45%   { transform: translateX(-32.24vw);   }
-    60%   { transform: translateX(-41.60vw);   }
-    74%   { transform: translateX(-47.84vw);   }
-    85%   { transform: translateX(-51.48vw);   }
-    92%   { transform: translateX(-53.82vw);   }
-    97%   { transform: translateX(-52.26vw);   }
-    100%  { transform: translateX(-52.78vw);   }
-}
-
 /* ══════════════════════════════════════════════════════════
    ░░  GEMELOS CSS — Tweedledee & Tweedledum  ░░
-   120×200px escalado al 50% → 60×100px visible
+   120×220px escalado al 45% → 54×99px visible en bordes
    ══════════════════════════════════════════════════════════ */
 
 .cat-stage .twin {
     position: absolute;
     bottom: 0; left: 0;
     width: 120px; height: 220px;
-    transform: scale(0.24);
+    transform: scale(0.45);
     transform-origin: bottom left;
 }
 .cat-stage .twin .twin-shake {
@@ -1458,17 +1427,19 @@ body {
     border-radius: 12px;
     z-index: 3;
 }
+/* Brazo externo — balance mientras jala */
 .cat-stage .twin .twin-arm-l {
     left: -12px;
-    transform: rotate(18deg);
     transform-origin: top center;
-    animation: twinArmL 0.46s infinite ease-in-out;
+    animation: twinBraceArm 2s ease-in-out 0.55s infinite;
 }
+/* Brazo interno — jala el telón, sincronizado con apertura (6s) */
 .cat-stage .twin .twin-arm-r {
     right: -12px;
-    transform: rotate(-18deg);
     transform-origin: top center;
-    animation: twinArmR 0.46s infinite ease-in-out;
+    animation:
+        twinPullArm 6s ease-in-out 0.55s both,
+        twinPullArmIdle 2s ease-in-out 6.6s infinite;
 }
 /* Manitos color piel */
 .cat-stage .twin .twin-arm::after {
@@ -1506,11 +1477,9 @@ body {
 }
 .cat-stage .twin .twin-leg-l {
     left: 28px;
-    animation: twinLegL 0.46s infinite ease-in-out;
 }
 .cat-stage .twin .twin-leg-r {
     right: 28px;
-    animation: twinLegR 0.46s infinite ease-in-out;
 }
 /* Zapatos planos */
 .cat-stage .twin .twin-leg-l::after,
@@ -1524,26 +1493,33 @@ body {
 }
 
 /* ── Animaciones ── */
+
+/* Balanceo suave del cuerpo mientras jala */
 @keyframes twinWaddle {
-    0%, 100% { transform: rotate(-2deg); }
-    50%       { transform: rotate(2deg); }
+    0%, 100% { transform: rotate(-3deg); }
+    50%       { transform: rotate(3deg); }
 }
-@keyframes twinLegL {
-    0%, 100% { transform: rotate(-5deg); }
-    50%       { transform: rotate(5deg); }
+
+/* Brazo que JALA el telón — sincronizado con openCurtain (6s, delay 0.55s) */
+@keyframes twinPullArm {
+    0%    { transform: rotate(62deg);  } /* extendido hacia el telón */
+    8%    { transform: rotate(65deg);  } /* agarra */
+    80%   { transform: rotate(-38deg); } /* jalado completamente */
+    92%   { transform: rotate(-32deg); } /* pequeño rebote */
+    100%  { transform: rotate(-35deg); } /* sostiene */
 }
-@keyframes twinLegR {
-    0%, 100% { transform: rotate(5deg); }
-    50%       { transform: rotate(-5deg); }
+/* Idle del brazo jalador tras abrir el telón */
+@keyframes twinPullArmIdle {
+    0%, 100% { transform: rotate(-35deg); }
+    50%       { transform: rotate(-28deg); }
 }
-@keyframes twinArmL {
-    0%, 100% { transform: rotate(12deg); transform-origin: top center; }
-    50%       { transform: rotate(24deg); }
-}
-@keyframes twinArmR {
-    0%, 100% { transform: rotate(-24deg); transform-origin: top center; }
+
+/* Brazo de balance — oscila suavemente todo el tiempo */
+@keyframes twinBraceArm {
+    0%, 100% { transform: rotate(-22deg); }
     50%       { transform: rotate(-12deg); }
 }
+
 @keyframes propSpin {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
