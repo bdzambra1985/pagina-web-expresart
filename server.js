@@ -567,6 +567,7 @@ async function start() {
 }
 
 start().catch(err => {
-    console.error('Error al iniciar:', err.message);
+    console.error('Error al iniciar:', err.message || err);
+    console.error(err.stack || err);
     process.exit(1);
 });
