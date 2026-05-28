@@ -1,8 +1,11 @@
-const express  = require('express');
-const multer   = require('multer');
-const path     = require('path');
-const fs       = require('fs');
-const crypto   = require('crypto');
+const express     = require('express');
+const multer      = require('multer');
+const path        = require('path');
+const fs          = require('fs');
+const crypto      = require('crypto');
+const compression = require('compression');
+const helmet      = require('helmet');
+const rateLimit   = require('express-rate-limit');
 
 const app  = express();
 const PORT = process.env.PORT || 9090;
@@ -57,17 +60,24 @@ function writeContent(data)       { writeJSON(CONTENT_FILE, data); }
 function readEvents()             { return readJSON(EVENTS_FILE, []); }
 function writeEvents(data)        { writeJSON(EVENTS_FILE, data); }
 
-/* ── Rate limiting simple para /api/login ── */
-const loginAttempts = new Map();
-function checkRateLimit(ip) {
-    const now  = Date.now();
-    const entry = loginAttempts.get(ip) || { count: 0, first: now };
-    if (now - entry.first > 15 * 60 * 1000) { loginAttempts.set(ip, { count: 1, first: now }); return true; }
-    if (entry.count >= 10) return false;
-    entry.count++;
-    loginAttempts.set(ip, entry);
-    return true;
-}
+/* ── Rate limiting para /api/login ── */
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
+    message: { ok: false, message: 'Demasiados intentos. Intenta en 15 minutos.' }
+});
+
+/* ── Rate limiting general para la API ── */
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => !req.path.startsWith('/api/')
+});
 
 /* ── Crear admin en primer inicio ── */
 function initAdmin() {
@@ -136,32 +146,40 @@ function uploaderFor(userId) {
 }
 
 /* ── Middleware ── */
+app.use(compression());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+}));
+app.use(apiLimiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    next();
-});
 
 /* Raíz siempre muestra la página de inicio */
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.use(express.static(__dirname));
-app.use('/uploads', express.static(UPLOADS_DIR));
+const ONE_WEEK = 7 * 24 * 60 * 60;
+app.use(express.static(__dirname, {
+    setHeaders(res, filePath) {
+        if (/\.(css|js|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath)) {
+            res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}, stale-while-revalidate=86400`);
+        } else if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
+app.use('/uploads', express.static(UPLOADS_DIR, {
+    setHeaders(res) {
+        res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}`);
+    }
+}));
 
 /* ══════════════════════════════════════════
    AUTENTICACIÓN
    ══════════════════════════════════════════ */
-app.post('/api/login', (req, res) => {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
-    if (!checkRateLimit(ip)) {
-        return res.status(429).json({ ok: false, message: 'Demasiados intentos. Intenta en 15 minutos.' });
-    }
+app.post('/api/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
