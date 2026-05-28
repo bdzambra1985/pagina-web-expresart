@@ -1228,7 +1228,8 @@ body {
     position: absolute;
     inset: 0;
     transform-origin: bottom center;
-    animation: twinWaddle 0.46s infinite ease-in-out;
+    animation: twinPullBody 6s ease-in-out 0.55s both,
+               twinWaddle  0.5s ease-in-out 6.6s infinite;
 }
 
 /* ── Gorrito rojo — encima de la cabeza ── */
@@ -1429,19 +1430,19 @@ body {
     border-radius: 12px;
     z-index: 3;
 }
-/* Brazo externo — balance mientras jala */
+/* Brazo externo — contrapeso, sincronizado con el jalado */
 .cat-stage .twin .twin-arm-l {
     left: -12px;
     transform-origin: top center;
-    animation: twinBraceArm 2s ease-in-out 0.55s infinite;
+    animation: twinBraceArm  6s ease-in-out 0.55s both,
+               twinBraceIdle 1.8s ease-in-out 6.6s infinite;
 }
-/* Brazo interno — jala el telón, sincronizado con apertura (6s) */
+/* Brazo interno — 3 jaladas a la cuerda, sincronizado con apertura (6s) */
 .cat-stage .twin .twin-arm-r {
     right: -12px;
     transform-origin: top center;
-    animation:
-        twinPullArm 6s ease-in-out 0.55s both,
-        twinPullArmIdle 2s ease-in-out 6.6s infinite;
+    animation: twinPullArm  6s ease-in-out 0.55s both,
+               twinPullIdle 1.8s ease-in-out 6.6s infinite;
 }
 /* Manitos color piel */
 .cat-stage .twin .twin-arm::after {
@@ -1499,55 +1500,107 @@ body {
 /* ══ CUERDAS VERTICALES — como en un teatro real ══ */
 .twin-rope {
     position: absolute;
-    width: 4px;
+    width: 7px;
     top: 0;
-    bottom: 30px;
-    border-radius: 2px;
-    background: repeating-linear-gradient(
-        180deg,
-        #c9a227 0px, #a07010 5px,
-        #e8d060 5px, #c9a227 10px
-    );
+    bottom: 28px;
+    border-radius: 3px;
+    /* Aspecto cilíndrico trenzado */
+    background:
+        repeating-linear-gradient(
+            180deg,
+            #7a4d00 0px,  #c9a227 4px,
+            #f0d870 6px,  #c9a227 8px,
+            #7a4d00 12px
+        );
+    box-shadow:
+        inset  2px 0 3px rgba(255,240,160,0.45),
+        inset -2px 0 3px rgba(0,0,0,0.55),
+        2px 0 6px rgba(0,0,0,0.50);
     z-index: 25;
     pointer-events: none;
+    transform-origin: top center;
 }
 .twin-rope-l {
-    left: 28px;
-    animation: ropeSwayL 0.4s ease-in-out 0.55s infinite alternate,
-               ropeFade  0.6s ease-out   6.6s  forwards;
+    left: 26px;
+    animation: ropeSwayL 6s ease-in-out 0.55s forwards,
+               ropeFade  0.6s ease-out  6.6s  forwards;
 }
 .twin-rope-r {
-    right: 28px;
-    animation: ropeSwayR 0.4s ease-in-out 0.55s infinite alternate,
-               ropeFade  0.6s ease-out   6.6s  forwards;
+    right: 26px;
+    animation: ropeSwayR 6s ease-in-out 0.55s forwards,
+               ropeFade  0.6s ease-out  6.6s  forwards;
 }
 
 /* ── Animaciones ── */
 
-/* Balanceo suave del cuerpo mientras jala */
+/* Cuerpo con esfuerzo real — 3 ciclos de jalada en 6s */
+@keyframes twinPullBody {
+    /* ciclo 1 */
+    0%   { transform: rotate(-4deg); }   /* se inclina al frente para alcanzar */
+    5%   { transform: rotate(-6deg); }   /* agarra alto */
+    28%  { transform: rotate(9deg);  }   /* se echa para atrás jalando fuerte */
+    32%  { transform: rotate(7deg);  }
+    /* ciclo 2 */
+    36%  { transform: rotate(-4deg); }   /* se inclina al frente de nuevo */
+    41%  { transform: rotate(-6deg); }
+    62%  { transform: rotate(8deg);  }   /* otro jalón atrás */
+    66%  { transform: rotate(6deg);  }
+    /* ciclo 3 */
+    70%  { transform: rotate(-3deg); }
+    75%  { transform: rotate(-5deg); }
+    94%  { transform: rotate(8deg);  }   /* jalón final */
+    100% { transform: rotate(7deg);  }
+}
+
+/* Balanceo tranquilo post-jalada (al caminar) */
 @keyframes twinWaddle {
-    0%, 100% { transform: rotate(-3deg); }
-    50%       { transform: rotate(3deg); }
+    0%, 100% { transform: rotate(-2deg); }
+    50%       { transform: rotate(2deg); }
 }
 
-/* Brazo que JALA la cuerda vertical — sube y baja repetidamente */
+/* ── Brazo jalador: 3 ciclos sube-agarra-jala en 6s ── */
 @keyframes twinPullArm {
-    0%    { transform: rotate(-72deg); } /* brazo arriba, agarra la cuerda */
-    40%   { transform: rotate(58deg);  } /* jala fuerte hacia abajo */
-    55%   { transform: rotate(-68deg); } /* sube para agarrar más cuerda */
-    90%   { transform: rotate(54deg);  } /* segunda jalada */
-    100%  { transform: rotate(52deg);  } /* sostiene al final */
+    /* ciclo 1: alcanza arriba → jala abajo */
+    0%   { transform: rotate(-84deg); }   /* brazo bien alto, listo */
+    5%   { transform: rotate(-88deg); }   /* agarra firme la cuerda */
+    28%  { transform: rotate(74deg);  }   /* jala con todo el brazo */
+    33%  { transform: rotate(70deg);  }   /* fondo del jalón */
+    /* ciclo 2 */
+    36%  { transform: rotate(-82deg); }   /* suelta y sube rápido */
+    41%  { transform: rotate(-86deg); }   /* vuelve a agarrar */
+    62%  { transform: rotate(72deg);  }   /* segundo jalón */
+    66%  { transform: rotate(68deg);  }
+    /* ciclo 3 */
+    70%  { transform: rotate(-80deg); }   /* tercer alcance */
+    75%  { transform: rotate(-84deg); }
+    94%  { transform: rotate(70deg);  }   /* jalón final */
+    100% { transform: rotate(66deg);  }   /* sostiene */
 }
-/* Idle del brazo jalador tras abrir el telón */
-@keyframes twinPullArmIdle {
-    0%, 100% { transform: rotate(52deg); }
-    50%       { transform: rotate(45deg); }
+/* Brazo jalador en reposo tras abrir */
+@keyframes twinPullIdle {
+    0%, 100% { transform: rotate(66deg); }
+    50%       { transform: rotate(60deg); }
 }
 
-/* Brazo de balance — empuja contra el cuerpo para dar fuerza */
+/* ── Brazo de contrapeso — fase opuesta al jalador ── */
 @keyframes twinBraceArm {
-    0%, 100% { transform: rotate(18deg); }
-    50%       { transform: rotate(28deg); }
+    /* cuando el jalador jala hacia abajo, el contrapeso sube */
+    0%   { transform: rotate(32deg);  }
+    5%   { transform: rotate(28deg);  }
+    28%  { transform: rotate(-18deg); }   /* sube como contrapeso */
+    33%  { transform: rotate(-16deg); }
+    36%  { transform: rotate(30deg);  }
+    41%  { transform: rotate(26deg);  }
+    62%  { transform: rotate(-16deg); }
+    66%  { transform: rotate(-14deg); }
+    70%  { transform: rotate(28deg);  }
+    75%  { transform: rotate(24deg);  }
+    94%  { transform: rotate(-14deg); }
+    100% { transform: rotate(-12deg); }
+}
+@keyframes twinBraceIdle {
+    0%, 100% { transform: rotate(-12deg); }
+    50%       { transform: rotate(-6deg);  }
 }
 
 /* Piernas — caminan al salir */
@@ -1570,14 +1623,37 @@ body {
     100% { transform: translateX(60px); }
 }
 
-/* Cuerda vertical: balanceo lateral mientras se jala */
+/* Cuerda vibra con tensión en cada jalón (sincronizado con los 3 ciclos) */
 @keyframes ropeSwayL {
-    from { transform: translateX(0);    }
-    to   { transform: translateX(-2px); }
+    /* ciclo 1 */
+    0%   { transform: skewX(1deg);    }
+    5%   { transform: skewX(2deg);    }   /* tensa al agarrar */
+    28%  { transform: skewX(-5deg);   }   /* jalón: cuerda se comba */
+    33%  { transform: skewX(-4deg);   }
+    /* ciclo 2 */
+    36%  { transform: skewX(1deg);    }   /* suelta: regresa */
+    41%  { transform: skewX(2deg);    }
+    62%  { transform: skewX(-4deg);   }
+    66%  { transform: skewX(-3deg);   }
+    /* ciclo 3 */
+    70%  { transform: skewX(1deg);    }
+    75%  { transform: skewX(2deg);    }
+    94%  { transform: skewX(-4deg);   }
+    100% { transform: skewX(-3deg);   }
 }
 @keyframes ropeSwayR {
-    from { transform: translateX(0);   }
-    to   { transform: translateX(2px); }
+    0%   { transform: skewX(-1deg);   }
+    5%   { transform: skewX(-2deg);   }
+    28%  { transform: skewX(5deg);    }
+    33%  { transform: skewX(4deg);    }
+    36%  { transform: skewX(-1deg);   }
+    41%  { transform: skewX(-2deg);   }
+    62%  { transform: skewX(4deg);    }
+    66%  { transform: skewX(3deg);    }
+    70%  { transform: skewX(-1deg);   }
+    75%  { transform: skewX(-2deg);   }
+    94%  { transform: skewX(4deg);    }
+    100% { transform: skewX(3deg);    }
 }
 /* Cuerda desaparece cuando los gemelos se van */
 @keyframes ropeFade {
