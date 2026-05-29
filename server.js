@@ -95,15 +95,21 @@ const apiLimiter = rateLimit({
 
 /* ── Admin inicial ── */
 function initAdmin() {
-    const users = readUsers();
-    if (!users.find(u => u.role === 'admin')) {
+    const users    = readUsers();
+    const pw       = process.env.EXP_ADMIN_PW || 'expresart2025';
+    const existing = users.find(u => u.role === 'admin');
+    if (!existing) {
         users.push({
             userId: 'admin', username: 'admin',
-            passwordHash: hashPassword(process.env.EXP_ADMIN_PW || 'expresart2025'),
+            passwordHash: hashPassword(pw),
             role: 'admin', active: true, createdAt: new Date().toISOString()
         });
         writeUsers(users);
-        console.log('  Usuario admin creado: admin / expresart2025');
+        console.log('  Usuario admin creado.');
+    } else if (process.env.EXP_ADMIN_PW) {
+        existing.passwordHash = hashPassword(pw);
+        writeUsers(users);
+        console.log('  Contraseña admin actualizada desde EXP_ADMIN_PW.');
     }
 }
 
