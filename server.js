@@ -677,6 +677,133 @@ app.get('/factura/:id', (req, res) => {
 });
 
 /* ══════════════════════════════════════════
+   PAYPHONE — pago con tarjeta
+   ══════════════════════════════════════════ */
+const https = require('https');
+
+const PP_TOKEN    = process.env.PAYPHONE_TOKEN;
+const PP_STORE_ID = process.env.PAYPHONE_STORE_ID;
+const BASE_URL    = (process.env.BASE_URL || 'http://localhost:9090').replace(/\/$/, '');
+const CLASES_AMOUNT_CENTS = 5000; // $50.00
+
+function payphoneRequest(method, path, body) {
+    return new Promise((resolve, reject) => {
+        const payload = body ? JSON.stringify(body) : null;
+        const options = {
+            hostname: 'pay.payphonetodopagoapi.com',
+            path,
+            method,
+            headers: { 'Authorization': `Bearer ${PP_TOKEN}`, 'Content-Type': 'application/json' }
+        };
+        if (payload) options.headers['Content-Length'] = Buffer.byteLength(payload);
+        const r = https.request(options, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+                try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+                catch { resolve({ status: res.statusCode, body: data }); }
+            });
+        });
+        r.on('error', reject);
+        if (payload) r.write(payload);
+        r.end();
+    });
+}
+
+/* Crear transacción Payphone */
+app.post('/api/payphone/create', async (req, res) => {
+    const { customerName, customerDoc, customerEmail } = req.body;
+    if (!customerName || !customerDoc || !customerEmail)
+        return res.status(400).json({ ok: false, message: 'Nombre, cédula y correo son requeridos' });
+
+    const clientTransactionId = 'pp_' + Date.now();
+    const subtotal = Math.round((50 / 1.15) * 100) / 100;
+    const iva      = Math.round((50 - subtotal) * 100) / 100;
+
+    const order = {
+        id:              clientTransactionId,
+        token:           crypto.randomBytes(16).toString('hex'),
+        status:          'pendiente',
+        paymentMethod:   'payphone',
+        customerName:    customerName.trim().slice(0, 200),
+        customerDoc:     customerDoc.trim().slice(0, 20),
+        customerEmail:   customerEmail.trim().slice(0, 200),
+        concept:         'Pago de clases — EXPRESART',
+        amount:          50,
+        subtotal,
+        iva,
+        ivaRate:         15,
+        receiptUrl:      '',
+        notes:           '',
+        invoiceNumber:   null,
+        rejectionReason: '',
+        createdAt:       new Date().toISOString(),
+        confirmedAt:     null
+    };
+    const orders = readOrders();
+    orders.push(order);
+    writeOrders(orders);
+
+    try {
+        const result = await payphoneRequest('POST', '/api/v1/button/pay', {
+            amount:               CLASES_AMOUNT_CENTS,
+            amountWithTax:        0,
+            amountWithoutTax:     CLASES_AMOUNT_CENTS,
+            tax:                  0,
+            service:              0,
+            tip:                  0,
+            currency:             'USD',
+            clientTransactionId,
+            storeId:              PP_STORE_ID,
+            responseUrl:          `${BASE_URL}/api/payphone/return`,
+            cancellUrl:           `${BASE_URL}/pago.html?cancelled=1`
+        });
+
+        if (result.status !== 200 || !result.body.payWithCard)
+            return res.status(502).json({ ok: false, message: 'Payphone no disponible. Por favor usa transferencia bancaria.' });
+
+        res.json({ ok: true, url: result.body.payWithCard });
+    } catch {
+        res.status(502).json({ ok: false, message: 'Error de conexión con Payphone.' });
+    }
+});
+
+/* Retorno del usuario desde Payphone */
+app.get('/api/payphone/return', async (req, res) => {
+    const { id, clientTransactionId } = req.query;
+    if (!id || !clientTransactionId) return res.redirect('/pago.html?payphone=fail');
+
+    try {
+        const result = await payphoneRequest(
+            'GET',
+            `/api/v1/button/transactionStatus?id=${encodeURIComponent(id)}&clientTransactionId=${encodeURIComponent(clientTransactionId)}`
+        );
+        const t = result.body;
+        if (t && t.transactionStatus === 'Approved') {
+            const orders = readOrders();
+            const idx    = orders.findIndex(o => o.id === clientTransactionId);
+            if (idx !== -1 && orders[idx].status === 'pendiente') {
+                orders[idx].status        = 'confirmado';
+                orders[idx].invoiceNumber = nextInvoiceNumber();
+                orders[idx].confirmedAt   = new Date().toISOString();
+                writeOrders(orders);
+            }
+            return res.redirect(`/pago.html?payphone=ok&ref=${encodeURIComponent(clientTransactionId)}`);
+        }
+        const orders = readOrders();
+        const idx    = orders.findIndex(o => o.id === clientTransactionId);
+        if (idx !== -1 && orders[idx].status === 'pendiente') {
+            orders[idx].status          = 'rechazado';
+            orders[idx].rejectionReason = (t && t.transactionStatus) || 'Rechazado';
+            writeOrders(orders);
+        }
+        return res.redirect('/pago.html?payphone=fail');
+    } catch {
+        return res.redirect('/pago.html?payphone=fail');
+    }
+});
+
+/* ══════════════════════════════════════════
    CATCH-ALL
    ══════════════════════════════════════════ */
 app.use((req, res) => {
