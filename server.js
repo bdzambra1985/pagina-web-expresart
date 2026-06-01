@@ -759,12 +759,32 @@ app.post('/api/payphone/create', async (req, res) => {
             cancellUrl:           `${BASE_URL}/pago.html?cancelled=1`
         });
 
+        console.error('[Payphone] status:', result.status, 'body:', JSON.stringify(result.body));
+
         if (result.status !== 200 || !result.body.payWithCard)
-            return res.status(502).json({ ok: false, message: 'Payphone no disponible. Por favor usa transferencia bancaria.' });
+            return res.status(502).json({ ok: false, message: 'Payphone no disponible. Por favor usa transferencia bancaria.', detail: result.body });
 
         res.json({ ok: true, url: result.body.payWithCard });
-    } catch {
-        res.status(502).json({ ok: false, message: 'Error de conexión con Payphone.' });
+    } catch (err) {
+        console.error('[Payphone] error:', err.message);
+        res.status(502).json({ ok: false, message: 'Error de conexión con Payphone.', detail: err.message });
+    }
+});
+
+/* Diagnóstico Payphone — solo para debug, eliminar en producción */
+app.get('/api/payphone/test', async (req, res) => {
+    try {
+        const result = await payphoneRequest('POST', '/api/v1/button/pay', {
+            amount: 100, amountWithTax: 0, amountWithoutTax: 100,
+            tax: 0, service: 0, tip: 0, currency: 'USD',
+            clientTransactionId: 'test_' + Date.now(),
+            storeId: PP_STORE_ID,
+            responseUrl: `${BASE_URL}/api/payphone/return`,
+            cancellUrl:  `${BASE_URL}/pago.html?cancelled=1`
+        });
+        res.json({ status: result.status, body: result.body, token_set: !!PP_TOKEN, store_set: !!PP_STORE_ID, base_url: BASE_URL });
+    } catch (err) {
+        res.json({ error: err.message, token_set: !!PP_TOKEN, store_set: !!PP_STORE_ID });
     }
 });
 
