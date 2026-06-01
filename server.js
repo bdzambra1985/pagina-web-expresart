@@ -690,7 +690,7 @@ function payphoneRequest(method, path, body) {
     return new Promise((resolve, reject) => {
         const payload = body ? JSON.stringify(body) : null;
         const options = {
-            hostname: 'app.payphonetodopagoapi.com',
+            hostname: 'pay.payphonetodoesposible.com',
             path,
             method,
             headers: { 'Authorization': `Bearer ${PP_TOKEN}`, 'Content-Type': 'application/json' }
@@ -745,18 +745,19 @@ app.post('/api/payphone/create', async (req, res) => {
     writeOrders(orders);
 
     try {
-        const result = await payphoneRequest('POST', '/api/v1/button/pay', {
-            amount:               CLASES_AMOUNT_CENTS,
-            amountWithTax:        0,
-            amountWithoutTax:     CLASES_AMOUNT_CENTS,
-            tax:                  0,
-            service:              0,
-            tip:                  0,
-            currency:             'USD',
+        const taxAmount  = Math.round(CLASES_AMOUNT_CENTS - CLASES_AMOUNT_CENTS / 1.15);
+        const baseAmount = CLASES_AMOUNT_CENTS - taxAmount;
+
+        const result = await payphoneRequest('POST', '/api/button/Prepare', {
+            amount:             CLASES_AMOUNT_CENTS,
+            amountWithTax:      baseAmount,
+            tax:                taxAmount,
+            currency:           'USD',
             clientTransactionId,
-            storeId:              PP_STORE_ID,
-            responseUrl:          `${BASE_URL}/api/payphone/return`,
-            cancellUrl:           `${BASE_URL}/pago.html?cancelled=1`
+            storeId:            PP_STORE_ID,
+            reference:          'Pago de clases — EXPRESART',
+            responseUrl:        `${BASE_URL}/api/payphone/return`,
+            cancellUrl:         `${BASE_URL}/pago.html?cancelled=1`
         });
 
         console.error('[Payphone] status:', result.status, 'body:', JSON.stringify(result.body));
@@ -774,11 +775,11 @@ app.post('/api/payphone/create', async (req, res) => {
 /* Diagnóstico Payphone — solo para debug, eliminar en producción */
 app.get('/api/payphone/test', async (req, res) => {
     try {
-        const result = await payphoneRequest('POST', '/api/v1/button/pay', {
-            amount: 100, amountWithTax: 0, amountWithoutTax: 100,
-            tax: 0, service: 0, tip: 0, currency: 'USD',
+        const result = await payphoneRequest('POST', '/api/button/Prepare', {
+            amount: 100, amountWithTax: 87, tax: 13, currency: 'USD',
             clientTransactionId: 'test_' + Date.now(),
             storeId: PP_STORE_ID,
+            reference: 'Test EXPRESART',
             responseUrl: `${BASE_URL}/api/payphone/return`,
             cancellUrl:  `${BASE_URL}/pago.html?cancelled=1`
         });
@@ -794,10 +795,10 @@ app.get('/api/payphone/return', async (req, res) => {
     if (!id || !clientTransactionId) return res.redirect('/pago.html?payphone=fail');
 
     try {
-        const result = await payphoneRequest(
-            'GET',
-            `/api/v1/button/transactionStatus?id=${encodeURIComponent(id)}&clientTransactionId=${encodeURIComponent(clientTransactionId)}`
-        );
+        const result = await payphoneRequest('POST', '/api/button/V2/Confirm', {
+            id:        parseInt(id),
+            clientTxId: clientTransactionId
+        });
         const t = result.body;
         if (t && t.transactionStatus === 'Approved') {
             const orders = readOrders();
