@@ -327,26 +327,6 @@
         .payphone-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
         .payphone-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-        .pp-success, .pp-error {
-            display: none;
-            text-align: center;
-            padding: 28px 10px;
-        }
-        .pp-success .success-icon, .pp-error .success-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
-        .pp-success .success-title, .pp-error .success-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.3rem;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-        .pp-success .success-text, .pp-error .success-text {
-            font-family: 'Poppins', sans-serif;
-            font-size: .83em;
-            color: rgba(255,210,210,.7);
-            line-height: 1.7;
-            margin-bottom: 16px;
-        }
-        .pp-error .success-title { color: #e88; }
     </style>
 </head>
 <body>
@@ -461,55 +441,15 @@
     <!-- ── Payphone card ── -->
     <div class="glass-card payphone-card">
         <div class="card-title">
-            <span class="icon">💳</span> Pago seguro con Payphone
+            <span class="icon">💳</span> Pago con tarjeta — Payphone
         </div>
-
-        <div id="ppFormPanel">
-            <p class="pp-desc">
-                Paga <strong style="color:#fff">$50.00</strong> (IVA incluido) directamente con tu tarjeta.<br>
-                Serás redirigido a la plataforma segura de Payphone para completar el pago.
-            </p>
-
-            <div class="pp-row">
-                <div>
-                    <label class="f-label">Nombre completo</label>
-                    <input id="ppName" class="f-input" type="text" placeholder="Ej: María García">
-                </div>
-                <div>
-                    <label class="f-label">RUC o Cédula</label>
-                    <input id="ppDoc" class="f-input" type="text" placeholder="1712345678">
-                </div>
-            </div>
-
-            <label class="f-label">Correo electrónico</label>
-            <input id="ppEmail" class="f-input" type="email" placeholder="tu@correo.com">
-
-            <button class="payphone-btn" id="ppBtn">💳 &nbsp;Pagar $50 con tarjeta</button>
-        </div>
-
-        <div class="pp-success" id="ppSuccess">
-            <span class="success-icon">✅</span>
-            <div class="success-title">¡Pago aprobado!</div>
-            <p class="success-text">
-                Tu pago fue procesado correctamente por Payphone.<br>
-                EXPRESART ha recibido la confirmación.
-            </p>
-            <div class="success-id" id="ppSuccessRef"></div>
-            <br>
-            <a href="index.html" class="back-btn">← Volver al inicio</a>
-        </div>
-
-        <div class="pp-error" id="ppError">
-            <span class="success-icon">❌</span>
-            <div class="success-title">Pago no completado</div>
-            <p class="success-text">
-                El pago fue rechazado o cancelado.<br>
-                Puedes intentarlo de nuevo o usar la transferencia bancaria.
-            </p>
-            <button class="payphone-btn" onclick="document.getElementById('ppError').style.display='none'; document.getElementById('ppFormPanel').style.display='block';">
-                Intentar de nuevo
-            </button>
-        </div>
+        <p class="pp-desc">
+            Paga <strong style="color:#fff">$50.00</strong> de forma segura con tu tarjeta de crédito o débito.<br>
+            Serás redirigido a la plataforma de Payphone para completar el pago.
+        </p>
+        <a class="payphone-btn" href="PAYPHONE_LINK_AQUI" target="_blank" rel="noopener noreferrer">
+            💳 &nbsp;Pagar $50 con tarjeta
+        </a>
     </div>
 
 </div>
@@ -664,54 +604,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 });
 
 loadBankInfo();
-
-/* ── Payphone ── */
-(function () {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('payphone');
-    const ref    = params.get('ref');
-
-    if (status === 'ok') {
-        document.getElementById('ppFormPanel').style.display = 'none';
-        document.getElementById('ppSuccess').style.display   = 'block';
-        if (ref) document.getElementById('ppSuccessRef').textContent = 'Ref: ' + ref;
-        document.getElementById('ppSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (status === 'fail' || params.get('cancelled') === '1') {
-        document.getElementById('ppFormPanel').style.display = 'none';
-        document.getElementById('ppError').style.display     = 'block';
-        document.getElementById('ppError').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-})();
-
-document.getElementById('ppBtn').addEventListener('click', async () => {
-    const name  = document.getElementById('ppName').value.trim();
-    const doc   = document.getElementById('ppDoc').value.trim();
-    const email = document.getElementById('ppEmail').value.trim();
-
-    if (!name || !doc || !email) {
-        alert('Por favor completa nombre, cédula y correo para continuar.');
-        return;
-    }
-
-    const btn = document.getElementById('ppBtn');
-    btn.disabled    = true;
-    btn.textContent = 'Redirigiendo a Payphone…';
-
-    try {
-        const r    = await fetch('/api/payphone/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ customerName: name, customerDoc: doc, customerEmail: email })
-        });
-        const data = await r.json();
-        if (!data.ok) throw new Error(data.message);
-        window.location.href = data.url;
-    } catch (e) {
-        alert('Error: ' + e.message);
-        btn.disabled    = false;
-        btn.textContent = '💳  Pagar $50 con tarjeta';
-    }
-});
 </script>
 </body>
 </html>
