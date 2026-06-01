@@ -690,7 +690,7 @@ function payphoneRequest(method, path, body) {
     return new Promise((resolve, reject) => {
         const payload = body ? JSON.stringify(body) : null;
         const options = {
-            hostname: 'pay.payphonetodopagoapi.com',
+            hostname: 'app.payphonetodopagoapi.com',
             path,
             method,
             headers: { 'Authorization': `Bearer ${PP_TOKEN}`, 'Content-Type': 'application/json' }
