@@ -122,7 +122,7 @@ body {
     z-index: 5;
 }
 @media (max-width: 680px) {
-    .page-hero { margin-top: 80px; height: 7vh; min-height: 60px; }
+    .page-hero { margin-top: 50px; height: 7vh; min-height: 60px; }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -256,20 +256,26 @@ body {
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 680px) {
     .top-nav {
-        height: auto;
-        padding: 8px 10px;
+        height: 50px;
+        padding: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+    .top-nav::-webkit-scrollbar { display: none; }
 
     .nav-inner {
-        justify-content: center;
+        justify-content: flex-start;
+        min-width: max-content;
+        padding: 0 10px;
+        gap: 4px;
+        height: 100%;
     }
 
     .nav-links {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 4px;
+        flex-wrap: nowrap;
+        gap: 2px;
         margin-left: 0;
     }
 
@@ -277,11 +283,12 @@ body {
         padding: 6px 10px;
         font-size: 0.68em;
         letter-spacing: 1px;
-        border-radius: 6px;
+        white-space: nowrap;
     }
 
     .nav-cta {
         padding: 6px 12px;
+        white-space: nowrap;
     }
 }
 
