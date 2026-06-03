@@ -256,6 +256,8 @@ body {
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 680px) {
     .top-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
         height: 50px;
         padding: 0;
         overflow-x: auto;
