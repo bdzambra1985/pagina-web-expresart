@@ -547,7 +547,7 @@ function renderAll() {
 function renderAvatar() {
     const wrap = document.getElementById('avatarWrap');
     if (profile.photoUrl) {
-        wrap.innerHTML = `<img class="current-avatar" src="${profile.photoUrl}" alt="Foto de perfil">`;
+        wrap.innerHTML = `<img class="current-avatar" src="${esc(profile.photoUrl)}" alt="Foto de perfil">`;
     } else {
         wrap.innerHTML = `<div class="avatar-placeholder-sm"><i class="bx bx-user"></i></div>`;
     }
