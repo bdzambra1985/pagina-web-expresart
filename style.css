@@ -1682,6 +1682,51 @@ body {
     to   { background-position: 0 0, 0 11px; }
 }
 
+/* ══════════════════════════════════════════════════════════
+   ░░  FEEDBACK DE INTERACCIÓN  ░░
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Spinner en botones mientras carga ── */
+.btn-loading {
+    position: relative !important;
+    pointer-events: none;
+    opacity: 0.75;
+}
+.btn-loading > * { visibility: hidden; }
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,0.20);
+    border-top-color: rgba(255,255,255,0.90);
+    border-radius: 50%;
+    animation: _btnSpin 0.55s linear infinite;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+}
+@keyframes _btnSpin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ── Skeleton shimmer para imágenes que cargan lento ── */
+img { transition: opacity 0.30s ease; }
+.img-skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(60,0,20,0.60)  0%,
+        rgba(100,10,40,0.55) 50%,
+        rgba(60,0,20,0.60)  100%
+    );
+    background-size: 200% 100%;
+    animation: _imgShimmer 1.5s ease-in-out infinite;
+    min-height: 48px;
+    opacity: 1 !important;
+}
+@keyframes _imgShimmer {
+    0%   { background-position:  200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 @keyframes ropeSwayL {
     /* Espejo exacto de twinPullArm (linear):
        0-18%  = brazo subiendo → cuerda suelta

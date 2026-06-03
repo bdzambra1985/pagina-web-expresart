@@ -575,24 +575,27 @@ document.getElementById('photoInput').onchange = async () => {
 /* ── Guardar información básica ── */
 document.getElementById('saveBasicBtn').onclick = async () => {
     const btn = document.getElementById('saveBasicBtn');
-    btn.disabled = true;
-    const r = await fetch('/api/my-profile', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
-        body: JSON.stringify({
-            displayName: document.getElementById('displayName').value.trim(),
-            bio_short:   document.getElementById('bio_short').value.trim(),
-            bio:         document.getElementById('bio').value.trim()
-        })
-    });
-    const d = await r.json();
-    btn.disabled = false;
-    if (d.ok) {
-        profile.displayName = document.getElementById('displayName').value.trim();
-        document.getElementById('dashSub').textContent = profile.displayName || myUserId;
-        showToast('✓ Información guardada');
-    } else {
-        showToast(d.message || 'Error', true);
+    btnLoad(btn);
+    try {
+        const r = await fetch('/api/my-profile', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({
+                displayName: document.getElementById('displayName').value.trim(),
+                bio_short:   document.getElementById('bio_short').value.trim(),
+                bio:         document.getElementById('bio').value.trim()
+            })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            profile.displayName = document.getElementById('displayName').value.trim();
+            document.getElementById('dashSub').textContent = profile.displayName || myUserId;
+            showToast('✓ Información guardada');
+        } else {
+            showToast(d.message || 'Error', true);
+        }
+    } finally {
+        btnDone(btn);
     }
 };
 
@@ -636,16 +639,19 @@ function addEsp() {
 
 document.getElementById('saveEspBtn').onclick = async () => {
     const btn = document.getElementById('saveEspBtn');
-    btn.disabled = true;
-    const r = await fetch('/api/my-profile', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
-        body: JSON.stringify({ especialidades: profile.especialidades })
-    });
-    const d = await r.json();
-    btn.disabled = false;
-    if (d.ok) showToast('✓ Especialidades guardadas');
-    else      showToast(d.message || 'Error', true);
+    btnLoad(btn);
+    try {
+        const r = await fetch('/api/my-profile', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ especialidades: profile.especialidades })
+        });
+        const d = await r.json();
+        if (d.ok) showToast('✓ Especialidades guardadas');
+        else      showToast(d.message || 'Error', true);
+    } finally {
+        btnDone(btn);
+    }
 };
 
 /* ══════════════════
@@ -747,17 +753,20 @@ function collectProd() {
 
 document.getElementById('saveProdBtn').onclick = async () => {
     const btn = document.getElementById('saveProdBtn');
-    btn.disabled = true;
-    const producciones = collectProd();
-    const r = await fetch('/api/my-profile', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
-        body: JSON.stringify({ producciones })
-    });
-    const d = await r.json();
-    btn.disabled = false;
-    if (d.ok) { profile.producciones = producciones; showToast('✓ Producciones guardadas'); }
-    else      showToast(d.message || 'Error', true);
+    btnLoad(btn);
+    try {
+        const producciones = collectProd();
+        const r = await fetch('/api/my-profile', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ producciones })
+        });
+        const d = await r.json();
+        if (d.ok) { profile.producciones = producciones; showToast('✓ Producciones guardadas'); }
+        else      showToast(d.message || 'Error', true);
+    } finally {
+        btnDone(btn);
+    }
 };
 
 /* ══════════════════

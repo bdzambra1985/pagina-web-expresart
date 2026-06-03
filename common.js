@@ -37,3 +37,38 @@ function api(url, opts) {
     if (tok) headers['x-session-token'] = tok;
     return fetch(url, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
 }
+
+/* ── Feedback de botones: spinner mientras carga ── */
+function btnLoad(el) {
+    el._savedHTML     = el.innerHTML;
+    el._savedDisabled = el.disabled;
+    el.disabled = true;
+    el.classList.add('btn-loading');
+}
+function btnDone(el) {
+    el.disabled = el._savedDisabled || false;
+    if (el._savedHTML !== undefined) el.innerHTML = el._savedHTML;
+    el.classList.remove('btn-loading');
+}
+
+/* ── Skeleton shimmer para imágenes lentas ── */
+function _applyImgSkeleton(img) {
+    if (img.complete && img.naturalWidth > 0) return;
+    img.classList.add('img-skeleton');
+    function removeSkeleton() { img.classList.remove('img-skeleton'); }
+    img.addEventListener('load',  removeSkeleton, { once: true });
+    img.addEventListener('error', removeSkeleton, { once: true });
+}
+function initImgSkeletons() {
+    document.querySelectorAll('img').forEach(_applyImgSkeleton);
+    new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(n) {
+                if (n.nodeType !== 1) return;
+                if (n.tagName === 'IMG') _applyImgSkeleton(n);
+                else n.querySelectorAll && n.querySelectorAll('img').forEach(_applyImgSkeleton);
+            });
+        });
+    }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+}
+document.addEventListener('DOMContentLoaded', initImgSkeletons);

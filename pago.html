@@ -572,8 +572,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     }
 
     const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Enviando…';
+    btnLoad(btn);
 
     const fd = new FormData();
     fd.append('customerName',  name);
@@ -593,8 +592,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
         document.getElementById('successPanel').style.display = 'block';
     } catch (e) {
         alert('Error al enviar: ' + e.message);
-        btn.disabled = false;
-        btn.textContent = 'Enviar comprobante';
+        btnDone(btn);
     }
 });
 

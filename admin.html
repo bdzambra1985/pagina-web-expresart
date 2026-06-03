@@ -831,20 +831,26 @@ document.getElementById('createUserBtn').onclick = async () => {
     const password    = document.getElementById('new_password').value;
     const displayName = document.getElementById('new_displayName').value.trim();
     if (!username || !password) return showToast('Usuario y contraseña son requeridos', true);
-    const r = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
-        body: JSON.stringify({ username, password, displayName })
-    });
-    const d = await r.json();
-    if (d.ok) {
-        showToast('✓ Alumno creado: ' + username);
-        document.getElementById('new_username').value    = '';
-        document.getElementById('new_password').value    = '';
-        document.getElementById('new_displayName').value = '';
-        loadUsers();
-    } else {
-        showToast(d.message || 'Error al crear alumno', true);
+    const btn = document.getElementById('createUserBtn');
+    btnLoad(btn);
+    try {
+        const r = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ username, password, displayName })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            showToast('✓ Alumno creado: ' + username);
+            document.getElementById('new_username').value    = '';
+            document.getElementById('new_password').value    = '';
+            document.getElementById('new_displayName').value = '';
+            loadUsers();
+        } else {
+            showToast(d.message || 'Error al crear alumno', true);
+        }
+    } finally {
+        btnDone(btn);
     }
 };
 
@@ -1010,7 +1016,7 @@ async function saveSection(section, data) {
 
 document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
     btn.onclick = async () => {
-        btn.disabled = true;
+        btnLoad(btn);
         const section = btn.dataset.section;
         let data;
         if (section === 'destacada') {
@@ -1030,9 +1036,12 @@ document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
         } else if (section === 'profile') {
             data = { description: document.getElementById('profile_desc').value };
         }
-        await saveSection(section, data);
-        await loadContent();
-        btn.disabled = false;
+        try {
+            await saveSection(section, data);
+            await loadContent();
+        } finally {
+            btnDone(btn);
+        }
     };
 });
 
@@ -1170,29 +1179,34 @@ document.getElementById('saveEvtBtn').onclick = async () => {
 
     if (!title || !date) return showToast('Título y fecha son requeridos', true);
 
+    const btn = document.getElementById('saveEvtBtn');
+    btnLoad(btn);
     const body = { title, date, time, location, category, description, audience };
-
-    let r;
-    if (editingEvtId) {
-        r = await fetch('/api/events/' + editingEvtId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
-            body: JSON.stringify(body)
-        });
-    } else {
-        r = await fetch('/api/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
-            body: JSON.stringify(body)
-        });
-    }
-    const d = await r.json();
-    if (d.ok) {
-        showToast(editingEvtId ? '✓ Evento actualizado' : '✓ Evento creado');
-        resetEvtForm();
-        loadEvents();
-    } else {
-        showToast(d.message || 'Error', true);
+    try {
+        let r;
+        if (editingEvtId) {
+            r = await fetch('/api/events/' + editingEvtId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+                body: JSON.stringify(body)
+            });
+        } else {
+            r = await fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+                body: JSON.stringify(body)
+            });
+        }
+        const d = await r.json();
+        if (d.ok) {
+            showToast(editingEvtId ? '✓ Evento actualizado' : '✓ Evento creado');
+            resetEvtForm();
+            loadEvents();
+        } else {
+            showToast(d.message || 'Error', true);
+        }
+    } finally {
+        btnDone(btn);
     }
 };
 
@@ -1259,6 +1273,8 @@ window.removeService = (i) => {
 };
 
 document.getElementById('saveBankBtn').onclick = async () => {
+    const btn = document.getElementById('saveBankBtn');
+    btnLoad(btn);
     const body = {
         bankName:      document.getElementById('bkBank').value.trim(),
         accountType:   document.getElementById('bkType').value,
@@ -1270,9 +1286,13 @@ document.getElementById('saveBankBtn').onclick = async () => {
         phone:         document.getElementById('bkPhone').value.trim(),
         services:      bankServices
     };
-    const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const d = await r.json();
-    if (d.ok) showToast('✓ Configuración guardada'); else showToast('Error al guardar', true);
+    try {
+        const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (d.ok) showToast('✓ Configuración guardada'); else showToast('Error al guardar', true);
+    } finally {
+        btnDone(btn);
+    }
 };
 
 /* Cargar órdenes */
