@@ -720,5 +720,12 @@ app.use((req, res) => {
 initAdmin();
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}`);
-    console.log(`  Imágenes: ${USE_CLOUDINARY ? 'Cloudinary (CDN)' : 'disco local'}\n`);
+    if (USE_CLOUDINARY) {
+        console.log(`  Imágenes: Cloudinary (CDN)`);
+        console.log(`  CLD cloud_name: ${CLD_NAME || '(via CLOUDINARY_URL)'}`);
+    } else {
+        console.log(`  Imágenes: disco local`);
+        console.log(`  [WARN] Cloudinary NO configurado — variables detectadas: NAME=${!!CLD_NAME} KEY=${!!CLD_KEY} SECRET=${!!CLD_SECRET} URL=${!!process.env.CLOUDINARY_URL}`);
+    }
+    console.log();
 });
