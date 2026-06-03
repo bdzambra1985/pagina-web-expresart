@@ -286,7 +286,7 @@ body {
         display: flex;
         justify-content: center;
         align-items: center;
-        border-right: 1px solid rgba(201, 162, 39, 0.30);
+        border-right: 1px solid rgba(255, 255, 255, 0.20);
     }
     .nav-links li:last-child {
         border-right: none;
