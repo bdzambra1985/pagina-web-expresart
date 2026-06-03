@@ -319,20 +319,17 @@ app.post('/api/upload-photo', (req, res) => {
 
 /* ── Subir foto de producción ── */
 app.post('/api/upload-prod-photo', (req, res) => {
-    console.log('[upload-prod-photo] hit — token:', !!(req.headers['x-session-token']), 'ct:', req.headers['content-type']);
     const sess = requireAuth(req, res);
-    if (!sess) { console.log('[upload-prod-photo] no session'); return; }
-    console.log('[upload-prod-photo] auth ok, userId:', sess.userId);
+    if (!sess) return;
     uploader.single('photo')(req, res, async (err) => {
-        console.log('[upload-prod-photo] multer done — err:', err, 'file:', !!req.file);
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
         try {
             const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
             res.json({ ok: true, url });
         } catch(e) {
-            console.error('[upload-prod-photo] saveFile error:', e);
-            res.status(500).json({ ok: false, message: e.message || 'Error al guardar imagen' });
+            console.error('upload-prod-photo error:', e.message);
+            res.status(500).json({ ok: false, message: 'Error al guardar imagen' });
         }
     });
 });
@@ -723,12 +720,5 @@ app.use((req, res) => {
 initAdmin();
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  EXPRESART Server corriendo en puerto ${PORT}`);
-    if (USE_CLOUDINARY) {
-        console.log(`  Imágenes: Cloudinary (CDN)`);
-        console.log(`  CLD cloud_name: ${CLD_NAME || '(via CLOUDINARY_URL)'}`);
-    } else {
-        console.log(`  Imágenes: disco local`);
-        console.log(`  [WARN] Cloudinary NO configurado — variables detectadas: NAME=${!!CLD_NAME} KEY=${!!CLD_KEY} SECRET=${!!CLD_SECRET} URL=${!!process.env.CLOUDINARY_URL}`);
-    }
-    console.log();
+    console.log(`  Imágenes: ${USE_CLOUDINARY ? 'Cloudinary (CDN)' : 'disco local'}\n`);
 });
