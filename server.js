@@ -319,16 +319,19 @@ app.post('/api/upload-photo', (req, res) => {
 
 /* ── Subir foto de producción ── */
 app.post('/api/upload-prod-photo', (req, res) => {
+    console.log('[upload-prod-photo] hit — token:', !!(req.headers['x-session-token']), 'ct:', req.headers['content-type']);
     const sess = requireAuth(req, res);
-    if (!sess) return;
+    if (!sess) { console.log('[upload-prod-photo] no session'); return; }
+    console.log('[upload-prod-photo] auth ok, userId:', sess.userId);
     uploader.single('photo')(req, res, async (err) => {
+        console.log('[upload-prod-photo] multer done — err:', err, 'file:', !!req.file);
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
         try {
             const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
             res.json({ ok: true, url });
         } catch(e) {
-            console.error('upload-prod-photo error:', e);
+            console.error('[upload-prod-photo] saveFile error:', e);
             res.status(500).json({ ok: false, message: e.message || 'Error al guardar imagen' });
         }
     });
