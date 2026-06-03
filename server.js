@@ -13,11 +13,12 @@ const app  = express();
 const PORT = process.env.PORT || 9090;
 
 /* ── Rutas de datos ── */
-const DATA_DIR     = path.join(__dirname, 'data');
-const USERS_FILE   = path.join(DATA_DIR, 'users.json');
-const PROFILES_DIR = path.join(DATA_DIR, 'profiles');
-const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
-const EVENTS_FILE  = path.join(DATA_DIR, 'events.json');
+const DATA_DIR      = path.join(__dirname, 'data');
+const USERS_FILE    = path.join(DATA_DIR, 'users.json');
+const PROFILES_DIR  = path.join(DATA_DIR, 'profiles');
+const CONTENT_FILE  = path.join(DATA_DIR, 'content.json');
+const EVENTS_FILE   = path.join(DATA_DIR, 'events.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 
 [DATA_DIR, PROFILES_DIR, UPLOADS_DIR].forEach(d => {
@@ -113,9 +114,26 @@ function initAdmin() {
     }
 }
 
-/* ── Sesiones en memoria ── */
-const sessions    = new Map();
+/* ── Sesiones persistidas en disco ── */
 const SESSION_TTL = 8 * 60 * 60 * 1000;
+
+function loadSessions() {
+    try {
+        const raw = readJSON(SESSIONS_FILE, {});
+        const now = Date.now();
+        const map = new Map();
+        Object.entries(raw).forEach(([k, v]) => {
+            if (now - v.ts <= SESSION_TTL) map.set(k, v);
+        });
+        return map;
+    } catch(e) { return new Map(); }
+}
+function saveSessions(map) {
+    const obj = {};
+    map.forEach((v, k) => { obj[k] = v; });
+    writeJSON(SESSIONS_FILE, obj);
+}
+const sessions = loadSessions();
 
 function newToken() { return crypto.randomBytes(32).toString('hex'); }
 function getSession(req) {
@@ -123,7 +141,7 @@ function getSession(req) {
     if (!token) return null;
     const sess = sessions.get(token);
     if (!sess) return null;
-    if (Date.now() - sess.ts > SESSION_TTL) { sessions.delete(token); return null; }
+    if (Date.now() - sess.ts > SESSION_TTL) { sessions.delete(token); saveSessions(sessions); return null; }
     sess.ts = Date.now();
     return sess;
 }
@@ -214,12 +232,13 @@ app.post('/api/login', loginLimiter, (req, res) => {
         return res.status(403).json({ ok: false, message: 'Cuenta inactiva — contacta a EXPRESART' });
     const token = newToken();
     sessions.set(token, { ts: Date.now(), userId: user.userId, role: user.role });
+    saveSessions(sessions);
     res.json({ ok: true, token, role: user.role });
 });
 
 app.post('/api/logout', (req, res) => {
     const token = req.headers['x-session-token'];
-    if (token) sessions.delete(token);
+    if (token) { sessions.delete(token); saveSessions(sessions); }
     res.json({ ok: true });
 });
 
