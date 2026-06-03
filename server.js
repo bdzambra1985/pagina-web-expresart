@@ -171,11 +171,11 @@ async function saveFile(buffer, originalname, userId) {
     if (USE_CLOUDINARY) {
         return new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
-                {
-                    folder:         'expresart/' + userId,
-                    transformation: [{ width: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }]
-                },
-                (err, result) => err ? reject(err) : resolve(result.secure_url)
+                { folder: 'expresart/' + userId },
+                (err, result) => {
+                    if (err) return reject(new Error(err.message || JSON.stringify(err)));
+                    resolve(result.secure_url);
+                }
             ).end(buffer);
         });
     }
