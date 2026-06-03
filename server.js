@@ -303,11 +303,16 @@ app.post('/api/upload-photo', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
-        const p   = readProfile(sess.userId) || emptyProfile(sess.userId);
-        p.photoUrl = url;
-        writeProfile(sess.userId, p);
-        res.json({ ok: true, url });
+        try {
+            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
+            const p   = readProfile(sess.userId) || emptyProfile(sess.userId);
+            p.photoUrl = url;
+            writeProfile(sess.userId, p);
+            res.json({ ok: true, url });
+        } catch(e) {
+            console.error('upload-photo error:', e);
+            res.status(500).json({ ok: false, message: 'Error al guardar imagen' });
+        }
     });
 });
 
@@ -318,8 +323,13 @@ app.post('/api/upload-prod-photo', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
-        const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
-        res.json({ ok: true, url });
+        try {
+            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
+            res.json({ ok: true, url });
+        } catch(e) {
+            console.error('upload-prod-photo error:', e);
+            res.status(500).json({ ok: false, message: 'Error al guardar imagen' });
+        }
     });
 });
 
