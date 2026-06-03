@@ -329,7 +329,7 @@ app.post('/api/upload-prod-photo', (req, res) => {
             res.json({ ok: true, url });
         } catch(e) {
             console.error('upload-prod-photo error:', e);
-            res.status(500).json({ ok: false, message: 'Error al guardar imagen' });
+            res.status(500).json({ ok: false, message: e.message || 'Error al guardar imagen' });
         }
     });
 });
