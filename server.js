@@ -197,6 +197,7 @@ const emptyProfile = (userId) => ({
 /* ══════════════════════════════════════════
    MIDDLEWARE
    ══════════════════════════════════════════ */
+app.set('trust proxy', 1);
 app.use(compression());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(apiLimiter);
