@@ -26,17 +26,17 @@ const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 });
 
 /* ── Cloudinary (activo solo si las tres variables están definidas) ── */
-const USE_CLOUDINARY = !!(
-    process.env.CLOUDINARY_NAME &&
-    process.env.CLOUDINARY_KEY  &&
-    process.env.CLOUDINARY_SECRET
-);
+/* Acepta CLOUDINARY_URL, o las variables individuales en cualquier variante de nombre */
+const CLD_NAME   = process.env.CLOUDINARY_NAME   || process.env.CLOUDINARY_CLOUD_NAME;
+const CLD_KEY    = process.env.CLOUDINARY_KEY    || process.env.CLOUDINARY_API_KEY;
+const CLD_SECRET = process.env.CLOUDINARY_SECRET || process.env.CLOUDINARY_API_SECRET;
+const USE_CLOUDINARY = !!(process.env.CLOUDINARY_URL || (CLD_NAME && CLD_KEY && CLD_SECRET));
 if (USE_CLOUDINARY) {
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_NAME,
-        api_key:    process.env.CLOUDINARY_KEY,
-        api_secret: process.env.CLOUDINARY_SECRET
-    });
+    if (process.env.CLOUDINARY_URL) {
+        cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
+    } else {
+        cloudinary.config({ cloud_name: CLD_NAME, api_key: CLD_KEY, api_secret: CLD_SECRET });
+    }
 }
 
 /* ── Contraseñas ── */
