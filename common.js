@@ -40,14 +40,12 @@ function api(url, opts) {
 
 /* ── Feedback de botones: spinner mientras carga ── */
 function btnLoad(el) {
-    el._savedHTML     = el.innerHTML;
     el._savedDisabled = el.disabled;
     el.disabled = true;
     el.classList.add('btn-loading');
 }
 function btnDone(el) {
     el.disabled = el._savedDisabled || false;
-    if (el._savedHTML !== undefined) el.innerHTML = el._savedHTML;
     el.classList.remove('btn-loading');
 }
 
