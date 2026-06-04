@@ -506,26 +506,6 @@
         </div>
     </div>
 
-    <!-- ══ VIDEOS ══ -->
-    <div class="dash-section">
-        <h2 class="section-title"><i class="bx bx-play-circle"></i> Videos de obras</h2>
-        <div class="video-list" id="videoList"></div>
-        <h3 style="font-size:0.80rem;color:rgba(201,162,39,0.75);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Agregar video</h3>
-        <div class="video-add-row">
-            <div class="field-group">
-                <label class="field-label">Título</label>
-                <input id="vidTitle" class="dash-input" type="text" placeholder="La Casa de Bernarda Alba (2024)">
-            </div>
-            <div class="field-group">
-                <label class="field-label">URL (YouTube, Vimeo…)</label>
-                <input id="vidUrl" class="dash-input" type="url" placeholder="https://youtube.com/watch?v=…">
-            </div>
-            <div class="field-group">
-                <label class="field-label" style="opacity:0">—</label>
-                <button class="save-btn" id="addVideoBtn"><i class="bx bx-plus"></i> Agregar</button>
-            </div>
-        </div>
-    </div>
 
 </div>
 
@@ -585,7 +565,6 @@ function renderAll() {
     renderAvatar();
     renderEsp();
     renderProd();
-    renderVideos();
 }
 
 /* ── Avatar ── */
@@ -925,63 +904,6 @@ window.deleteProdVideo = function(prodIdx, j) {
     renderProdVideos(prodIdx);
 };
 
-/* ══════════════════
-   VIDEOS
-   ══════════════════ */
-function renderVideos() {
-    const list = document.getElementById('videoList');
-    if (!profile.videos || !profile.videos.length) {
-        list.innerHTML = '<p style="font-size:0.78rem;color:rgba(255,200,200,0.35);font-style:italic">Sin videos todavía</p>';
-        return;
-    }
-    list.innerHTML = '';
-    profile.videos.forEach((v, i) => {
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.innerHTML = `
-            <i class="bx bx-play-circle"></i>
-            <div class="video-card-info">
-                <div class="video-card-title">${esc(v.title || 'Video ' + (i+1))}</div>
-                <div class="video-card-url">${esc(v.url)}</div>
-            </div>
-            <button class="del-btn" onclick="deleteVideo(${i})"><i class="bx bx-trash"></i></button>`;
-        list.appendChild(card);
-    });
-}
-
-window.deleteVideo = async function(i) {
-    const r = await fetch('/api/video/' + i, { method: 'DELETE', headers: { 'x-session-token': TOKEN } });
-    const d = await r.json();
-    if (d.ok) {
-        profile.videos.splice(i, 1);
-        renderVideos();
-        showToast('✓ Video eliminado');
-    } else {
-        showToast(d.message || 'Error', true);
-    }
-};
-
-document.getElementById('addVideoBtn').onclick = async () => {
-    const url   = document.getElementById('vidUrl').value.trim();
-    const title = document.getElementById('vidTitle').value.trim();
-    if (!url) return showToast('Ingresa una URL de video', true);
-    const r = await fetch('/api/add-video', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
-        body: JSON.stringify({ url, title })
-    });
-    const d = await r.json();
-    if (d.ok) {
-        profile.videos = profile.videos || [];
-        profile.videos.push({ url, title });
-        renderVideos();
-        document.getElementById('vidUrl').value   = '';
-        document.getElementById('vidTitle').value = '';
-        showToast('✓ Video agregado');
-    } else {
-        showToast(d.message || 'Error', true);
-    }
-};
 
 </script>
 </body>
