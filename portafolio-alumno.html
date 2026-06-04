@@ -1251,7 +1251,8 @@ function _getEmbedUrl(url) {
 
 /* ── Zoom de imagen centrado ── */
 var _zoomHideTimer = null;
-var _zoomActiveSrc = null; // evita mostrar imagen de carga anterior si se cambió rápido
+var _zoomActiveSrc = null;
+var _zoomOpenedAt  = 0; // timestamp para evitar cierre inmediato en móvil
 
 function _zoomHideNow() {
     clearTimeout(_zoomHideTimer);
@@ -1273,6 +1274,7 @@ function _zoomShow(src) {
 
     /* Abrir overlay de inmediato (con spinner) */
     document.getElementById('imgZoomOverlay').classList.add('show');
+    _zoomOpenedAt = Date.now(); // marcar cuándo se abrió
 
     /* Cargar la imagen en paralelo */
     var tmp = new Image();
@@ -1304,8 +1306,9 @@ document.addEventListener('mouseleave', function(e) {
     if (e.target.closest && e.target.closest('#imgZoomOverlay')) _zoomHide();
 }, true);
 
-/* Móvil: toca el overlay para cerrar */
+/* Móvil: toca el overlay para cerrar — guard de 250ms evita cierre inmediato por el mismo tap */
 document.getElementById('imgZoomOverlay').addEventListener('click', function(e) {
+    if (Date.now() - _zoomOpenedAt < 250) return;
     e.stopPropagation();
     _zoomHideNow();
 });
