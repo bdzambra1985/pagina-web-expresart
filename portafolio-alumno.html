@@ -339,53 +339,65 @@
         .timeline {
             display: flex;
             flex-direction: column;
-            gap: 1.1rem;
-            overflow-y: auto;
-            max-height: 31rem;
+            gap: 0;
+            height: calc(100% - 4rem);
         }
         .timeline-item {
             display: flex;
             gap: 0.9rem;
             align-items: flex-start;
+            flex: 1;
+            padding: 0.9rem 0.5rem;
+        }
+        .timeline-item + .timeline-item {
+            border-top: 1px solid rgba(201,162,39,0.22);
         }
         .timeline-img-wrap {
             flex-shrink: 0;
-            width: 90px; height: 90px;
-            overflow: hidden;
-            border-radius: 6px;
-            border: 1px solid rgba(201,162,39,0.35);
+            width: 88px; height: 88px;
+            border-radius: 7px;
+            border: 1px solid rgba(201,162,39,0.40);
             cursor: zoom-in;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: transform 0.30s ease, z-index 0s 0s, box-shadow 0.30s ease;
+            transform-origin: top left;
+        }
+        .timeline-img-wrap:hover {
+            transform: scale(2.4);
+            z-index: 80;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+            overflow: hidden;
+            transition: transform 0.30s ease, box-shadow 0.30s ease;
         }
         .timeline-img {
             width: 100%; height: 100%;
             object-fit: cover;
-            transition: transform 0.35s ease;
             display: block;
         }
-        .timeline-img-wrap:hover .timeline-img {
-            transform: scale(1.55);
-        }
         .timeline-img-placeholder {
-            width: 90px; height: 90px;
+            width: 88px; height: 88px;
             flex-shrink: 0;
-            border-radius: 6px;
-            background: linear-gradient(135deg, rgba(158,0,0,0.12), rgba(201,162,39,0.08));
-            border: 1px dashed rgba(201,162,39,0.25);
+            border-radius: 7px;
+            background: linear-gradient(135deg, rgba(158,0,0,0.10), rgba(201,162,39,0.06));
+            border: 1px dashed rgba(201,162,39,0.22);
             display: flex; align-items: center; justify-content: center;
         }
-        .timeline-img-placeholder i { font-size: 1.8rem; color: rgba(201,162,39,0.25); }
+        .timeline-img-placeholder i { font-size: 1.8rem; color: rgba(201,162,39,0.22); }
         .timeline-body { flex: 1; min-width: 0; }
         .timeline-year {
-            font-size: 0.68rem; font-weight: 600;
+            font-size: 0.66rem; font-weight: 600;
             letter-spacing: 1.5px; text-transform: uppercase;
-            color: var(--gold);
+            color: var(--gold); margin-bottom: 3px;
         }
         .timeline-title {
             font-family: 'Playfair Display', serif;
-            font-size: 0.95rem; font-weight: 700;
-            color: var(--crimson); margin: 2px 0;
+            font-size: 0.92rem; font-weight: 700;
+            color: var(--crimson); margin: 0 0 4px;
+            line-height: 1.2;
         }
-        .timeline-text { font-size: 0.73rem; color: var(--text2); line-height: 1.5; }
+        .timeline-text { font-size: 0.71rem; color: var(--text2); line-height: 1.5; }
 
         /* ── Videos ── */
         .video-list {
@@ -770,68 +782,82 @@ function populateBook(p) {
     openCover();
 }
 
-/* ── Generar hojas de producciones (2 por hoja) + Videos ── */
+/* ── Generar hojas de producciones (2 por cara) + Videos ── */
 function buildBookPages(p) {
     const book = document.querySelector('.book');
     book.querySelectorAll('.book-page.page-right').forEach(el => el.remove());
 
-    const pages = [];
-
-    /* Agrupar producciones de 2 en 2 */
     const prods = (p.producciones && p.producciones.length) ? p.producciones : [];
+
+    /* Chunks de 2 producciones */
+    var chunks = [];
     if (prods.length === 0) {
-        pages.push({ type: 'prods', items: [] });
+        chunks.push([]);
     } else {
-        for (let i = 0; i < prods.length; i += 2) {
-            pages.push({ type: 'prods', items: prods.slice(i, i + 2) });
+        for (var i = 0; i < prods.length; i += 2) {
+            chunks.push(prods.slice(i, i + 2));
         }
     }
 
-    /* Hoja de videos */
-    pages.push({ type: 'videos', items: p.videos || [] });
+    /* Emparejar chunks: turno-N → frente=chunks[2N], dorso=chunks[2N+1] */
+    var turns = [];
+    for (var i = 0; i < chunks.length; i += 2) {
+        turns.push({
+            front: { type: 'prods', items: chunks[i] },
+            back:  i + 1 < chunks.length ? { type: 'prods', items: chunks[i + 1] } : null
+        });
+    }
+    /* Turno de videos al final */
+    turns.push({ front: { type: 'videos', items: p.videos || [] }, back: null });
 
-    const total = pages.length;
+    const total = turns.length;
 
-    pages.forEach(function(pageData, idx) {
-        const id      = 'turn-' + (idx + 1);
-        const zIndex  = total - idx;
-        const pageNum = idx * 2 + 2;   /* perfil=1, primera hoja derecha=2, 3, 4… */
-        const isLast  = idx === total - 1;
+    function renderProd(pr) {
+        var imgHTML = pr.photoUrl
+            ? '<div class="timeline-img-wrap"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
+            : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
+        return '<div class="timeline-item">' +
+            imgHTML +
+            '<div class="timeline-body">' +
+                '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
+                '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
+                '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
+            '</div>' +
+        '</div>';
+    }
 
-        /* Contenido del frente */
-        var frontHTML = '';
-        if (pageData.type === 'prods') {
-            var prodsHTML = pageData.items.length
-                ? pageData.items.map(function(pr) {
-                    var imgHTML = pr.photoUrl
-                        ? '<div class="timeline-img-wrap"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
-                        : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
-                    return '<div class="timeline-item">' +
-                        imgHTML +
-                        '<div class="timeline-body">' +
-                            '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
-                            '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
-                            '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
-                        '</div>' +
-                    '</div>';
-                }).join('')
-                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
-            frontHTML = '<h2 class="page-title">Producciones</h2>' +
-                        '<div class="page-title-rule"></div>' +
-                        '<div class="timeline">' + prodsHTML + '</div>';
-        } else {
-            var videosHTML = pageData.items.length
-                ? pageData.items.map(function(v, i) {
-                    return '<div class="video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
-                        '<i class="bx bx-play-circle"></i>' +
-                        '<div><div class="vt">' + esc(v.title||'Video '+(i+1)) + '</div>' +
-                        '<div class="vu">' + esc(v.url) + '</div></div></a></div>';
-                }).join('')
-                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>';
-            frontHTML = '<h2 class="page-title">Videos</h2>' +
-                        '<div class="page-title-rule"></div>' +
-                        '<div class="video-list">' + videosHTML + '</div>';
+    function renderContent(data) {
+        if (!data) {
+            return '<div class="page-back-deco"><i class="bx bx-mask"></i></div>';
         }
+        if (data.type === 'prods') {
+            var body = data.items.length
+                ? data.items.map(renderProd).join('')
+                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
+            return '<h2 class="page-title">Producciones</h2>' +
+                   '<div class="page-title-rule"></div>' +
+                   '<div class="timeline">' + body + '</div>';
+        }
+        /* videos */
+        var body = data.items.length
+            ? data.items.map(function(v, i) {
+                return '<div class="video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
+                    '<i class="bx bx-play-circle"></i>' +
+                    '<div><div class="vt">' + esc(v.title||'Video '+(i+1)) + '</div>' +
+                    '<div class="vu">' + esc(v.url) + '</div></div></a></div>';
+              }).join('')
+            : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>';
+        return '<h2 class="page-title">Videos</h2>' +
+               '<div class="page-title-rule"></div>' +
+               '<div class="video-list">' + body + '</div>';
+    }
+
+    turns.forEach(function(turn, idx) {
+        var id           = 'turn-' + (idx + 1);
+        var zIndex       = total - idx;
+        var frontPageNum = idx * 2 + 2;   /* perfil=1, turn-1-frente=2, turn-1-dorso=3, … */
+        var backPageNum  = frontPageNum + 1;
+        var isLast       = idx === total - 1;
 
         var el = document.createElement('div');
         el.className = 'book-page page-right';
@@ -839,13 +865,13 @@ function buildBookPages(p) {
         el.style.zIndex = zIndex;
         el.innerHTML =
             '<div class="page-front">' +
-                frontHTML +
-                '<span class="number-page">' + pageNum + '</span>' +
+                renderContent(turn.front) +
+                '<span class="number-page">' + frontPageNum + '</span>' +
                 (!isLast ? '<span class="nextprev-btn" data-page="' + id + '"><i class="bx bx-chevron-right"></i></span>' : '') +
             '</div>' +
             '<div class="page-back">' +
-                '<div class="page-back-deco"><i class="bx bx-mask"></i></div>' +
-                '<span class="number-page">' + (pageNum + 1) + '</span>' +
+                renderContent(turn.back) +
+                '<span class="number-page">' + backPageNum + '</span>' +
                 '<span class="nextprev-btn back" data-page="' + id + '"><i class="bx bx-chevron-left"></i></span>' +
             '</div>';
 
