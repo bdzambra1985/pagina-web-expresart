@@ -1727,7 +1727,15 @@ body {
 }
 
 /* ── Skeleton shimmer para imágenes que cargan lento ── */
-img { transition: opacity 0.30s ease; }
+img {
+    transition: opacity 0.30s ease;
+    -webkit-touch-callout: none;   /* iOS: deshabilita menú largo-toque "Guardar imagen" */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;       /* WebKit: impide arrastrar imagen al escritorio */
+    pointer-events: none;          /* bloquea clic-derecho nativo sobre el <img> */
+}
+/* Las imágenes dentro de wrappers clickeables recuperan eventos en el wrapper, no en el <img> */
 .img-skeleton {
     background: linear-gradient(
         90deg,

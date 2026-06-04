@@ -70,3 +70,11 @@ function initImgSkeletons() {
     }).observe(document.body || document.documentElement, { childList: true, subtree: true });
 }
 document.addEventListener('DOMContentLoaded', initImgSkeletons);
+
+/* ── Protección contra descarga / guardado de imágenes ── */
+document.addEventListener('contextmenu', function(e) {
+    if (e.target.tagName === 'IMG') e.preventDefault();
+}, false);
+document.addEventListener('dragstart', function(e) {
+    if (e.target.tagName === 'IMG') e.preventDefault();
+}, false);
