@@ -361,11 +361,14 @@
             position: relative;
             z-index: 1;
             overflow: hidden;
+            touch-action: manipulation; /* un solo toque en móvil, sin esperar doble-tap */
             transition: box-shadow 0.25s ease, border-color 0.25s ease;
         }
-        .timeline-img-wrap:hover {
-            box-shadow: 0 0 0 2px rgba(201,162,39,0.70);
-            border-color: rgba(201,162,39,0.80);
+        @media (hover: hover) {
+            .timeline-img-wrap:hover {
+                box-shadow: 0 0 0 2px rgba(201,162,39,0.70);
+                border-color: rgba(201,162,39,0.80);
+            }
         }
 
         /* ── Overlay de zoom ── */
@@ -377,7 +380,8 @@
             background: rgba(0,0,0,0.82);
             align-items: center;
             justify-content: center;
-            pointer-events: none; /* no intercepta mouse → sin parpadeo por hover */
+            cursor: zoom-out;
+            /* pointer-events: auto (default) — parpadeo evitado con debounce JS */
         }
         #imgZoomOverlay.show { display: flex; }
         #imgZoomClose {
@@ -1147,32 +1151,51 @@ function _getEmbedUrl(url) {
 }
 
 /* ── Zoom de imagen centrado ── */
-function _zoomImg(src) {
+var _zoomHideTimer = null;
+
+function _zoomShow(src) {
+    clearTimeout(_zoomHideTimer);
     document.getElementById('imgZoomImg').src = src;
     document.getElementById('imgZoomOverlay').classList.add('show');
 }
+function _zoomHide() {
+    /* Debounce 120ms: evita parpadeo cuando el mouse pasa del wrap al overlay */
+    _zoomHideTimer = setTimeout(function() {
+        document.getElementById('imgZoomOverlay').classList.remove('show');
+    }, 120);
+}
+function _zoomImg(src) { _zoomShow(src); } /* llamado desde collage en popup */
 
-/* ── Zoom: mouseenter/leave (sin parpadeo gracias a pointer-events:none en overlay) ── */
+/* Hover desktop: capture phase para wrap + overlay (debounce une los dos) */
 document.addEventListener('mouseenter', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
-    if (wrap) {
-        var img = wrap.querySelector('img');
-        if (img) { document.getElementById('imgZoomImg').src = img.src; document.getElementById('imgZoomOverlay').classList.add('show'); }
-    }
+    if (wrap) { var img = wrap.querySelector('img'); if (img) _zoomShow(img.src); return; }
+    if (e.target.closest && e.target.closest('#imgZoomOverlay')) { clearTimeout(_zoomHideTimer); }
 }, true);
 document.addEventListener('mouseleave', function(e) {
-    var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
-    if (wrap) { document.getElementById('imgZoomOverlay').classList.remove('show'); }
+    if (e.target.closest && e.target.closest('.timeline-img-wrap')) { _zoomHide(); return; }
+    if (e.target.closest && e.target.closest('#imgZoomOverlay')) { _zoomHide(); }
 }, true);
-/* Click para móvil: toggle al tocar el wrap, cierra al tocar otra cosa */
+
+/* Click overlay background → cerrar zoom SIN afectar lo que hay detrás */
+document.getElementById('imgZoomOverlay').addEventListener('click', function(e) {
+    e.stopPropagation();
+    clearTimeout(_zoomHideTimer);
+    document.getElementById('imgZoomOverlay').classList.remove('show');
+});
+
+/* Un solo toque en móvil: primer toque muestra, segundo toque cierra */
 document.addEventListener('click', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
-    if (wrap) {
-        var ov = document.getElementById('imgZoomOverlay');
-        if (ov.classList.contains('show')) { ov.classList.remove('show'); }
-        else { var img = wrap.querySelector('img'); if (img) { document.getElementById('imgZoomImg').src = img.src; ov.classList.add('show'); } }
-    } else if (!e.target.closest('#imgZoomOverlay') && !e.target.closest('#prodPopup')) {
-        document.getElementById('imgZoomOverlay').classList.remove('show');
+    if (!wrap) return;
+    e.stopPropagation();
+    var ov = document.getElementById('imgZoomOverlay');
+    if (ov.classList.contains('show')) {
+        clearTimeout(_zoomHideTimer);
+        ov.classList.remove('show');
+    } else {
+        var img = wrap.querySelector('img');
+        if (img) _zoomShow(img.src);
     }
 });
 
