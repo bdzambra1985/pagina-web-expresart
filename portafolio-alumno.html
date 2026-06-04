@@ -361,15 +361,33 @@
             position: relative;
             z-index: 1;
             overflow: hidden;
-            transition: transform 0.30s ease, z-index 0s 0s, box-shadow 0.30s ease;
-            transform-origin: center center;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
         }
         .timeline-img-wrap:hover {
-            transform: scale(5);
-            z-index: 80;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.70);
-            overflow: hidden;
-            transition: transform 0.30s ease, box-shadow 0.30s ease;
+            box-shadow: 0 0 0 2px rgba(201,162,39,0.70);
+            border-color: rgba(201,162,39,0.80);
+        }
+
+        /* ── Overlay de zoom ── */
+        #imgZoomOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99997;
+            background: rgba(0,0,0,0.82);
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        #imgZoomOverlay.show { display: flex; }
+        #imgZoomImg {
+            max-width: min(82vw, 620px);
+            max-height: min(82vh, 620px);
+            border-radius: 14px;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.85);
+            border: 2px solid rgba(201,162,39,0.55);
+            object-fit: contain;
+            pointer-events: none;
         }
         .timeline-img {
             width: 100%; height: 100%;
@@ -851,6 +869,11 @@
 
 </div><!-- /mobile-view -->
 
+<!-- ── Overlay de zoom de foto ── -->
+<div id="imgZoomOverlay" onclick="document.getElementById('imgZoomOverlay').classList.remove('show')">
+    <img id="imgZoomImg" src="" alt="">
+</div>
+
 <!-- ── Popup de detalles / videos ── -->
 <div class="prod-popup-overlay" id="prodPopup" onclick="closeProdPopup(event)">
     <div class="prod-popup-box" onclick="event.stopPropagation()">
@@ -1027,11 +1050,17 @@ function buildBookPages(p) {
 function _openDetalles(idx) {
     var pr = _allProds[idx];
     if (!pr) return;
-    var photos = (pr.photos && pr.photos.length) ? pr.photos : (pr.photoUrl ? [pr.photoUrl] : []);
+    /* Combinar photoUrl (slot 0) + photos[] adicionales */
+    var allPhotos = [];
+    if (pr.photoUrl) allPhotos.push(pr.photoUrl);
+    if (pr.photos && pr.photos.length) {
+        pr.photos.forEach(function(u) { if (u) allPhotos.push(u); });
+    }
     var cells = '';
     for (var i = 0; i < 6; i++) {
-        if (photos[i]) {
-            cells += '<div class="prod-popup-photo"><img src="' + esc(photos[i]) + '" alt="foto ' + (i+1) + '"></div>';
+        if (allPhotos[i]) {
+            cells += '<div class="prod-popup-photo" style="cursor:zoom-in" onclick="_zoomImg(\'' + allPhotos[i].replace(/'/g,'%27') + '\')">' +
+                     '<img src="' + esc(allPhotos[i]) + '" alt="foto ' + (i+1) + '"></div>';
         } else {
             cells += '<div class="prod-popup-photo"><div class="prod-popup-photo-ph"><i class="bx bx-image"></i></div></div>';
         }
@@ -1048,17 +1077,19 @@ function _openDetalles(idx) {
     document.getElementById('prodPopup').classList.add('open');
 }
 
-/* ── Popup: Videos ── */
+/* ── Popup: Videos (lista) ── */
 function _openVideos() {
     var videos = _allVideos;
     var body = videos.length
         ? '<div class="prod-popup-video-list">' +
             videos.map(function(v, i) {
-                return '<div class="prod-popup-video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
-                    '<i class="bx bx-play-circle"></i>' +
-                    '<div><div style="font-weight:600;font-size:0.82rem">' + esc(v.title||'Video '+(i+1)) + '</div>' +
-                    '<div style="font-size:0.65rem;opacity:0.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px">' + esc(v.url) + '</div>' +
-                    '</div></a></div>';
+                return '<div class="prod-popup-video-item">' +
+                    '<button onclick="_playVideo(' + i + ')" style="width:100%;display:flex;align-items:center;gap:10px;background:rgba(201,162,39,0.04);border:1px solid rgba(201,162,39,0.28);border-radius:8px;padding:10px 14px;cursor:pointer;color:rgba(255,220,180,0.90);font-family:Poppins,sans-serif;font-size:0.80rem;text-align:left;">' +
+                        '<i class="bx bx-play-circle" style="font-size:1.5rem;color:#cc0000;flex-shrink:0"></i>' +
+                        '<div><div style="font-weight:600">' + esc(v.title||'Video '+(i+1)) + '</div>' +
+                        '<div style="font-size:0.65rem;opacity:0.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:480px">' + esc(v.url) + '</div>' +
+                        '</div>' +
+                    '</button></div>';
             }).join('') + '</div>'
         : '<p style="color:rgba(255,200,200,0.50);font-size:0.82rem;font-style:italic;margin-top:8px">Sin videos registrados.</p>';
     document.getElementById('prodPopupContent').innerHTML =
@@ -1068,9 +1099,62 @@ function _openVideos() {
     document.getElementById('prodPopup').classList.add('open');
 }
 
+/* ── Reproducir video en popup ── */
+function _playVideo(idx) {
+    var v = _allVideos[idx];
+    if (!v) return;
+    var embed = _getEmbedUrl(v.url);
+    document.getElementById('prodPopupContent').innerHTML =
+        '<button onclick="_openVideos()" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:rgba(201,162,39,0.80);font-size:0.75rem;cursor:pointer;margin-bottom:12px;font-family:Poppins,sans-serif;">' +
+            '<i class="bx bx-arrow-back"></i> Volver a videos</button>' +
+        '<div class="prod-popup-title">' + esc(v.title||'Video') + '</div>' +
+        '<div style="position:relative;padding-top:56.25%;margin-top:12px;border-radius:10px;overflow:hidden;background:#000">' +
+            '<iframe src="' + esc(embed) + '" style="position:absolute;top:0;left:0;width:100%;height:100%" frameborder="0" ' +
+            'allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>' +
+        '</div>';
+    document.getElementById('prodPopup').classList.add('open');
+}
+
+function _getEmbedUrl(url) {
+    var yt = url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
+    if (yt) return 'https://www.youtube.com/embed/' + yt[1] + '?autoplay=1&rel=0';
+    var vm = url.match(/vimeo\.com\/(\d+)/);
+    if (vm) return 'https://player.vimeo.com/video/' + vm[1] + '?autoplay=1';
+    return url;
+}
+
+/* ── Zoom de imagen centrado ── */
+function _zoomImg(src) {
+    document.getElementById('imgZoomImg').src = src;
+    document.getElementById('imgZoomOverlay').classList.add('show');
+}
+
+/* ── Zoom delegado (hover desktop + click móvil) ── */
+document.addEventListener('mouseover', function(e) {
+    var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
+    if (wrap) {
+        var img = wrap.querySelector('img');
+        if (img) { document.getElementById('imgZoomImg').src = img.src; document.getElementById('imgZoomOverlay').classList.add('show'); }
+    }
+});
+document.addEventListener('mouseout', function(e) {
+    var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
+    if (wrap && (!e.relatedTarget || !e.relatedTarget.closest('.timeline-img-wrap'))) {
+        document.getElementById('imgZoomOverlay').classList.remove('show');
+    }
+});
+document.addEventListener('click', function(e) {
+    var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
+    if (wrap) {
+        var img = wrap.querySelector('img');
+        if (img) { document.getElementById('imgZoomImg').src = img.src; document.getElementById('imgZoomOverlay').classList.add('show'); }
+    }
+});
+
 /* ── Cerrar popup ── */
 function closeProdPopup(e, force) {
     if (force || (e && e.target === document.getElementById('prodPopup'))) {
+        document.getElementById('prodPopupContent').innerHTML = '';
         document.getElementById('prodPopup').classList.remove('open');
     }
 }
