@@ -766,6 +766,7 @@ function renderProd() {
             const d = await r.json();
             if (d.ok) {
                 profile.producciones[i].photoUrl = d.url;
+                profile.producciones = collectProd(); // preserva texto escrito en otras producciones
                 renderProd();
                 showToast('✓ Foto de producción subida');
             } else {
@@ -776,6 +777,7 @@ function renderProd() {
 }
 
 window.deleteProd = function(i) {
+    profile.producciones = collectProd(); // preserva datos no guardados de las demás producciones
     profile.producciones.splice(i, 1);
     renderProd();
 };
@@ -831,7 +833,7 @@ async function uploadCollagePhoto(prodIdx, slotIdx) {
 }
 
 document.getElementById('addProdBtn').onclick = () => {
-    profile.producciones = profile.producciones || [];
+    profile.producciones = collectProd(); // guarda lo que el usuario escribió antes de re-renderizar
     profile.producciones.push({ year:'', title:'', role:'', description:'', photoUrl:'' });
     renderProd();
 };
