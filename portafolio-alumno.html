@@ -362,12 +362,12 @@
             z-index: 1;
             overflow: hidden;
             transition: transform 0.30s ease, z-index 0s 0s, box-shadow 0.30s ease;
-            transform-origin: top left;
+            transform-origin: center center;
         }
         .timeline-img-wrap:hover {
-            transform: scale(2.4);
+            transform: scale(5);
             z-index: 80;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.70);
             overflow: hidden;
             transition: transform 0.30s ease, box-shadow 0.30s ease;
         }
@@ -591,6 +591,131 @@
         }
         .page-back-deco i { font-size: 9rem; color: var(--crimson); }
 
+        /* ── Botones de producción ── */
+        .prod-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(140,0,0,0.40);
+            border: 1px solid rgba(200,30,30,0.50);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.60rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
+        }
+        .prod-btn:hover { background: rgba(180,0,0,0.65); }
+        .prod-btn.videos-btn {
+            background: rgba(10,10,60,0.50);
+            border-color: rgba(100,120,220,0.55);
+        }
+        .prod-btn.videos-btn:hover { background: rgba(30,30,100,0.70); }
+
+        /* ── Popup ── */
+        .prod-popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.88);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .prod-popup-overlay.open { display: flex; }
+        .prod-popup-box {
+            background: linear-gradient(135deg, #1a0005 0%, #0d0002 100%);
+            border: 1px solid rgba(201,162,39,0.42);
+            border-radius: 18px;
+            max-width: 680px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.80), 0 0 0 1px rgba(201,162,39,0.12);
+        }
+        .prod-popup-close {
+            position: absolute;
+            top: 14px; right: 16px;
+            width: 32px; height: 32px;
+            background: rgba(180,0,0,0.30);
+            border: 1px solid rgba(200,30,30,0.50);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .prod-popup-close:hover { background: rgba(200,20,20,0.65); }
+        .prod-popup-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+            padding-right: 44px;
+        }
+        .prod-popup-year {
+            font-size: 0.70rem; letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(201,162,39,0.85);
+            margin-bottom: 18px;
+        }
+        .prod-popup-section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem; font-weight: 700;
+            color: var(--gold, #c9a227);
+            margin: 0 0 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .prod-popup-collage {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .prod-popup-photo {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(40,0,10,0.60);
+            border: 1px solid rgba(201,162,39,0.18);
+        }
+        .prod-popup-photo img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+        }
+        .prod-popup-photo-ph {
+            width: 100%; height: 100%;
+            min-height: 80px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .prod-popup-photo-ph i { font-size: 2rem; color: rgba(201,162,39,0.15); }
+        .prod-popup-desc {
+            font-size: 0.82rem; line-height: 1.68;
+            color: rgba(255,230,230,0.68);
+            margin-bottom: 18px;
+        }
+        .prod-popup-video-list { display: flex; flex-direction: column; gap: 8px; }
+        .prod-popup-video-item a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid rgba(201,162,39,0.28);
+            border-radius: 8px;
+            text-decoration: none;
+            color: rgba(255,220,180,0.90);
+            font-size: 0.80rem;
+            background: rgba(201,162,39,0.04);
+            transition: background 0.2s;
+        }
+        .prod-popup-video-item a:hover { background: rgba(201,162,39,0.12); }
+        .prod-popup-video-item i { font-size: 1.5rem; color: #cc0000; flex-shrink: 0; }
+
         /* ── Responsive toggle ── */
         @media (max-width: 767px) {
             .book-wrapper { display: none !important; }
@@ -726,6 +851,14 @@
 
 </div><!-- /mobile-view -->
 
+<!-- ── Popup de detalles / videos ── -->
+<div class="prod-popup-overlay" id="prodPopup" onclick="closeProdPopup(event)">
+    <div class="prod-popup-box" onclick="event.stopPropagation()">
+        <button class="prod-popup-close" onclick="closeProdPopup(null,true)"><i class="bx bx-x"></i></button>
+        <div id="prodPopupContent"></div>
+    </div>
+</div>
+
 <script src="common.js"></script>
 <script>
 function ytThumb(url) {
@@ -782,12 +915,19 @@ function populateBook(p) {
     openCover();
 }
 
-/* ── Generar hojas de producciones (2 por cara) + Videos ── */
+/* ── Globales para popups ── */
+var _allProds  = [];
+var _allVideos = [];
+
+/* ── Generar hojas de producciones (2 por cara) ── */
 function buildBookPages(p) {
+    _allProds  = (p.producciones && p.producciones.length) ? p.producciones : [];
+    _allVideos = p.videos || [];
+
     const book = document.querySelector('.book');
     book.querySelectorAll('.book-page.page-right').forEach(el => el.remove());
 
-    const prods = (p.producciones && p.producciones.length) ? p.producciones : [];
+    const prods = _allProds;
 
     /* Chunks de 2 producciones */
     var chunks = [];
@@ -807,12 +947,11 @@ function buildBookPages(p) {
             back:  i + 1 < chunks.length ? { type: 'prods', items: chunks[i + 1] } : null
         });
     }
-    /* Turno de videos al final */
-    turns.push({ front: { type: 'videos', items: p.videos || [] }, back: null });
 
     const total = turns.length;
 
     function renderProd(pr) {
+        var gIdx = _allProds.indexOf(pr);
         var imgHTML = pr.photoUrl
             ? '<div class="timeline-img-wrap"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
             : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
@@ -822,6 +961,10 @@ function buildBookPages(p) {
                 '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
                 '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
                 '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
+                '<div style="display:flex;gap:5px;margin-top:6px;">' +
+                    '<button class="prod-btn" onclick="_openDetalles(' + gIdx + ')"><i class="bx bx-image-alt"></i> Detalles</button>' +
+                    '<button class="prod-btn videos-btn" onclick="_openVideos()"><i class="bx bx-play-circle"></i> Videos</button>' +
+                '</div>' +
             '</div>' +
         '</div>';
     }
@@ -830,32 +973,18 @@ function buildBookPages(p) {
         if (!data) {
             return '<div class="page-back-deco"><i class="bx bx-mask"></i></div>';
         }
-        if (data.type === 'prods') {
-            var body = data.items.length
-                ? data.items.map(renderProd).join('')
-                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
-            return '<h2 class="page-title">Producciones</h2>' +
-                   '<div class="page-title-rule"></div>' +
-                   '<div class="timeline">' + body + '</div>';
-        }
-        /* videos */
         var body = data.items.length
-            ? data.items.map(function(v, i) {
-                return '<div class="video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
-                    '<i class="bx bx-play-circle"></i>' +
-                    '<div><div class="vt">' + esc(v.title||'Video '+(i+1)) + '</div>' +
-                    '<div class="vu">' + esc(v.url) + '</div></div></a></div>';
-              }).join('')
-            : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>';
-        return '<h2 class="page-title">Videos</h2>' +
+            ? data.items.map(renderProd).join('')
+            : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
+        return '<h2 class="page-title">Producciones</h2>' +
                '<div class="page-title-rule"></div>' +
-               '<div class="video-list">' + body + '</div>';
+               '<div class="timeline">' + body + '</div>';
     }
 
     turns.forEach(function(turn, idx) {
         var id           = 'turn-' + (idx + 1);
         var zIndex       = total - idx;
-        var frontPageNum = idx * 2 + 2;   /* perfil=1, turn-1-frente=2, turn-1-dorso=3, … */
+        var frontPageNum = idx * 2 + 2;
         var backPageNum  = frontPageNum + 1;
         var isLast       = idx === total - 1;
 
@@ -894,6 +1023,58 @@ function buildBookPages(p) {
     });
 }
 
+/* ── Popup: Detalles ── */
+function _openDetalles(idx) {
+    var pr = _allProds[idx];
+    if (!pr) return;
+    var photos = (pr.photos && pr.photos.length) ? pr.photos : (pr.photoUrl ? [pr.photoUrl] : []);
+    var cells = '';
+    for (var i = 0; i < 6; i++) {
+        if (photos[i]) {
+            cells += '<div class="prod-popup-photo"><img src="' + esc(photos[i]) + '" alt="foto ' + (i+1) + '"></div>';
+        } else {
+            cells += '<div class="prod-popup-photo"><div class="prod-popup-photo-ph"><i class="bx bx-image"></i></div></div>';
+        }
+    }
+    document.getElementById('prodPopupContent').innerHTML =
+        '<div class="prod-popup-title">' + esc(pr.title||'Producción') + '</div>' +
+        '<div class="prod-popup-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</div>' +
+        '<p class="prod-popup-section-title"><i class="bx bx-images"></i> Fotos</p>' +
+        '<div class="prod-popup-collage">' + cells + '</div>' +
+        (pr.description
+            ? '<p class="prod-popup-section-title"><i class="bx bx-text"></i> Descripción</p>' +
+              '<p class="prod-popup-desc">' + esc(pr.description) + '</p>'
+            : '');
+    document.getElementById('prodPopup').classList.add('open');
+}
+
+/* ── Popup: Videos ── */
+function _openVideos() {
+    var videos = _allVideos;
+    var body = videos.length
+        ? '<div class="prod-popup-video-list">' +
+            videos.map(function(v, i) {
+                return '<div class="prod-popup-video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
+                    '<i class="bx bx-play-circle"></i>' +
+                    '<div><div style="font-weight:600;font-size:0.82rem">' + esc(v.title||'Video '+(i+1)) + '</div>' +
+                    '<div style="font-size:0.65rem;opacity:0.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px">' + esc(v.url) + '</div>' +
+                    '</div></a></div>';
+            }).join('') + '</div>'
+        : '<p style="color:rgba(255,200,200,0.50);font-size:0.82rem;font-style:italic;margin-top:8px">Sin videos registrados.</p>';
+    document.getElementById('prodPopupContent').innerHTML =
+        '<div class="prod-popup-title">Videos</div>' +
+        '<div class="prod-popup-year">EXPRESART</div>' +
+        body;
+    document.getElementById('prodPopup').classList.add('open');
+}
+
+/* ── Cerrar popup ── */
+function closeProdPopup(e, force) {
+    if (force || (e && e.target === document.getElementById('prodPopup'))) {
+        document.getElementById('prodPopup').classList.remove('open');
+    }
+}
+
 /* ── Poblar móvil ── */
 function populateMobile(p) {
     document.getElementById('mName').textContent = p.displayName || '';
@@ -910,7 +1091,7 @@ function populateMobile(p) {
 
     /* Producciones */
     if (p.producciones && p.producciones.length) {
-        document.getElementById('mProd').innerHTML = p.producciones.map(pr => `
+        document.getElementById('mProd').innerHTML = p.producciones.map((pr, idx) => `
             <div class="timeline-item">
                 ${pr.photoUrl
                     ? `<div class="timeline-img-wrap"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
@@ -919,6 +1100,10 @@ function populateMobile(p) {
                     <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
                     <h3 class="timeline-title">${esc(pr.title||'')}</h3>
                     <p class="timeline-text">${esc(pr.description||'')}</p>
+                    <div style="display:flex;gap:5px;margin-top:6px;">
+                        <button class="prod-btn" onclick="_openDetalles(${idx})"><i class="bx bx-image-alt"></i> Detalles</button>
+                        <button class="prod-btn videos-btn" onclick="_openVideos()"><i class="bx bx-play-circle"></i> Videos</button>
+                    </div>
                 </div>
             </div>`).join('');
     } else {
