@@ -558,6 +558,15 @@
         .m-video-item a { color: var(--text); text-decoration: none; font-size: 0.82rem; }
         .m-video-item a:hover { color: var(--crimson); }
 
+        .page-back-deco {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: calc(100% - 3rem);
+            opacity: 0.07;
+        }
+        .page-back-deco i { font-size: 9rem; color: var(--crimson); }
+
         /* ── Responsive toggle ── */
         @media (max-width: 767px) {
             .book-wrapper { display: none !important; }
@@ -639,51 +648,7 @@
                 </div>
             </div>
 
-            <!-- ── Páginas 1 & 2 — Producciones / Videos ── -->
-            <div class="book-page page-right" id="turn-1" style="z-index:2">
-                <div class="page-front">
-                    <h2 class="page-title">Producciones</h2>
-                    <div class="page-title-rule"></div>
-                    <div class="timeline" id="bookProd">
-                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>
-                    </div>
-                    <span class="number-page">1</span>
-                    <span class="nextprev-btn" data-page="turn-1"><i class="bx bx-chevron-right"></i></span>
-                </div>
-                <div class="page-back">
-                    <h2 class="page-title">Videos</h2>
-                    <div class="page-title-rule"></div>
-                    <div class="video-list" id="bookVideos">
-                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>
-                    </div>
-                    <span class="number-page">2</span>
-                    <span class="nextprev-btn back" data-page="turn-1"><i class="bx bx-chevron-left"></i></span>
-                </div>
-            </div>
-
-            <!-- ── Páginas 3 & 4 — Especialidades / Sobre la Escuela ── -->
-            <div class="book-page page-right" id="turn-2" style="z-index:1">
-                <div class="page-front">
-                    <h2 class="page-title">Especialidades</h2>
-                    <div class="page-title-rule"></div>
-                    <div class="esp-list" id="bookEsp">
-                        <p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin especialidades registradas.</p>
-                    </div>
-                    <span class="number-page">3</span>
-                    <span class="nextprev-btn" data-page="turn-2"><i class="bx bx-chevron-right"></i></span>
-                </div>
-                <div class="page-back">
-                    <h2 class="page-title">Sobre la Escuela</h2>
-                    <div class="page-title-rule"></div>
-                    <div class="contact-school">
-                        <p>EXPRESART forma artistas escénicos con técnica, sensibilidad y vocación. Cada alumno construye su propio lenguaje artístico a través de nuestra metodología integral.</p>
-                        <a href="nosotros.html" class="tbtn" style="align-self:flex-start">Conoce EXPRESART</a>
-                        <a href="portafolio.html" class="tbtn" style="align-self:flex-start;background:transparent;border-color:var(--gold);color:var(--gold)">← Otros artistas</a>
-                    </div>
-                    <span class="number-page">4</span>
-                    <span class="nextprev-btn back" data-page="turn-2"><i class="bx bx-chevron-left"></i></span>
-                </div>
-            </div>
+            <!-- Las páginas derechas se generan dinámicamente en JS -->
 
         </div><!-- /book -->
     </div><!-- /wrapper -->
@@ -779,41 +744,110 @@ function populateBook(p) {
         document.getElementById('bookAvatar').replaceWith(img);
     }
 
-    /* Producciones */
-    if (p.producciones && p.producciones.length) {
-        document.getElementById('bookProd').innerHTML = p.producciones.map(pr => `
-            <div class="timeline-item">
-                <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
-                <h3 class="timeline-title">${esc(pr.title||'')}</h3>
-                <p class="timeline-text">${esc(pr.description||'')}</p>
-                ${pr.photoUrl ? `<img class="timeline-img" src="${esc(pr.photoUrl)}" alt="${esc(pr.title||'')}">` : ''}
-            </div>`).join('');
-    }
-
-    /* Videos */
-    if (p.videos && p.videos.length) {
-        document.getElementById('bookVideos').innerHTML = p.videos.map((v,i) => `
-            <div class="video-item">
-                <a href="${esc(v.url)}" target="_blank" rel="noopener">
-                    <i class="bx bx-play-circle"></i>
-                    <div>
-                        <div class="vt">${esc(v.title||'Video '+(i+1))}</div>
-                        <div class="vu">${esc(v.url)}</div>
-                    </div>
-                </a>
-            </div>`).join('');
-    }
-
-    /* Especialidades en página 3 y en perfil */
+    /* Especialidades en perfil */
     if (p.especialidades && p.especialidades.length) {
-        const tags = p.especialidades.map(e => `<span class="esp-tag">${esc(e)}</span>`).join('');
-        document.getElementById('bookEsp').innerHTML = tags;
         document.getElementById('bookEspProfile').innerHTML = p.especialidades.map(e =>
             `<span class="profile-esp-tag">${esc(e)}</span>`).join('');
     }
 
+    /* Generar hojas dinámicas */
+    buildBookPages(p);
+
     /* Abrir portada ahora que los datos están listos */
     openCover();
+}
+
+/* ── Generar hojas de producciones (2 por hoja) + Videos ── */
+function buildBookPages(p) {
+    const book = document.querySelector('.book');
+    book.querySelectorAll('.book-page.page-right').forEach(el => el.remove());
+
+    const pages = [];
+
+    /* Agrupar producciones de 2 en 2 */
+    const prods = (p.producciones && p.producciones.length) ? p.producciones : [];
+    if (prods.length === 0) {
+        pages.push({ type: 'prods', items: [] });
+    } else {
+        for (let i = 0; i < prods.length; i += 2) {
+            pages.push({ type: 'prods', items: prods.slice(i, i + 2) });
+        }
+    }
+
+    /* Hoja de videos */
+    pages.push({ type: 'videos', items: p.videos || [] });
+
+    const total = pages.length;
+
+    pages.forEach(function(pageData, idx) {
+        const id      = 'turn-' + (idx + 1);
+        const zIndex  = total - idx;
+        const pageNum = idx * 2 + 1;
+        const isLast  = idx === total - 1;
+
+        /* Contenido del frente */
+        var frontHTML = '';
+        if (pageData.type === 'prods') {
+            var prodsHTML = pageData.items.length
+                ? pageData.items.map(function(pr) {
+                    return '<div class="timeline-item">' +
+                        '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
+                        '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
+                        '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
+                        (pr.photoUrl ? '<img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt="">' : '') +
+                    '</div>';
+                }).join('')
+                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
+            frontHTML = '<h2 class="page-title">Producciones</h2>' +
+                        '<div class="page-title-rule"></div>' +
+                        '<div class="timeline">' + prodsHTML + '</div>';
+        } else {
+            var videosHTML = pageData.items.length
+                ? pageData.items.map(function(v, i) {
+                    return '<div class="video-item"><a href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
+                        '<i class="bx bx-play-circle"></i>' +
+                        '<div><div class="vt">' + esc(v.title||'Video '+(i+1)) + '</div>' +
+                        '<div class="vu">' + esc(v.url) + '</div></div></a></div>';
+                }).join('')
+                : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin videos registrados.</p>';
+            frontHTML = '<h2 class="page-title">Videos</h2>' +
+                        '<div class="page-title-rule"></div>' +
+                        '<div class="video-list">' + videosHTML + '</div>';
+        }
+
+        var el = document.createElement('div');
+        el.className = 'book-page page-right';
+        el.id = id;
+        el.style.zIndex = zIndex;
+        el.innerHTML =
+            '<div class="page-front">' +
+                frontHTML +
+                '<span class="number-page">' + pageNum + '</span>' +
+                (!isLast ? '<span class="nextprev-btn" data-page="' + id + '"><i class="bx bx-chevron-right"></i></span>' : '') +
+            '</div>' +
+            '<div class="page-back">' +
+                '<div class="page-back-deco"><i class="bx bx-mask"></i></div>' +
+                '<span class="number-page">' + (pageNum + 1) + '</span>' +
+                '<span class="nextprev-btn back" data-page="' + id + '"><i class="bx bx-chevron-left"></i></span>' +
+            '</div>';
+
+        book.appendChild(el);
+    });
+
+    /* Event listeners */
+    book.querySelectorAll('.nextprev-btn').forEach(function(btn) {
+        btn.onclick = function() {
+            var page = document.getElementById(btn.getAttribute('data-page'));
+            if (page.classList.contains('turn')) {
+                page.classList.remove('turn');
+                var num = parseInt(page.id.replace('turn-', ''));
+                page.style.zIndex = total - num + 1;
+            } else {
+                page.classList.add('turn');
+                page.style.zIndex = 20;
+            }
+        };
+    });
 }
 
 /* ── Poblar móvil ── */
@@ -867,20 +901,6 @@ function populateMobile(p) {
 
 /* ── Libro ── */
 const coverRight = document.querySelector('.cover.cover-right');
-
-/* Botones siguiente / anterior */
-document.querySelectorAll('.nextprev-btn').forEach(function(el) {
-    el.onclick = function() {
-        var page = document.getElementById(el.getAttribute('data-page'));
-        if (page.classList.contains('turn')) {
-            page.classList.remove('turn');
-            page.style.zIndex = page.id === 'turn-1' ? 2 : 1;
-        } else {
-            page.classList.add('turn');
-            page.style.zIndex = 20;
-        }
-    };
-});
 
 /* La portada se abre brevemente cuando los datos ya están listos */
 function openCover() {
