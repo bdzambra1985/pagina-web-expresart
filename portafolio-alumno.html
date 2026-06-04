@@ -410,12 +410,29 @@
         #imgZoomFrame {
             position: relative;
             display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 18px;
             transform: scale(0.80);
             transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         #imgZoomOverlay.show #imgZoomFrame {
             transform: scale(1);
+        }
+        #imgZoomLoading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            width: 180px; height: 180px;
+            color: rgba(201,162,39,0.65);
+        }
+        #imgZoomLoading i { font-size: 2.2rem; }
+        #imgZoomLoading span {
+            font-size: 0.63rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
         }
         #imgZoomClose {
             position: absolute;
@@ -966,7 +983,11 @@
         <button id="imgZoomClose" onclick="event.stopPropagation();_zoomHideNow()">
             <i class="bx bx-x"></i>
         </button>
-        <img id="imgZoomImg" src="" alt="">
+        <div id="imgZoomLoading">
+            <i class="bx bx-loader-alt bx-spin"></i>
+            <span>Cargando…</span>
+        </div>
+        <img id="imgZoomImg" src="" alt="" style="display:none">
     </div>
     <p id="imgZoomHint">Toca para cerrar</p>
 </div>
@@ -1230,15 +1251,42 @@ function _getEmbedUrl(url) {
 
 /* ── Zoom de imagen centrado ── */
 var _zoomHideTimer = null;
+var _zoomActiveSrc = null; // evita mostrar imagen de carga anterior si se cambió rápido
 
 function _zoomHideNow() {
     clearTimeout(_zoomHideTimer);
+    _zoomActiveSrc = null;
     document.getElementById('imgZoomOverlay').classList.remove('show');
 }
 function _zoomShow(src) {
     clearTimeout(_zoomHideTimer);
-    document.getElementById('imgZoomImg').src = src;
+    _zoomActiveSrc = src;
+
+    var img     = document.getElementById('imgZoomImg');
+    var loading = document.getElementById('imgZoomLoading');
+
+    /* Ocultar foto anterior, mostrar spinner */
+    img.style.display     = 'none';
+    img.src               = '';
+    loading.style.display = 'flex';
+    loading.innerHTML     = '<i class="bx bx-loader-alt bx-spin"></i><span>Cargando…</span>';
+
+    /* Abrir overlay de inmediato (con spinner) */
     document.getElementById('imgZoomOverlay').classList.add('show');
+
+    /* Cargar la imagen en paralelo */
+    var tmp = new Image();
+    tmp.onload = function() {
+        if (_zoomActiveSrc !== src) return; // ya se abrió otra foto
+        loading.style.display = 'none';
+        img.src               = src;
+        img.style.display     = 'block';
+    };
+    tmp.onerror = function() {
+        if (_zoomActiveSrc !== src) return;
+        loading.innerHTML = '<i class="bx bx-image-x"></i><span>No se pudo cargar</span>';
+    };
+    tmp.src = src;
 }
 function _zoomHide() {
     _zoomHideTimer = setTimeout(_zoomHideNow, 120);
