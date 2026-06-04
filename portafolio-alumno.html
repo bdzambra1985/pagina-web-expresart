@@ -380,10 +380,16 @@
             background: rgba(0,0,0,0.82);
             align-items: center;
             justify-content: center;
-            cursor: zoom-out;
-            /* pointer-events: auto (default) — parpadeo evitado con debounce JS */
         }
         #imgZoomOverlay.show { display: flex; }
+        /* Desktop con ratón: overlay transparente al puntero → sin cambio de cursor */
+        @media (hover: hover) {
+            #imgZoomOverlay { pointer-events: none; }
+        }
+        /* Móvil/touch: overlay captura toques → cierra con un toque */
+        @media (hover: none) {
+            #imgZoomOverlay { pointer-events: auto; cursor: zoom-out; }
+        }
         #imgZoomClose {
             position: absolute;
             top: 16px; right: 18px;
@@ -755,19 +761,14 @@
         .prod-popup-video-item a:hover { background: rgba(201,162,39,0.12); }
         .prod-popup-video-item i { font-size: 1.5rem; color: #cc0000; flex-shrink: 0; }
 
-        /* ── Responsive toggle ── */
-        @media (max-width: 767px) {
+        /* ── Responsive toggle (libro solo desde 900px) ── */
+        @media (max-width: 899px) {
             .book-wrapper { display: none !important; }
             .mobile-view  { display: block; }
         }
-        @media (min-width: 768px) {
+        @media (min-width: 900px) {
             .book-wrapper { display: flex; }
             .mobile-view  { display: none; }
-        }
-
-        /* ── Responsive libro ── */
-        @media (max-width: 900px) {
-            .wrapper { width: 95vw; height: auto; min-height: 480px; }
         }
     </style>
 </head>
