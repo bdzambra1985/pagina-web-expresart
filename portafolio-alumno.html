@@ -1001,7 +1001,7 @@ function buildBookPages(p) {
     function renderProd(pr) {
         var gIdx = _allProds.indexOf(pr);
         var imgHTML = pr.photoUrl
-            ? '<div class="timeline-img-wrap" onclick="_zoomShow(this.querySelector(\'img\').src)"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
+            ? '<div class="timeline-img-wrap" onclick="event.stopPropagation();_zoomShow(this.querySelector(\'img\').src)"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
             : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
         return '<div class="timeline-item">' +
             imgHTML +
@@ -1084,7 +1084,7 @@ function _openDetalles(idx) {
     var cells = '';
     for (var i = 0; i < 6; i++) {
         if (allPhotos[i]) {
-            cells += '<div class="prod-popup-photo" style="cursor:zoom-in" onclick="_zoomImg(\'' + allPhotos[i].replace(/'/g,'%27') + '\')">' +
+            cells += '<div class="prod-popup-photo" style="cursor:pointer" onclick="_zoomImg(\'' + allPhotos[i].replace(/'/g,'%27') + '\')">' +
                      '<img src="' + esc(allPhotos[i]) + '" alt="foto ' + (i+1) + '"></div>';
         } else {
             cells += '<div class="prod-popup-photo"><div class="prod-popup-photo-ph"><i class="bx bx-image"></i></div></div>';
@@ -1227,7 +1227,7 @@ function populateMobile(p) {
         document.getElementById('mProd').innerHTML = p.producciones.map((pr, idx) => `
             <div class="timeline-item">
                 ${pr.photoUrl
-                    ? `<div class="timeline-img-wrap" onclick="_zoomShow(this.querySelector('img').src)"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
+                    ? `<div class="timeline-img-wrap" onclick="event.stopPropagation();_zoomShow(this.querySelector('img').src)"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
                     : `<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>`}
                 <div class="timeline-body">
                     <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
