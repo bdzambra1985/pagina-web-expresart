@@ -261,15 +261,15 @@
             width: 100%;
         }
         .profile-page .avatar {
-            width: 170px; height: 170px;
+            width: 210px; height: 210px;
             border-radius: 50%;
             border: 4px solid var(--gold);
-            box-shadow: 0 0 28px rgba(201,162,39,0.40);
+            box-shadow: 0 0 32px rgba(201,162,39,0.45);
             object-fit: cover;
             margin-bottom: 0.5rem;
         }
         .avatar-placeholder {
-            width: 170px; height: 170px;
+            width: 210px; height: 210px;
             border-radius: 50%;
             border: 4px solid var(--gold);
             background: linear-gradient(135deg, #3a0010, #1a0005);
@@ -278,7 +278,7 @@
             justify-content: center;
             margin-bottom: 0.5rem;
         }
-        .avatar-placeholder i { font-size: 4rem; color: rgba(201,162,39,0.45); }
+        .avatar-placeholder i { font-size: 5rem; color: rgba(201,162,39,0.45); }
         .profile-page h1 {
             font-family: 'Playfair Display', serif;
             font-size: 1.6rem;
@@ -337,43 +337,55 @@
 
         /* ── Timeline ── */
         .timeline {
-            border-left: 2px solid var(--gold);
-            margin-left: 0.5rem;
-            padding-left: 1.4rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.1rem;
             overflow-y: auto;
             max-height: 31rem;
         }
-        .timeline-item { position: relative; }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            top: 4px; left: -1.96rem;
-            width: 1rem; height: 1rem;
-            border-radius: 50%;
-            background: var(--crimson);
-            border: 2px solid var(--gold);
+        .timeline-item {
+            display: flex;
+            gap: 0.9rem;
+            align-items: flex-start;
         }
+        .timeline-img-wrap {
+            flex-shrink: 0;
+            width: 90px; height: 90px;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid rgba(201,162,39,0.35);
+            cursor: zoom-in;
+        }
+        .timeline-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.35s ease;
+            display: block;
+        }
+        .timeline-img-wrap:hover .timeline-img {
+            transform: scale(1.55);
+        }
+        .timeline-img-placeholder {
+            width: 90px; height: 90px;
+            flex-shrink: 0;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(158,0,0,0.12), rgba(201,162,39,0.08));
+            border: 1px dashed rgba(201,162,39,0.25);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .timeline-img-placeholder i { font-size: 1.8rem; color: rgba(201,162,39,0.25); }
+        .timeline-body { flex: 1; min-width: 0; }
         .timeline-year {
-            font-size: 0.72rem; font-weight: 600;
+            font-size: 0.68rem; font-weight: 600;
             letter-spacing: 1.5px; text-transform: uppercase;
             color: var(--gold);
         }
         .timeline-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1rem; font-weight: 700;
+            font-size: 0.95rem; font-weight: 700;
             color: var(--crimson); margin: 2px 0;
         }
-        .timeline-text { font-size: 0.76rem; color: var(--text2); line-height: 1.5; }
-        .timeline-img {
-            width: 100%; height: 80px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-top: 6px;
-            border: 1px solid rgba(201,162,39,0.30);
-        }
+        .timeline-text { font-size: 0.73rem; color: var(--text2); line-height: 1.5; }
 
         /* ── Videos ── */
         .video-list {
@@ -646,6 +658,7 @@
                     <div class="divider"></div>
                     <p id="bookBio"></p>
                 </div>
+                <span class="number-page">1</span>
             </div>
 
             <!-- Las páginas derechas se generan dinámicamente en JS -->
@@ -782,7 +795,7 @@ function buildBookPages(p) {
     pages.forEach(function(pageData, idx) {
         const id      = 'turn-' + (idx + 1);
         const zIndex  = total - idx;
-        const pageNum = idx * 2 + 1;
+        const pageNum = idx * 2 + 2;   /* perfil=1, primera hoja derecha=2, 3, 4… */
         const isLast  = idx === total - 1;
 
         /* Contenido del frente */
@@ -790,11 +803,16 @@ function buildBookPages(p) {
         if (pageData.type === 'prods') {
             var prodsHTML = pageData.items.length
                 ? pageData.items.map(function(pr) {
+                    var imgHTML = pr.photoUrl
+                        ? '<div class="timeline-img-wrap"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
+                        : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
                     return '<div class="timeline-item">' +
-                        '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
-                        '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
-                        '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
-                        (pr.photoUrl ? '<img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt="">' : '') +
+                        imgHTML +
+                        '<div class="timeline-body">' +
+                            '<span class="timeline-year"><i class="bx bxs-mask"></i> ' + esc(pr.year||'') + '</span>' +
+                            '<h3 class="timeline-title">' + esc(pr.title||'') + '</h3>' +
+                            '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
+                        '</div>' +
                     '</div>';
                 }).join('')
                 : '<p style="color:var(--text2);font-size:0.82rem;font-style:italic">Sin producciones registradas.</p>';
@@ -868,10 +886,14 @@ function populateMobile(p) {
     if (p.producciones && p.producciones.length) {
         document.getElementById('mProd').innerHTML = p.producciones.map(pr => `
             <div class="timeline-item">
-                <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
-                <h3 class="timeline-title">${esc(pr.title||'')}</h3>
-                <p class="timeline-text">${esc(pr.description||'')}</p>
-                ${pr.photoUrl ? `<img class="timeline-img" src="${esc(pr.photoUrl)}" alt="">` : ''}
+                ${pr.photoUrl
+                    ? `<div class="timeline-img-wrap"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
+                    : `<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>`}
+                <div class="timeline-body">
+                    <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
+                    <h3 class="timeline-title">${esc(pr.title||'')}</h3>
+                    <p class="timeline-text">${esc(pr.description||'')}</p>
+                </div>
             </div>`).join('');
     } else {
         document.getElementById('mProdSection').style.display = 'none';
