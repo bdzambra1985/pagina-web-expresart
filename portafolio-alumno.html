@@ -406,25 +406,36 @@
         @media (hover: none) {
             #imgZoomOverlay.show { pointer-events: auto; cursor: default; }
         }
+        /* Frame que envuelve la foto — la X se posiciona relativa a él */
+        #imgZoomFrame {
+            position: relative;
+            display: inline-flex;
+            border-radius: 18px;
+            transform: scale(0.80);
+            transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #imgZoomOverlay.show #imgZoomFrame {
+            transform: scale(1);
+        }
         #imgZoomClose {
             position: absolute;
-            top: 16px; right: 18px;
-            width: 44px; height: 44px;
-            background: rgba(255,255,255,0.10);
-            border: 2px solid rgba(255,255,255,0.50);
+            top: -13px; right: -13px;
+            width: 30px; height: 30px;
+            background: rgba(8,0,2,0.90);
+            border: 2px solid rgba(201,162,39,0.70);
             border-radius: 50%;
-            color: #fff;
-            font-size: 1.5rem;
+            color: rgba(201,162,39,0.95);
+            font-size: 1.05rem;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             pointer-events: auto;
-            transition: background 0.2s, border-color 0.2s, transform 0.2s;
-            z-index: 1;
+            transition: background 0.2s, transform 0.2s, border-color 0.2s;
+            z-index: 2;
         }
         #imgZoomClose:hover {
-            background: rgba(255,255,255,0.25);
-            border-color: rgba(255,255,255,0.85);
-            transform: scale(1.12);
+            background: rgba(180,10,10,0.92);
+            border-color: rgba(220,40,40,0.80);
+            transform: scale(1.18);
         }
         #imgZoomImg {
             max-width: min(84vw, 700px);
@@ -433,11 +444,7 @@
             box-shadow: 0 32px 90px rgba(0,0,0,0.92), 0 0 0 2px rgba(201,162,39,0.50);
             object-fit: contain;
             pointer-events: none;
-            transform: scale(0.80);
-            transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        #imgZoomOverlay.show #imgZoomImg {
-            transform: scale(1);
+            display: block;
         }
         /* Hint "toca para cerrar" — visible solo en móvil */
         #imgZoomHint {
@@ -955,10 +962,12 @@
 
 <!-- ── Overlay de foto ampliada ── -->
 <div id="imgZoomOverlay">
-    <button id="imgZoomClose" onclick="event.stopPropagation();_zoomHideNow()">
-        <i class="bx bx-x"></i>
-    </button>
-    <img id="imgZoomImg" src="" alt="">
+    <div id="imgZoomFrame">
+        <button id="imgZoomClose" onclick="event.stopPropagation();_zoomHideNow()">
+            <i class="bx bx-x"></i>
+        </button>
+        <img id="imgZoomImg" src="" alt="">
+    </div>
     <p id="imgZoomHint">Toca para cerrar</p>
 </div>
 
