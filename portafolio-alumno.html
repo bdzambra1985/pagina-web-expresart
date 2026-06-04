@@ -372,49 +372,111 @@
         }
 
         /* ── Overlay de zoom ── */
+        /* ── Overlay de foto ampliada ── */
         #imgZoomOverlay {
-            display: none;
+            display: flex;
             position: fixed;
             inset: 0;
             z-index: 99997;
-            background: rgba(0,0,0,0.82);
+            background: rgba(0,0,0,0.86);
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.28s ease, backdrop-filter 0.28s ease,
+                        -webkit-backdrop-filter 0.28s ease, visibility 0s linear 0.28s;
         }
-        #imgZoomOverlay.show { display: flex; }
-        /* Desktop con ratón: overlay transparente al puntero → sin cambio de cursor */
+        #imgZoomOverlay.show {
+            opacity: 1;
+            visibility: visible;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: opacity 0.28s ease, backdrop-filter 0.28s ease,
+                        -webkit-backdrop-filter 0.28s ease, visibility 0s linear 0s;
+        }
+        /* Desktop: solo el botón X captura el ratón */
         @media (hover: hover) {
-            #imgZoomOverlay { pointer-events: none; }
+            #imgZoomOverlay.show { pointer-events: none; }
+            #imgZoomClose        { pointer-events: auto; }
         }
-        /* Móvil/touch: overlay captura toques → cierra con un toque */
+        /* Móvil: toca cualquier parte para cerrar */
         @media (hover: none) {
-            #imgZoomOverlay { pointer-events: auto; cursor: zoom-out; }
+            #imgZoomOverlay.show { pointer-events: auto; cursor: default; }
         }
         #imgZoomClose {
             position: absolute;
             top: 16px; right: 18px;
-            width: 38px; height: 38px;
-            background: rgba(255,255,255,0.12);
-            border: 2px solid rgba(255,255,255,0.65);
+            width: 44px; height: 44px;
+            background: rgba(255,255,255,0.10);
+            border: 2px solid rgba(255,255,255,0.50);
             border-radius: 50%;
             color: #fff;
-            font-size: 1.35rem;
-            line-height: 1;
+            font-size: 1.5rem;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            pointer-events: auto; /* el botón SÍ recibe clicks aunque el overlay no */
-            transition: background 0.2s;
+            pointer-events: auto;
+            transition: background 0.2s, border-color 0.2s, transform 0.2s;
             z-index: 1;
         }
-        #imgZoomClose:hover { background: rgba(255,255,255,0.28); }
+        #imgZoomClose:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.85);
+            transform: scale(1.12);
+        }
         #imgZoomImg {
-            max-width: min(82vw, 620px);
-            max-height: min(82vh, 620px);
-            border-radius: 14px;
-            box-shadow: 0 24px 70px rgba(0,0,0,0.85);
-            border: 2px solid rgba(201,162,39,0.55);
+            max-width: min(84vw, 700px);
+            max-height: min(84vh, 700px);
+            border-radius: 18px;
+            box-shadow: 0 32px 90px rgba(0,0,0,0.92), 0 0 0 2px rgba(201,162,39,0.50);
             object-fit: contain;
             pointer-events: none;
+            transform: scale(0.80);
+            transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #imgZoomOverlay.show #imgZoomImg {
+            transform: scale(1);
+        }
+        /* Hint "toca para cerrar" — visible solo en móvil */
+        #imgZoomHint {
+            position: absolute;
+            bottom: 22px; left: 0; right: 0;
+            text-align: center;
+            font-size: 0.64rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.45s;
+        }
+        @media (hover: none) {
+            #imgZoomOverlay.show #imgZoomHint { opacity: 1; }
+        }
+        /* Avatar — clickeable para ver foto ampliada */
+        .avatar-zoom-wrap {
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 50%;
+            position: relative;
+            transition: box-shadow 0.28s, transform 0.28s;
+        }
+        .avatar-zoom-wrap:hover {
+            box-shadow: 0 0 0 4px rgba(201,162,39,0.65), 0 0 32px rgba(201,162,39,0.28);
+            transform: scale(1.03);
+        }
+        .m-avatar-zoom-wrap {
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+            border-radius: 50%;
+            transition: box-shadow 0.28s, transform 0.28s;
+        }
+        .m-avatar-zoom-wrap:hover {
+            box-shadow: 0 0 0 4px rgba(201,162,39,0.65), 0 0 24px rgba(201,162,39,0.25);
+            transform: scale(1.03);
         }
         .timeline-img {
             width: 100%; height: 100%;
@@ -891,12 +953,13 @@
 
 </div><!-- /mobile-view -->
 
-<!-- ── Overlay de zoom de foto ── -->
+<!-- ── Overlay de foto ampliada ── -->
 <div id="imgZoomOverlay">
-    <button id="imgZoomClose" onclick="event.stopPropagation(); document.getElementById('imgZoomOverlay').classList.remove('show')">
+    <button id="imgZoomClose" onclick="event.stopPropagation();_zoomHideNow()">
         <i class="bx bx-x"></i>
     </button>
     <img id="imgZoomImg" src="" alt="">
+    <p id="imgZoomHint">Toca para cerrar</p>
 </div>
 
 <!-- ── Popup de detalles / videos ── -->
@@ -941,13 +1004,18 @@ function populateBook(p) {
     document.getElementById('bookName').textContent  = p.displayName || '';
     document.getElementById('bookBio').textContent   = p.bio || p.bio_short || '';
 
-    /* Avatar */
+    /* Avatar — clickeable para ampliar */
     if (p.photoUrl) {
+        const wrap = document.createElement('div');
+        wrap.className = 'avatar-zoom-wrap';
+        wrap.title = 'Ver foto';
+        wrap.onclick = function() { _zoomShow(p.photoUrl); };
         const img = document.createElement('img');
         img.className = 'avatar';
         img.src = p.photoUrl;
         img.alt = p.displayName || '';
-        document.getElementById('bookAvatar').replaceWith(img);
+        wrap.appendChild(img);
+        document.getElementById('bookAvatar').replaceWith(wrap);
     }
 
     /* Especialidades en perfil */
@@ -1154,50 +1222,50 @@ function _getEmbedUrl(url) {
 /* ── Zoom de imagen centrado ── */
 var _zoomHideTimer = null;
 
+function _zoomHideNow() {
+    clearTimeout(_zoomHideTimer);
+    document.getElementById('imgZoomOverlay').classList.remove('show');
+}
 function _zoomShow(src) {
     clearTimeout(_zoomHideTimer);
     document.getElementById('imgZoomImg').src = src;
     document.getElementById('imgZoomOverlay').classList.add('show');
 }
 function _zoomHide() {
-    /* Debounce 120ms: evita parpadeo cuando el mouse pasa del wrap al overlay */
-    _zoomHideTimer = setTimeout(function() {
-        document.getElementById('imgZoomOverlay').classList.remove('show');
-    }, 120);
+    _zoomHideTimer = setTimeout(_zoomHideNow, 120);
 }
-function _zoomImg(src) { _zoomShow(src); } /* llamado desde collage en popup */
+function _zoomImg(src) { _zoomShow(src); }
 
-/* Hover desktop: capture phase para wrap + overlay (debounce une los dos) */
+/* Desktop: hover sobre miniaturas de producción → mostrar; sale → ocultar */
 document.addEventListener('mouseenter', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
     if (wrap) { var img = wrap.querySelector('img'); if (img) _zoomShow(img.src); return; }
-    if (e.target.closest && e.target.closest('#imgZoomOverlay')) { clearTimeout(_zoomHideTimer); }
+    if (e.target.closest && e.target.closest('#imgZoomOverlay')) clearTimeout(_zoomHideTimer);
 }, true);
 document.addEventListener('mouseleave', function(e) {
     if (e.target.closest && e.target.closest('.timeline-img-wrap')) { _zoomHide(); return; }
-    if (e.target.closest && e.target.closest('#imgZoomOverlay')) { _zoomHide(); }
+    if (e.target.closest && e.target.closest('#imgZoomOverlay')) _zoomHide();
 }, true);
 
-/* Click overlay background → cerrar zoom SIN afectar lo que hay detrás */
+/* Móvil: toca el overlay para cerrar */
 document.getElementById('imgZoomOverlay').addEventListener('click', function(e) {
     e.stopPropagation();
-    clearTimeout(_zoomHideTimer);
-    document.getElementById('imgZoomOverlay').classList.remove('show');
+    _zoomHideNow();
 });
 
-/* Un solo toque en móvil: primer toque muestra, segundo toque cierra */
+/* Toque en miniatura de producción → abre zoom */
 document.addEventListener('click', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
     if (!wrap) return;
     e.stopPropagation();
     var ov = document.getElementById('imgZoomOverlay');
-    if (ov.classList.contains('show')) {
-        clearTimeout(_zoomHideTimer);
-        ov.classList.remove('show');
-    } else {
-        var img = wrap.querySelector('img');
-        if (img) _zoomShow(img.src);
-    }
+    if (ov.classList.contains('show')) { _zoomHideNow(); }
+    else { var img = wrap.querySelector('img'); if (img) _zoomShow(img.src); }
+});
+
+/* Escape para cerrar */
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') _zoomHideNow();
 });
 
 /* ── Cerrar popup ── */
@@ -1213,13 +1281,18 @@ function populateMobile(p) {
     document.getElementById('mName').textContent = p.displayName || '';
     document.getElementById('mBio').textContent  = p.bio || p.bio_short || '';
 
-    /* Avatar */
+    /* Avatar móvil — clickeable para ampliar */
     if (p.photoUrl) {
+        const wrap = document.createElement('div');
+        wrap.className = 'm-avatar-zoom-wrap';
+        wrap.title = 'Ver foto';
+        wrap.onclick = function() { _zoomShow(p.photoUrl); };
         const img = document.createElement('img');
         img.className = 'm-avatar';
         img.src = p.photoUrl;
         img.alt = p.displayName || '';
-        document.getElementById('mAvatar').replaceWith(img);
+        wrap.appendChild(img);
+        document.getElementById('mAvatar').replaceWith(wrap);
     }
 
     /* Producciones */

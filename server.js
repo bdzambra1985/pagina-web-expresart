@@ -115,7 +115,7 @@ function initAdmin() {
 }
 
 /* ── Sesiones persistidas en disco ── */
-const SESSION_TTL = 8 * 60 * 60 * 1000;
+const SESSION_TTL = 1 * 60 * 60 * 1000; // 1 hora
 
 function loadSessions() {
     try {
