@@ -357,7 +357,7 @@
             width: 88px; height: 88px;
             border-radius: 7px;
             border: 1px solid rgba(201,162,39,0.40);
-            cursor: zoom-in;
+            cursor: pointer; /* pointer necesario en iOS Safari para que dispare click en div */
             position: relative;
             z-index: 1;
             overflow: hidden;
@@ -1000,7 +1000,7 @@ function buildBookPages(p) {
     function renderProd(pr) {
         var gIdx = _allProds.indexOf(pr);
         var imgHTML = pr.photoUrl
-            ? '<div class="timeline-img-wrap"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
+            ? '<div class="timeline-img-wrap" onclick="_zoomShow(this.querySelector(\'img\').src)"><img class="timeline-img" src="' + esc(pr.photoUrl) + '" alt=""></div>'
             : '<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>';
         return '<div class="timeline-item">' +
             imgHTML +
@@ -1226,7 +1226,7 @@ function populateMobile(p) {
         document.getElementById('mProd').innerHTML = p.producciones.map((pr, idx) => `
             <div class="timeline-item">
                 ${pr.photoUrl
-                    ? `<div class="timeline-img-wrap"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
+                    ? `<div class="timeline-img-wrap" onclick="_zoomShow(this.querySelector('img').src)"><img class="timeline-img" src="${esc(pr.photoUrl)}" alt=""></div>`
                     : `<div class="timeline-img-placeholder"><i class="bx bx-image"></i></div>`}
                 <div class="timeline-body">
                     <span class="timeline-year"><i class="bx bxs-mask"></i> ${esc(pr.year||'')}</span>
