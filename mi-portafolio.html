@@ -395,6 +395,7 @@
             .field-row { grid-template-columns: 1fr; }
             .video-add-row { grid-template-columns: 1fr; }
             .dash-section { padding: 18px 14px; }
+            .prod-collage-grid { grid-template-columns: repeat(5, 1fr); }
         }
     </style>
 </head>
@@ -748,11 +749,29 @@ function renderProd() {
             </div>
 
             <span class="prod-collage-label"><i class="bx bx-images"></i> Fotos adicionales del collage (hasta 5)</span>
-            <div class="prod-collage-grid" id="collageGrid${i}"></div>`;
+            <div class="prod-collage-grid" id="collageGrid${i}"></div>
+
+            <span class="prod-collage-label" style="margin-top:10px"><i class="bx bx-play-circle"></i> Videos de esta producción</span>
+            <div id="prodVideoList${i}" style="margin-bottom:10px"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+                <div class="field-group">
+                    <label class="field-label">Título del video</label>
+                    <input class="dash-input" id="pvTitle${i}" type="text" placeholder="Ej: Ensayo general 2024">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">URL (YouTube, Vimeo…)</label>
+                    <input class="dash-input" id="pvUrl${i}" type="url" placeholder="https://youtube.com/watch?v=…">
+                </div>
+                <div class="field-group">
+                    <label class="field-label" style="opacity:0">—</label>
+                    <button class="add-btn" onclick="addProdVideo(${i})"><i class="bx bx-plus"></i> Agregar</button>
+                </div>
+            </div>`;
         list.appendChild(card);
 
-        /* Renderizar slots del collage */
+        /* Renderizar slots del collage y videos */
         renderCollageSlots(i);
+        renderProdVideos(i);
 
         /* Eventos de foto principal */
         const zone  = card.querySelector('#prodZone' + i);
@@ -867,6 +886,43 @@ document.getElementById('saveProdBtn').onclick = async () => {
     } finally {
         btnDone(btn);
     }
+};
+
+/* ── Videos por producción ── */
+function renderProdVideos(prodIdx) {
+    const el = document.getElementById('prodVideoList' + prodIdx);
+    if (!el) return;
+    const videos = (profile.producciones[prodIdx].videos || []).filter(v => v && v.url);
+    if (!videos.length) {
+        el.innerHTML = '<p style="font-size:0.72rem;color:rgba(255,200,200,0.35);font-style:italic;margin-bottom:4px">Sin videos todavía</p>';
+        return;
+    }
+    el.innerHTML = videos.map((v, j) => `
+        <div class="video-card" style="padding:8px 12px;margin-bottom:6px;">
+            <i class="bx bx-play-circle"></i>
+            <div class="video-card-info">
+                <div class="video-card-title">${esc(v.title || 'Video '+(j+1))}</div>
+                <div class="video-card-url">${esc(v.url)}</div>
+            </div>
+            <button class="del-btn" onclick="deleteProdVideo(${prodIdx},${j})"><i class="bx bx-trash"></i></button>
+        </div>`).join('');
+}
+
+window.addProdVideo = function(prodIdx) {
+    const url   = document.getElementById('pvUrl'   + prodIdx).value.trim();
+    const title = document.getElementById('pvTitle' + prodIdx).value.trim();
+    if (!url) return showToast('Ingresa una URL de video', true);
+    if (!profile.producciones[prodIdx].videos) profile.producciones[prodIdx].videos = [];
+    profile.producciones[prodIdx].videos.push({ url, title });
+    renderProdVideos(prodIdx);
+    document.getElementById('pvUrl'   + prodIdx).value = '';
+    document.getElementById('pvTitle' + prodIdx).value = '';
+    showToast('✓ Video agregado');
+};
+
+window.deleteProdVideo = function(prodIdx, j) {
+    profile.producciones[prodIdx].videos.splice(j, 1);
+    renderProdVideos(prodIdx);
 };
 
 /* ══════════════════

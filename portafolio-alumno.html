@@ -377,7 +377,7 @@
             background: rgba(0,0,0,0.82);
             align-items: center;
             justify-content: center;
-            cursor: zoom-out;
+            pointer-events: none; /* NUNCA intercepta mouse → sin parpadeo por hover */
         }
         #imgZoomOverlay.show { display: flex; }
         #imgZoomImg {
@@ -870,7 +870,7 @@
 </div><!-- /mobile-view -->
 
 <!-- ── Overlay de zoom de foto ── -->
-<div id="imgZoomOverlay" onclick="document.getElementById('imgZoomOverlay').classList.remove('show')">
+<div id="imgZoomOverlay">
     <img id="imgZoomImg" src="" alt="">
 </div>
 
@@ -986,7 +986,7 @@ function buildBookPages(p) {
                 '<p class="timeline-text">' + esc(pr.description||'') + '</p>' +
                 '<div style="display:flex;gap:5px;margin-top:6px;">' +
                     '<button class="prod-btn" onclick="_openDetalles(' + gIdx + ')"><i class="bx bx-image-alt"></i> Detalles</button>' +
-                    '<button class="prod-btn videos-btn" onclick="_openVideos()"><i class="bx bx-play-circle"></i> Videos</button>' +
+                    '<button class="prod-btn videos-btn" onclick="_openVideos(' + gIdx + ')"><i class="bx bx-play-circle"></i> Videos</button>' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -1077,35 +1077,38 @@ function _openDetalles(idx) {
     document.getElementById('prodPopup').classList.add('open');
 }
 
-/* ── Popup: Videos (lista) ── */
-function _openVideos() {
-    var videos = _allVideos;
+/* ── Popup: Videos de una producción ── */
+function _openVideos(prodIdx) {
+    var pr = _allProds[prodIdx];
+    var videos = (pr && pr.videos && pr.videos.length) ? pr.videos.filter(function(v){return v&&v.url;}) : [];
+    var title = pr ? (pr.title || 'Producción') : 'Videos';
     var body = videos.length
         ? '<div class="prod-popup-video-list">' +
             videos.map(function(v, i) {
                 return '<div class="prod-popup-video-item">' +
-                    '<button onclick="_playVideo(' + i + ')" style="width:100%;display:flex;align-items:center;gap:10px;background:rgba(201,162,39,0.04);border:1px solid rgba(201,162,39,0.28);border-radius:8px;padding:10px 14px;cursor:pointer;color:rgba(255,220,180,0.90);font-family:Poppins,sans-serif;font-size:0.80rem;text-align:left;">' +
+                    '<button onclick="_playVideo(' + prodIdx + ',' + i + ')" style="width:100%;display:flex;align-items:center;gap:10px;background:rgba(201,162,39,0.04);border:1px solid rgba(201,162,39,0.28);border-radius:8px;padding:10px 14px;cursor:pointer;color:rgba(255,220,180,0.90);font-family:Poppins,sans-serif;font-size:0.80rem;text-align:left;">' +
                         '<i class="bx bx-play-circle" style="font-size:1.5rem;color:#cc0000;flex-shrink:0"></i>' +
                         '<div><div style="font-weight:600">' + esc(v.title||'Video '+(i+1)) + '</div>' +
                         '<div style="font-size:0.65rem;opacity:0.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:480px">' + esc(v.url) + '</div>' +
                         '</div>' +
                     '</button></div>';
             }).join('') + '</div>'
-        : '<p style="color:rgba(255,200,200,0.50);font-size:0.82rem;font-style:italic;margin-top:8px">Sin videos registrados.</p>';
+        : '<p style="color:rgba(255,200,200,0.50);font-size:0.82rem;font-style:italic;margin-top:8px">Sin videos para esta producción.</p>';
     document.getElementById('prodPopupContent').innerHTML =
         '<div class="prod-popup-title">Videos</div>' +
-        '<div class="prod-popup-year">EXPRESART</div>' +
+        '<div class="prod-popup-year"><i class="bx bxs-mask"></i> ' + esc(title) + '</div>' +
         body;
     document.getElementById('prodPopup').classList.add('open');
 }
 
 /* ── Reproducir video en popup ── */
-function _playVideo(idx) {
-    var v = _allVideos[idx];
+function _playVideo(prodIdx, vidIdx) {
+    var pr = _allProds[prodIdx];
+    var v = pr && pr.videos && pr.videos[vidIdx];
     if (!v) return;
     var embed = _getEmbedUrl(v.url);
     document.getElementById('prodPopupContent').innerHTML =
-        '<button onclick="_openVideos()" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:rgba(201,162,39,0.80);font-size:0.75rem;cursor:pointer;margin-bottom:12px;font-family:Poppins,sans-serif;">' +
+        '<button onclick="_openVideos(' + prodIdx + ')" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:rgba(201,162,39,0.80);font-size:0.75rem;cursor:pointer;margin-bottom:12px;font-family:Poppins,sans-serif;">' +
             '<i class="bx bx-arrow-back"></i> Volver a videos</button>' +
         '<div class="prod-popup-title">' + esc(v.title||'Video') + '</div>' +
         '<div style="position:relative;padding-top:56.25%;margin-top:12px;border-radius:10px;overflow:hidden;background:#000">' +
@@ -1129,25 +1132,27 @@ function _zoomImg(src) {
     document.getElementById('imgZoomOverlay').classList.add('show');
 }
 
-/* ── Zoom delegado (hover desktop + click móvil) ── */
-document.addEventListener('mouseover', function(e) {
+/* ── Zoom: mouseenter/leave (sin parpadeo gracias a pointer-events:none en overlay) ── */
+document.addEventListener('mouseenter', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
     if (wrap) {
         var img = wrap.querySelector('img');
         if (img) { document.getElementById('imgZoomImg').src = img.src; document.getElementById('imgZoomOverlay').classList.add('show'); }
     }
-});
-document.addEventListener('mouseout', function(e) {
+}, true);
+document.addEventListener('mouseleave', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
-    if (wrap && (!e.relatedTarget || !e.relatedTarget.closest('.timeline-img-wrap'))) {
-        document.getElementById('imgZoomOverlay').classList.remove('show');
-    }
-});
+    if (wrap) { document.getElementById('imgZoomOverlay').classList.remove('show'); }
+}, true);
+/* Click para móvil: toggle al tocar el wrap, cierra al tocar otra cosa */
 document.addEventListener('click', function(e) {
     var wrap = e.target.closest && e.target.closest('.timeline-img-wrap');
     if (wrap) {
-        var img = wrap.querySelector('img');
-        if (img) { document.getElementById('imgZoomImg').src = img.src; document.getElementById('imgZoomOverlay').classList.add('show'); }
+        var ov = document.getElementById('imgZoomOverlay');
+        if (ov.classList.contains('show')) { ov.classList.remove('show'); }
+        else { var img = wrap.querySelector('img'); if (img) { document.getElementById('imgZoomImg').src = img.src; ov.classList.add('show'); } }
+    } else if (!e.target.closest('#imgZoomOverlay') && !e.target.closest('#prodPopup')) {
+        document.getElementById('imgZoomOverlay').classList.remove('show');
     }
 });
 
@@ -1186,7 +1191,7 @@ function populateMobile(p) {
                     <p class="timeline-text">${esc(pr.description||'')}</p>
                     <div style="display:flex;gap:5px;margin-top:6px;">
                         <button class="prod-btn" onclick="_openDetalles(${idx})"><i class="bx bx-image-alt"></i> Detalles</button>
-                        <button class="prod-btn videos-btn" onclick="_openVideos()"><i class="bx bx-play-circle"></i> Videos</button>
+                        <button class="prod-btn videos-btn" onclick="_openVideos(${idx})"><i class="bx bx-play-circle"></i> Videos</button>
                     </div>
                 </div>
             </div>`).join('');
