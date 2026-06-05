@@ -1306,7 +1306,15 @@ document.addEventListener('mouseleave', function(e) {
     if (e.target.closest && e.target.closest('#imgZoomOverlay')) _zoomHide();
 }, true);
 
-/* Móvil: toca el overlay para cerrar — guard de 250ms evita cierre inmediato por el mismo tap */
+/* Móvil: touchend + preventDefault elimina el ghost click que cerraba la siguiente foto */
+document.getElementById('imgZoomOverlay').addEventListener('touchend', function(e) {
+    if (Date.now() - _zoomOpenedAt < 250) return;
+    e.preventDefault();   // impide el click sintético (ghost click) tras el toque
+    e.stopPropagation();
+    _zoomHideNow();
+}, { passive: false });
+
+/* Escritorio: click con ratón cierra el overlay (fallback sin ghost-click) */
 document.getElementById('imgZoomOverlay').addEventListener('click', function(e) {
     if (Date.now() - _zoomOpenedAt < 250) return;
     e.stopPropagation();
