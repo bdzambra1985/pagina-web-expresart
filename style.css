@@ -1191,10 +1191,6 @@ body {
     .stage-shadow {
         height: 20%;
     }
-    .footlights {
-        top: auto;
-        bottom: 24%;
-    }
 }
 
 @media (max-height: 650px) {
