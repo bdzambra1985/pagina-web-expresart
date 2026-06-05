@@ -279,12 +279,29 @@ app.post('/api/login', loginLimiter, (req, res) => {
     const token = newToken();
     sessions.set(token, { ts: Date.now(), userId: user.userId, role: user.role });
     saveSessions(sessions);
-    res.json({ ok: true, token, role: user.role });
+    res.json({ ok: true, token, role: user.role, mustChangePassword: !!user.mustChangePassword });
 });
 
 app.post('/api/logout', (req, res) => {
     const token = req.headers['x-session-token'];
     if (token) { sessions.delete(token); saveSessions(sessions); }
+    res.json({ ok: true });
+});
+
+app.post('/api/change-password', (req, res) => {
+    const sess = getSession(req);
+    if (!sess) return res.status(401).json({ ok: false, message: 'No autenticado' });
+    const { newPassword } = req.body;
+    if (!newPassword || typeof newPassword !== 'string')
+        return res.status(400).json({ ok: false, message: 'Nueva contraseña requerida' });
+    if (newPassword.length < 8)
+        return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+    const users = readUsers();
+    const idx = users.findIndex(u => u.userId === sess.userId);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    users[idx].passwordHash = hashPassword(newPassword);
+    delete users[idx].mustChangePassword;
+    writeUsers(users);
     res.json({ ok: true });
 });
 
@@ -429,7 +446,7 @@ app.post('/api/users', (req, res) => {
     if (users.find(u => u.username === username.trim()))
         return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
     const userId = 'alu_' + Date.now();
-    users.push({ userId, username: username.trim(), passwordHash: hashPassword(password), role: 'alumno', active: true, createdAt: new Date().toISOString() });
+    users.push({ userId, username: username.trim(), passwordHash: hashPassword(password), role: 'alumno', active: true, mustChangePassword: true, createdAt: new Date().toISOString() });
     writeUsers(users);
     writeProfile(userId, { ...emptyProfile(userId), displayName: displayName || username.trim() });
     res.json({ ok: true, userId });
