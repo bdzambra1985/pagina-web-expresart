@@ -917,6 +917,7 @@
                     <div id="bookAvatar" class="avatar-placeholder"><i class="bx bx-user"></i></div>
                     <h1 id="bookName">Cargando…</h1>
                     <h3>EXPRESART</h3>
+                    <div class="profile-esp-list" id="bookEspProfile"></div>
                     <div class="divider"></div>
                     <p id="bookBio"></p>
                 </div>
@@ -942,6 +943,7 @@
         <div id="mAvatar" class="m-avatar-ph"><i class="bx bx-user"></i></div>
         <h2 id="mName">Cargando…</h2>
         <p class="m-sub">EXPRESART — Artista Escénico</p>
+        <div class="m-esp" id="mEspProfile"></div>
         <div class="m-divider"></div>
         <p class="m-bio" id="mBio"></p>
     </div>
@@ -1036,6 +1038,12 @@ function populateBook(p) {
         img.alt = p.displayName || '';
         wrap.appendChild(img);
         document.getElementById('bookAvatar').replaceWith(wrap);
+    }
+
+    /* Especialidades en perfil */
+    if (p.especialidades && p.especialidades.length) {
+        document.getElementById('bookEspProfile').innerHTML = p.especialidades.map(e =>
+            `<span class="profile-esp-tag">${esc(e)}</span>`).join('');
     }
 
     /* Generar hojas dinámicas */
@@ -1377,6 +1385,12 @@ function populateMobile(p) {
             </div>`).join('');
     } else {
         document.getElementById('mVideosSection').style.display = 'none';
+    }
+
+    /* Especialidades en perfil móvil */
+    if (p.especialidades && p.especialidades.length) {
+        document.getElementById('mEspProfile').innerHTML = p.especialidades.map(e =>
+            `<span class="m-esp-chip">${esc(e)}</span>`).join('');
     }
 
 }
