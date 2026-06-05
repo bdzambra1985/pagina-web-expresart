@@ -1191,6 +1191,9 @@ body {
     .stage-shadow {
         height: 20%;
     }
+    .footlights {
+        display: none;
+    }
 }
 
 @media (max-height: 650px) {
