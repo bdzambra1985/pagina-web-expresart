@@ -474,7 +474,7 @@ body {
 /* ── Candilejas frontales ── */
 .footlights {
     position: absolute;
-    bottom: 22.5%;
+    top: calc(50% + 158px);
     left: 50%; transform: translateX(-50%);
     width: 74%;
     display: flex;
