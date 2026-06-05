@@ -691,6 +691,40 @@
             </div>
         </div>
 
+        <!-- Redes Sociales -->
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-share-alt"></i> Redes Sociales</h2>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label"><i class="bx bxl-instagram"></i> Instagram</label>
+                    <input id="smInsta" class="admin-input" type="url" placeholder="https://instagram.com/expresart">
+                </div>
+                <div class="field-group">
+                    <label class="field-label"><i class="bx bxl-facebook"></i> Facebook</label>
+                    <input id="smFb" class="admin-input" type="url" placeholder="https://facebook.com/expresart">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label"><i class="bx bxl-tiktok"></i> TikTok</label>
+                    <input id="smTiktok" class="admin-input" type="url" placeholder="https://tiktok.com/@expresart">
+                </div>
+                <div class="field-group">
+                    <label class="field-label"><i class="bx bxl-youtube"></i> YouTube</label>
+                    <input id="smYt" class="admin-input" type="url" placeholder="https://youtube.com/@expresart">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label"><i class="bx bxl-whatsapp"></i> WhatsApp</label>
+                    <input id="smWa" class="admin-input" type="url" placeholder="https://wa.me/593999999999">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" id="saveSocialBtn"><i class="bx bx-save"></i> Guardar redes</button>
+            </div>
+        </div>
+
         <!-- Lista de pagos -->
         <div class="admin-section">
             <h2 class="section-title"><i class="bx bx-receipt"></i> Pagos recibidos</h2>
@@ -1245,6 +1279,13 @@ async function loadBankInfo() {
     document.getElementById('bkPhone').value   = info.phone         || '';
     bankServices = info.services || [];
     renderServices();
+    /* Redes sociales */
+    const sm = info.socialMedia || {};
+    document.getElementById('smInsta').value  = sm.instagram || '';
+    document.getElementById('smFb').value     = sm.facebook  || '';
+    document.getElementById('smTiktok').value = sm.tiktok    || '';
+    document.getElementById('smYt').value     = sm.youtube   || '';
+    document.getElementById('smWa').value     = sm.whatsapp  || '';
 }
 
 function renderServices() {
@@ -1290,6 +1331,31 @@ document.getElementById('saveBankBtn').onclick = async () => {
         const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const d = await r.json();
         if (d.ok) showToast('✓ Configuración guardada'); else showToast('Error al guardar', true);
+    } finally {
+        btnDone(btn);
+    }
+};
+
+document.getElementById('saveSocialBtn').onclick = async () => {
+    const btn = document.getElementById('saveSocialBtn');
+    btnLoad(btn);
+    /* Leer valores actuales del banco para no pisar esos datos */
+    let current = {};
+    try { current = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } }).then(r => r.json()); } catch(_) {}
+    const body = {
+        ...current,
+        socialMedia: {
+            instagram: document.getElementById('smInsta').value.trim(),
+            facebook:  document.getElementById('smFb').value.trim(),
+            tiktok:    document.getElementById('smTiktok').value.trim(),
+            youtube:   document.getElementById('smYt').value.trim(),
+            whatsapp:  document.getElementById('smWa').value.trim(),
+        }
+    };
+    try {
+        const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (d.ok) showToast('✓ Redes sociales guardadas'); else showToast('Error al guardar', true);
     } finally {
         btnDone(btn);
     }
