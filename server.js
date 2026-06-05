@@ -40,7 +40,16 @@ if (USE_CLOUDINARY) {
 }
 
 /* ── Contraseñas ── */
-const PW_SALT = process.env.EXP_SALT || 'expresart_salt_2025';
+const SALT_FILE = path.join(DATA_DIR, '.salt');
+function getPwSalt() {
+    if (process.env.EXP_SALT) return process.env.EXP_SALT;
+    if (fs.existsSync(SALT_FILE)) return fs.readFileSync(SALT_FILE, 'utf8').trim();
+    const salt = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(SALT_FILE, salt, { mode: 0o600 });
+    console.warn('  WARN: EXP_SALT no definido. Salt generado y guardado en data/.salt');
+    return salt;
+}
+const PW_SALT = getPwSalt();
 function hashPassword(pw) {
     return crypto.pbkdf2Sync(pw, PW_SALT, 100000, 64, 'sha256').toString('hex');
 }
@@ -59,7 +68,16 @@ function readJSON(file, fallback) {
     }
 }
 function writeJSON(file, data) {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+    fs.renameSync(tmp, file);
+}
+
+/* ── Escape HTML para salida server-side ── */
+function htmlEncode(s) {
+    return String(s || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
 function readUsers()   { return readJSON(USERS_FILE, []); }
@@ -137,7 +155,7 @@ const sessions = loadSessions();
 
 function newToken() { return crypto.randomBytes(32).toString('hex'); }
 function getSession(req) {
-    const token = req.headers['x-session-token'] || req.query.token;
+    const token = req.headers['x-session-token'];
     if (!token) return null;
     const sess = sessions.get(token);
     if (!sess) return null;
@@ -198,8 +216,34 @@ const emptyProfile = (userId) => ({
    MIDDLEWARE
    ══════════════════════════════════════════ */
 app.set('trust proxy', 1);
+
+/* Redirigir a HTTPS cuando se usa detrás de un proxy en producción */
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.headers['x-forwarded-proto'] !== 'https')
+            return res.redirect(301, 'https://' + req.headers.host + req.url);
+        next();
+    });
+}
+
 app.use(compression());
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc:     ["'self'"],
+            scriptSrc:      ["'self'", "'unsafe-inline'"],
+            styleSrc:       ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+            fontSrc:        ["'self'", 'https://fonts.gstatic.com', 'https://unpkg.com'],
+            imgSrc:         ["'self'", 'https://res.cloudinary.com', 'https://img.youtube.com', 'data:', 'blob:'],
+            connectSrc:     ["'self'"],
+            frameSrc:       ['https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
+            frameAncestors: ["'none'"],
+            baseUri:        ["'self'"],
+            formAction:     ["'self'"],
+        }
+    },
+    crossOriginEmbedderPolicy: false
+}));
 app.use(apiLimiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
@@ -378,8 +422,8 @@ app.post('/api/users', (req, res) => {
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
     if (username.trim().length < 3 || username.trim().length > 40)
         return res.status(400).json({ ok: false, message: 'Usuario debe tener entre 3 y 40 caracteres' });
-    if (password.length < 6)
-        return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 6 caracteres' });
+    if (password.length < 8)
+        return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
     const users = readUsers();
     if (users.find(u => u.username === username.trim()))
         return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
@@ -566,10 +610,10 @@ td{padding:8px 12px;font-size:.9rem;border-bottom:1px solid #f0f0f0}.totals td{b
   <div class="company">
     <h1>EXPRESART</h1>
     <p>Escuela de Actuación</p>
-    ${info.ruc     ? `<p><strong>RUC:</strong> ${info.ruc}</p>`   : ''}
-    ${info.address ? `<p>${info.address}</p>`                     : ''}
-    ${info.email   ? `<p>${info.email}</p>`                       : ''}
-    ${info.phone   ? `<p>${info.phone}</p>`                       : ''}
+    ${info.ruc     ? `<p><strong>RUC:</strong> ${htmlEncode(info.ruc)}</p>`   : ''}
+    ${info.address ? `<p>${htmlEncode(info.address)}</p>`                     : ''}
+    ${info.email   ? `<p>${htmlEncode(info.email)}</p>`                       : ''}
+    ${info.phone   ? `<p>${htmlEncode(info.phone)}</p>`                       : ''}
   </div>
   <div class="inv-info">
     <h2>Comprobante de Pago</h2>
@@ -580,14 +624,14 @@ td{padding:8px 12px;font-size:.9rem;border-bottom:1px solid #f0f0f0}.totals td{b
 </div>
 <div class="section">
   <h3>Datos del cliente</h3>
-  <table><tr><td><strong>Nombre:</strong></td><td>${order.customerName}</td></tr>
-  <tr><td><strong>RUC / Cédula:</strong></td><td>${order.customerDoc}</td></tr>
-  <tr><td><strong>Correo:</strong></td><td>${order.customerEmail}</td></tr></table>
+  <table><tr><td><strong>Nombre:</strong></td><td>${htmlEncode(order.customerName)}</td></tr>
+  <tr><td><strong>RUC / Cédula:</strong></td><td>${htmlEncode(order.customerDoc)}</td></tr>
+  <tr><td><strong>Correo:</strong></td><td>${htmlEncode(order.customerEmail)}</td></tr></table>
 </div>
 <div class="section">
   <h3>Detalle del servicio</h3>
   <table><thead><tr><th>Concepto</th><th style="text-align:right">Subtotal sin IVA</th></tr></thead>
-  <tbody><tr><td>${order.concept}</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr></tbody></table>
+  <tbody><tr><td>${htmlEncode(order.concept)}</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr></tbody></table>
 </div>
 <div class="section">
   <table class="totals">
@@ -598,8 +642,8 @@ td{padding:8px 12px;font-size:.9rem;border-bottom:1px solid #f0f0f0}.totals td{b
 </div>
 <div class="section">
   <h3>Forma de pago</h3>
-  <p>Transferencia bancaria · ${info.bankName || ''} · ${info.accountType || ''} No. ${info.accountNumber || ''}</p>
-  ${order.notes ? `<div class="note">Nota: ${order.notes}</div>` : ''}
+  <p>Transferencia bancaria · ${htmlEncode(info.bankName)} · ${htmlEncode(info.accountType)} No. ${htmlEncode(info.accountNumber)}</p>
+  ${order.notes ? `<div class="note">Nota: ${htmlEncode(order.notes)}</div>` : ''}
 </div>
 <div class="footer">
   <p>Este comprobante es un documento de respaldo de pago.</p>
