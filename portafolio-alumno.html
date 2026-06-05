@@ -917,7 +917,6 @@
                     <div id="bookAvatar" class="avatar-placeholder"><i class="bx bx-user"></i></div>
                     <h1 id="bookName">Cargando…</h1>
                     <h3>EXPRESART</h3>
-                    <div class="profile-esp-list" id="bookEspProfile"></div>
                     <div class="divider"></div>
                     <p id="bookBio"></p>
                 </div>
@@ -943,7 +942,6 @@
         <div id="mAvatar" class="m-avatar-ph"><i class="bx bx-user"></i></div>
         <h2 id="mName">Cargando…</h2>
         <p class="m-sub">EXPRESART — Artista Escénico</p>
-        <div class="m-esp" id="mEspProfile"></div>
         <div class="m-divider"></div>
         <p class="m-bio" id="mBio"></p>
     </div>
@@ -966,14 +964,6 @@
         </div>
     </div>
 
-    <!-- Especialidades -->
-    <div class="mobile-section" id="mEspSection">
-        <h3>Especialidades</h3>
-        <div class="m-rule"></div>
-        <div class="m-esp-list" id="mEsp">
-            <p style="color:#888;font-size:0.80rem;font-style:italic">Sin especialidades.</p>
-        </div>
-    </div>
 
 </div><!-- /mobile-view -->
 
@@ -1046,12 +1036,6 @@ function populateBook(p) {
         img.alt = p.displayName || '';
         wrap.appendChild(img);
         document.getElementById('bookAvatar').replaceWith(wrap);
-    }
-
-    /* Especialidades en perfil */
-    if (p.especialidades && p.especialidades.length) {
-        document.getElementById('bookEspProfile').innerHTML = p.especialidades.map(e =>
-            `<span class="profile-esp-tag">${esc(e)}</span>`).join('');
     }
 
     /* Generar hojas dinámicas */
@@ -1395,15 +1379,6 @@ function populateMobile(p) {
         document.getElementById('mVideosSection').style.display = 'none';
     }
 
-    /* Especialidades en sección y en perfil */
-    if (p.especialidades && p.especialidades.length) {
-        document.getElementById('mEsp').innerHTML = p.especialidades.map(e =>
-            `<span class="m-esp-tag">${esc(e)}</span>`).join('');
-        document.getElementById('mEspProfile').innerHTML = p.especialidades.map(e =>
-            `<span class="m-esp-chip">${esc(e)}</span>`).join('');
-    } else {
-        document.getElementById('mEspSection').style.display = 'none';
-    }
 }
 
 /* ── Libro ── */
