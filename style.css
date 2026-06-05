@@ -1797,35 +1797,6 @@ img {
     100% { transform: skewX(0.5deg); }
 }
 /* Pila crece en el piso con cada jalón — escalones reflejan los 3 ciclos */
-/* ── Barra de redes sociales ── */
-.social-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    padding: 20px 0 10px;
-    flex-wrap: wrap;
-}
-.social-icon-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 46px; height: 46px;
-    border-radius: 50%;
-    background: rgba(201,162,39,0.08);
-    border: 1px solid rgba(201,162,39,0.28);
-    color: rgba(201,162,39,0.75);
-    font-size: 1.5rem;
-    text-decoration: none;
-    transition: background 0.22s, color 0.22s, transform 0.22s, box-shadow 0.22s;
-}
-.social-icon-link:hover {
-    background: rgba(201,162,39,0.22);
-    color: #e8c84a;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(201,162,39,0.25);
-}
-
 @keyframes ropePileGrow {
     0%   { width: 0;    height: 0;    opacity: 0; }
     5%   { width: 5px;  height: 3px;  opacity: 1; }  /* primer hilo cae */

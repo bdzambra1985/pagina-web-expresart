@@ -78,29 +78,3 @@ document.addEventListener('contextmenu', function(e) {
 document.addEventListener('dragstart', function(e) {
     if (e.target.tagName === 'IMG') e.preventDefault();
 }, false);
-
-/* ── Barra de redes sociales (dinámica desde /api/bank-info) ── */
-function initSocialBar(containerId) {
-    fetch('/api/bank-info')
-        .then(function(r) { return r.json(); })
-        .then(function(info) {
-            var sm = info.socialMedia || {};
-            var icons = [
-                { key: 'instagram', icon: 'bxl-instagram', label: 'Instagram' },
-                { key: 'facebook',  icon: 'bxl-facebook',  label: 'Facebook'  },
-                { key: 'tiktok',    icon: 'bxl-tiktok',    label: 'TikTok'    },
-                { key: 'youtube',   icon: 'bxl-youtube',   label: 'YouTube'   },
-                { key: 'whatsapp',  icon: 'bxl-whatsapp',  label: 'WhatsApp'  },
-            ];
-            var links = icons.filter(function(i) { return sm[i.key]; });
-            if (!links.length) return;
-            var el = document.getElementById(containerId);
-            if (!el) return;
-            el.innerHTML = links.map(function(i) {
-                return '<a href="' + esc(sm[i.key]) + '" target="_blank" rel="noopener noreferrer" ' +
-                       'aria-label="' + i.label + '" class="social-icon-link">' +
-                       '<i class="bx ' + i.icon + '"></i></a>';
-            }).join('');
-        })
-        .catch(function() {});
-}

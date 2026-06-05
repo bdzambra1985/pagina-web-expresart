@@ -660,8 +660,8 @@ app.get('/api/bank-info', (req, res) => res.json(readBankInfo()));
 /* Guardar datos bancarios (admin) */
 app.post('/api/bank-info', (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const { bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services, socialMedia } = req.body;
-    writeBankInfo({ bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services: services || [], socialMedia: socialMedia || {} });
+    const { bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services } = req.body;
+    writeBankInfo({ bankName, accountNumber, accountType, accountHolder, ruc, address, email, phone, services: services || [] });
     res.json({ ok: true });
 });
 
