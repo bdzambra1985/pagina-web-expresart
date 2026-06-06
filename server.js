@@ -8,6 +8,7 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const cloudinary  = require('cloudinary').v2;
+const { emitirFactura, getSRIConfig, getP12 } = require('./sri/index');
 
 const app  = express();
 const PORT = process.env.PORT || 9090;
@@ -741,6 +742,71 @@ app.put('/api/orders/:id/confirm', (req, res) => {
     orders[idx].confirmedAt   = new Date().toISOString();
     writeOrders(orders);
     res.json({ ok: true, invoiceNumber: orders[idx].invoiceNumber });
+
+    /* Lanzar flujo SRI de forma asíncrona sin bloquear la respuesta */
+    const orderId     = req.params.id;
+    const secuencial  = orders[idx].invoiceNumber;
+    const orderSnap   = { ...orders[idx] };
+    setImmediate(async () => {
+        try {
+            if (!getSRIConfig().ruc) return; // SRI no configurado — omitir silenciosamente
+            const result = await emitirFactura(orderSnap, secuencial);
+            const all    = readOrders();
+            const i2     = all.findIndex(o => o.id === orderId);
+            if (i2 === -1) return;
+            all[i2].sri = result.ok
+                ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
+                : { status: 'error', claveAcceso: result.claveAcceso || '', error: result.error };
+            writeOrders(all);
+        } catch (e) {
+            console.error('SRI error en confirm:', e.message);
+            const all = readOrders();
+            const i2  = all.findIndex(o => o.id === orderId);
+            if (i2 !== -1) { all[i2].sri = { status: 'error', error: e.message }; writeOrders(all); }
+        }
+    });
+});
+
+/* Reintentar autorización SRI (admin) */
+app.post('/api/orders/:id/sri-retry', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const orders = readOrders();
+    const idx    = orders.findIndex(o => o.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
+    if (orders[idx].status !== 'confirmado') return res.status(400).json({ ok: false, message: 'Solo se puede reintentar en órdenes confirmadas' });
+    res.json({ ok: true, message: 'Reintento iniciado' });
+
+    const orderId    = req.params.id;
+    const secuencial = orders[idx].invoiceNumber;
+    const orderSnap  = { ...orders[idx] };
+    setImmediate(async () => {
+        try {
+            const result = await emitirFactura(orderSnap, secuencial);
+            const all    = readOrders();
+            const i2     = all.findIndex(o => o.id === orderId);
+            if (i2 === -1) return;
+            all[i2].sri = result.ok
+                ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
+                : { status: 'error', claveAcceso: result.claveAcceso || '', error: result.error };
+            writeOrders(all);
+        } catch (e) {
+            const all = readOrders();
+            const i2  = all.findIndex(o => o.id === orderId);
+            if (i2 !== -1) { all[i2].sri = { status: 'error', error: e.message }; writeOrders(all); }
+        }
+    });
+});
+
+/* Subir certificado .p12 (admin) */
+app.post('/api/p12-upload', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    uploader.single('p12')(req, res, (err) => {
+        if (err) return res.status(400).json({ ok: false, message: err.message });
+        if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió el archivo' });
+        const dest = path.join(DATA_DIR, '.p12');
+        fs.writeFileSync(dest, req.file.buffer, { mode: 0o600 });
+        res.json({ ok: true, message: 'Certificado .p12 guardado correctamente' });
+    });
 });
 
 /* Rechazar pago (admin) */
