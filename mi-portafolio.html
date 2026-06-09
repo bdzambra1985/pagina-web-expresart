@@ -1042,16 +1042,10 @@ function renderShareList(links) {
                     <span class="share-item-id"><i class="bx bx-user-check" style="color:#c9a227;margin-right:4px"></i>${sid}</span>
                     <span class="share-item-meta">${l.label ? esc(l.label) + ' · ' : ''}Creado ${fecha}</span>
                 </div>
-                <div class="share-item-actions">
-                    <button class="share-view-btn" id="viewBtn_${sid}" onclick="toggleShareDetail('${sid}')">
-                        <i class="bx bx-show"></i> Ver
-                    </button>
-                    <button class="share-revoke-btn" onclick="revokeShareLink('${sid}')">
-                        <i class="bx bx-trash"></i> Revocar
-                    </button>
-                </div>
-            </div>
-            <div class="share-detail" id="share_detail_${sid}"></div>`;
+                <button class="share-revoke-btn" onclick="revokeShareLink('${sid}')">
+                    <i class="bx bx-trash"></i> Revocar
+                </button>
+            </div>`;
         }).join('');
 }
 
