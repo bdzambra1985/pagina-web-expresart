@@ -456,11 +456,23 @@
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 9px;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .share-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
         .share-item-id { font-size: 0.80em; color: #fff; font-family: monospace; }
         .share-item-meta { font-size: 0.64em; color: rgba(255,200,200,0.40); }
+        .share-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .share-view-btn {
+            background: rgba(201,162,39,0.12);
+            border: 1px solid rgba(201,162,39,0.30);
+            border-radius: 7px;
+            color: rgba(201,162,39,0.80); padding: 5px 12px;
+            font-size: 0.74em; cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .share-view-btn:hover { background: rgba(201,162,39,0.24); }
+        .share-view-btn.active { background: rgba(201,162,39,0.22); color: #c9a227; }
         .share-revoke-btn {
             background: rgba(160,10,10,0.40);
             border: 1px solid rgba(220,40,40,0.30);
@@ -471,6 +483,7 @@
             white-space: nowrap;
         }
         .share-revoke-btn:hover { background: rgba(200,15,15,0.60); }
+        .share-detail { display: none; margin-bottom: 10px; }
         .share-empty { font-size: 0.78em; color: rgba(255,200,200,0.35); padding: 6px 0; }
 
         @media (max-width: 600px) {
@@ -1023,15 +1036,22 @@ function renderShareList(links) {
     el.innerHTML = '<p class="share-list-title">Mis enlaces activos</p>' +
         links.map(l => {
             const fecha = new Date(l.createdAt).toLocaleDateString('es-EC', { day:'2-digit', month:'short', year:'numeric' });
+            const sid   = esc(l.shareId);
             return `<div class="share-item">
                 <div class="share-item-info">
-                    <span class="share-item-id"><i class="bx bx-user-check" style="color:#c9a227;margin-right:4px"></i>${esc(l.shareId)}</span>
+                    <span class="share-item-id"><i class="bx bx-user-check" style="color:#c9a227;margin-right:4px"></i>${sid}</span>
                     <span class="share-item-meta">${l.label ? esc(l.label) + ' · ' : ''}Creado ${fecha}</span>
                 </div>
-                <button class="share-revoke-btn" onclick="revokeShareLink('${esc(l.shareId)}')">
-                    <i class="bx bx-trash"></i> Revocar
-                </button>
-            </div>`;
+                <div class="share-item-actions">
+                    <button class="share-view-btn" id="viewBtn_${sid}" onclick="toggleShareDetail('${sid}')">
+                        <i class="bx bx-show"></i> Ver
+                    </button>
+                    <button class="share-revoke-btn" onclick="revokeShareLink('${sid}')">
+                        <i class="bx bx-trash"></i> Revocar
+                    </button>
+                </div>
+            </div>
+            <div class="share-detail" id="share_detail_${sid}"></div>`;
         }).join('');
 }
 
@@ -1048,6 +1068,10 @@ document.getElementById('genShareBtn').onclick = async () => {
         });
         const d = await r.json();
         if (!d.ok) { showToast(d.message || 'Error al generar enlace', true); return; }
+        // Guardar contraseña en localStorage para poder mostrarla con "Ver"
+        localStorage.setItem('share_creds_' + d.shareId, JSON.stringify({
+            url: d.url, shareId: d.shareId, password: d.password, label: label || ''
+        }));
         document.getElementById('shareLabelInput').value = '';
         const box = document.getElementById('newShareCreds');
         box.style.display = 'block';
@@ -1084,6 +1108,51 @@ function copyVal(id) {
     navigator.clipboard.writeText(txt).then(() => showToast('¡Copiado!'));
 }
 
+window.toggleShareDetail = function(shareId) {
+    const box = document.getElementById('share_detail_' + shareId);
+    const btn = document.getElementById('viewBtn_' + shareId);
+    if (!box) return;
+    if (box.style.display === 'block') {
+        box.style.display = 'none';
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="bx bx-show"></i> Ver';
+        return;
+    }
+    btn.classList.add('active');
+    btn.innerHTML = '<i class="bx bx-hide"></i> Ocultar';
+    const raw = localStorage.getItem('share_creds_' + shareId);
+    if (!raw) {
+        box.innerHTML = `<div class="share-creds-box" style="margin-top:0;border-radius:0 0 10px 10px;border-top:none">
+            <p style="font-size:0.76em;color:rgba(255,200,200,0.55);margin:0">
+                <i class="bx bx-info-circle"></i> La contraseña no está disponible en este dispositivo.
+                Genera un nuevo enlace para obtener credenciales frescas.
+            </p>
+        </div>`;
+    } else {
+        const c = JSON.parse(raw);
+        const s = shareId.replace(/'/g, '%27');
+        box.innerHTML = `<div class="share-creds-box" style="margin-top:0;border-radius:0 0 10px 10px;border-top:none">
+            <p class="creds-title">Credenciales de acceso</p>
+            <div class="creds-row">
+                <span class="creds-label">Enlace</span>
+                <span class="creds-val" id="sv_url_${s}">${esc(c.url)}</span>
+                <button class="copy-btn" onclick="copyVal('sv_url_${s}')"><i class="bx bx-copy"></i></button>
+            </div>
+            <div class="creds-row">
+                <span class="creds-label">Usuario</span>
+                <span class="creds-val" id="sv_user_${s}">${esc(c.shareId)}</span>
+                <button class="copy-btn" onclick="copyVal('sv_user_${s}')"><i class="bx bx-copy"></i></button>
+            </div>
+            <div class="creds-row">
+                <span class="creds-label">Contraseña</span>
+                <span class="creds-val" id="sv_pw_${s}">${esc(c.password)}</span>
+                <button class="copy-btn" onclick="copyVal('sv_pw_${s}')"><i class="bx bx-copy"></i></button>
+            </div>
+        </div>`;
+    }
+    box.style.display = 'block';
+};
+
 window.revokeShareLink = async function(shareId) {
     if (!confirm('¿Revocar este enlace? Quien lo tenga ya no podrá acceder.')) return;
     const r = await fetch('/api/share-links/' + encodeURIComponent(shareId), {
@@ -1091,7 +1160,11 @@ window.revokeShareLink = async function(shareId) {
         headers: { 'x-session-token': TOKEN }
     });
     const d = await r.json();
-    if (d.ok) { showToast('Enlace revocado'); await loadShareLinks(); }
+    if (d.ok) {
+        localStorage.removeItem('share_creds_' + shareId);
+        showToast('Enlace revocado');
+        await loadShareLinks();
+    }
     else showToast(d.message || 'Error', true);
 };
 
