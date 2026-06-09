@@ -391,11 +391,95 @@
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.error { background: rgba(60,0,0,0.92); border-color: rgba(220,40,40,0.40); color: #ffaaaa; }
 
+        /* ── Sección compartir ── */
+        .share-gen-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 20px;
+            background: rgba(201,162,39,0.14);
+            border: 1px solid rgba(201,162,39,0.40);
+            border-radius: 9px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.78em; letter-spacing: 1px;
+            color: #c9a227; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .share-gen-btn:hover { background: rgba(201,162,39,0.28); }
+        .share-creds-box {
+            margin-top: 18px;
+            background: rgba(0,0,0,0.38);
+            border: 1px solid rgba(201,162,39,0.30);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .share-creds-box .creds-title {
+            font-size: 0.62em; letter-spacing: 2.5px; text-transform: uppercase;
+            color: rgba(201,162,39,0.65); margin-bottom: 12px;
+        }
+        .creds-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 8px;
+        }
+        .creds-label {
+            font-size: 0.65em; letter-spacing: 1.5px; text-transform: uppercase;
+            color: rgba(255,200,200,0.45); min-width: 80px;
+        }
+        .creds-val {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.11);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.82em; color: #fff;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.55);
+            padding: 5px 10px;
+            cursor: pointer; font-size: 0.78em;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+        .copy-btn:hover { background: rgba(201,162,39,0.22); color: #c9a227; }
+        .share-list { margin-top: 22px; }
+        .share-list-title {
+            font-size: 0.62em; letter-spacing: 2.5px; text-transform: uppercase;
+            color: rgba(201,162,39,0.65); margin-bottom: 10px;
+        }
+        .share-item {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 9px;
+            margin-bottom: 8px;
+        }
+        .share-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+        .share-item-id { font-size: 0.80em; color: #fff; font-family: monospace; }
+        .share-item-meta { font-size: 0.64em; color: rgba(255,200,200,0.40); }
+        .share-revoke-btn {
+            background: rgba(160,10,10,0.40);
+            border: 1px solid rgba(220,40,40,0.30);
+            border-radius: 7px;
+            color: #ffaaaa; padding: 5px 12px;
+            font-size: 0.74em; cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .share-revoke-btn:hover { background: rgba(200,15,15,0.60); }
+        .share-empty { font-size: 0.78em; color: rgba(255,200,200,0.35); padding: 6px 0; }
+
         @media (max-width: 600px) {
             .field-row { grid-template-columns: 1fr; }
             .video-add-row { grid-template-columns: 1fr; }
             .dash-section { padding: 18px 14px; }
             .prod-collage-grid { grid-template-columns: repeat(5, 1fr); }
+            .creds-row { flex-wrap: wrap; }
+            .creds-val { word-break: break-all; }
         }
     </style>
 </head>
@@ -506,6 +590,21 @@
         </div>
     </div>
 
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-link-alt"></i> Compartir portafolio</h2>
+        <p style="font-size:0.79em;color:rgba(255,200,200,0.50);margin-bottom:16px;line-height:1.6">
+            Genera un enlace privado con usuario y contraseña para compartir tu portafolio con casting, productoras u otras personas.
+            Cada enlace puede revocarse en cualquier momento.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="share-gen-btn" id="genShareBtn"><i class="bx bx-plus-circle"></i> Generar nuevo enlace</button>
+            <input id="shareLabelInput" class="dash-input" style="max-width:240px"
+                   placeholder="Etiqueta opcional (ej: Agencia XYZ)">
+        </div>
+        <div id="newShareCreds" style="display:none"></div>
+        <div class="share-list" id="shareList"></div>
+    </div>
+
 
 </div>
 
@@ -529,6 +628,7 @@ async function init() {
     myUserId = d.userId;
     document.getElementById('previewBtn').href = 'portafolio-alumno.html?id=' + myUserId;
     await loadProfile();
+    await loadShareLinks();
 }
 init();
 
@@ -904,6 +1004,95 @@ window.addProdVideo = function(prodIdx) {
 window.deleteProdVideo = function(prodIdx, j) {
     profile.producciones[prodIdx].videos.splice(j, 1);
     renderProdVideos(prodIdx);
+};
+
+/* ── Enlaces privados ── */
+async function loadShareLinks() {
+    const r = await fetch('/api/share-links', { headers: { 'x-session-token': TOKEN } });
+    if (!r.ok) return;
+    const links = await r.json();
+    renderShareList(links);
+}
+
+function renderShareList(links) {
+    const el = document.getElementById('shareList');
+    if (!links.length) {
+        el.innerHTML = '<p class="share-empty">Aún no tienes enlaces privados generados.</p>';
+        return;
+    }
+    el.innerHTML = '<p class="share-list-title">Mis enlaces activos</p>' +
+        links.map(l => {
+            const fecha = new Date(l.createdAt).toLocaleDateString('es-EC', { day:'2-digit', month:'short', year:'numeric' });
+            return `<div class="share-item">
+                <div class="share-item-info">
+                    <span class="share-item-id"><i class="bx bx-user-check" style="color:#c9a227;margin-right:4px"></i>${esc(l.shareId)}</span>
+                    <span class="share-item-meta">${l.label ? esc(l.label) + ' · ' : ''}Creado ${fecha}</span>
+                </div>
+                <button class="share-revoke-btn" onclick="revokeShareLink('${esc(l.shareId)}')">
+                    <i class="bx bx-trash"></i> Revocar
+                </button>
+            </div>`;
+        }).join('');
+}
+
+document.getElementById('genShareBtn').onclick = async () => {
+    const btn   = document.getElementById('genShareBtn');
+    const label = document.getElementById('shareLabelInput').value.trim();
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Generando…';
+    try {
+        const r = await fetch('/api/share-links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ label })
+        });
+        const d = await r.json();
+        if (!d.ok) { showToast(d.message || 'Error al generar enlace', true); return; }
+        document.getElementById('shareLabelInput').value = '';
+        const box = document.getElementById('newShareCreds');
+        box.style.display = 'block';
+        box.innerHTML = `<div class="share-creds-box">
+            <p class="creds-title"><i class="bx bx-check-circle" style="color:#5fca7a;margin-right:5px"></i>Enlace generado — guarda estas credenciales ahora</p>
+            <div class="creds-row">
+                <span class="creds-label">Enlace</span>
+                <span class="creds-val" id="sc_url">${esc(d.url)}</span>
+                <button class="copy-btn" onclick="copyVal('sc_url')"><i class="bx bx-copy"></i></button>
+            </div>
+            <div class="creds-row">
+                <span class="creds-label">Usuario</span>
+                <span class="creds-val" id="sc_user">${esc(d.shareId)}</span>
+                <button class="copy-btn" onclick="copyVal('sc_user')"><i class="bx bx-copy"></i></button>
+            </div>
+            <div class="creds-row">
+                <span class="creds-label">Contraseña</span>
+                <span class="creds-val" id="sc_pw">${esc(d.password)}</span>
+                <button class="copy-btn" onclick="copyVal('sc_pw')"><i class="bx bx-copy"></i></button>
+            </div>
+            <p style="font-size:0.67em;color:rgba(255,180,180,0.45);margin-top:10px">
+                La contraseña no se puede recuperar después de cerrar esta sección.
+            </p>
+        </div>`;
+        await loadShareLinks();
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bx bx-plus-circle"></i> Generar nuevo enlace';
+    }
+};
+
+function copyVal(id) {
+    const txt = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(txt).then(() => showToast('¡Copiado!'));
+}
+
+window.revokeShareLink = async function(shareId) {
+    if (!confirm('¿Revocar este enlace? Quien lo tenga ya no podrá acceder.')) return;
+    const r = await fetch('/api/share-links/' + encodeURIComponent(shareId), {
+        method: 'DELETE',
+        headers: { 'x-session-token': TOKEN }
+    });
+    const d = await r.json();
+    if (d.ok) { showToast('Enlace revocado'); await loadShareLinks(); }
+    else showToast(d.message || 'Error', true);
 };
 
 

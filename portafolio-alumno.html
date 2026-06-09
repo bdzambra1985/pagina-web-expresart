@@ -856,9 +856,105 @@
             .book-wrapper { display: flex; }
             .mobile-view  { display: none; }
         }
+    /* ── Gate de acceso privado ── */
+    #shareGate {
+        position: fixed; inset: 0; z-index: 99999;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, #1a0005 0%, #0a0002 70%);
+    }
+    #shareGate.hidden { display: none; }
+    .gate-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(201,162,39,0.35);
+        border-top: 3px solid rgba(201,162,39,0.60);
+        border-radius: 20px;
+        padding: 40px 36px 34px;
+        width: min(400px, 92vw);
+        text-align: center;
+        box-shadow: 0 32px 90px rgba(0,0,0,0.80);
+    }
+    .gate-logo {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.35rem;
+        color: #c9a227;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .gate-sub {
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,200,200,0.35);
+        margin-bottom: 28px;
+    }
+    .gate-field-label {
+        font-size: 0.60rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(201,162,39,0.65);
+        text-align: left;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .gate-input {
+        width: 100%; box-sizing: border-box;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 9px;
+        padding: 11px 14px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.88em;
+        color: #fff;
+        margin-bottom: 14px;
+        transition: border-color 0.2s;
+    }
+    .gate-input:focus { outline: none; border-color: rgba(201,162,39,0.55); }
+    .gate-input::placeholder { color: rgba(255,200,200,0.28); }
+    .gate-input[readonly] {
+        color: rgba(255,220,150,0.70);
+        background: rgba(201,162,39,0.07);
+        cursor: default;
+    }
+    .gate-btn {
+        width: 100%;
+        padding: 12px;
+        background: rgba(201,162,39,0.18);
+        border: 1px solid rgba(201,162,39,0.45);
+        border-radius: 9px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.86em;
+        letter-spacing: 1.5px;
+        color: #c9a227;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 4px;
+    }
+    .gate-btn:hover:not(:disabled) { background: rgba(201,162,39,0.30); }
+    .gate-btn:disabled { opacity: 0.55; cursor: default; }
+    .gate-error {
+        font-size: 0.74em;
+        color: #ff8888;
+        margin-top: 10px;
+        min-height: 18px;
+    }
     </style>
 </head>
 <body>
+
+<!-- Gate de acceso privado (visible solo con ?share=) -->
+<div id="shareGate" class="hidden">
+    <div class="gate-box">
+        <div class="gate-logo">EXPRESART</div>
+        <div class="gate-sub">Portafolio Privado</div>
+        <label class="gate-field-label">Usuario</label>
+        <input id="gateUser" class="gate-input" type="text" readonly autocomplete="username">
+        <label class="gate-field-label">Contraseña</label>
+        <input id="gatePw" class="gate-input" type="password" placeholder="Ingresa la contraseña" autocomplete="current-password">
+        <button class="gate-btn" id="gateBtn">Acceder</button>
+        <p class="gate-error" id="gateError"></p>
+    </div>
+</div>
 
 <nav class="top-nav">
     <div class="nav-inner">
@@ -1001,20 +1097,85 @@ function ytThumb(url) {
 
 initNavAuth();
 
-/* ── Cargar perfil ── */
-const userId = new URLSearchParams(location.search).get('id');
-if (!userId) { location.href = 'portafolio.html'; }
+/* ── Acceso privado por enlace compartido ── */
+(function() {
+    const params  = new URLSearchParams(location.search);
+    const shareId = params.get('share');
+    if (!shareId) return; // acceso normal
 
-fetch('/api/profile/' + userId)
-    .then(r => {
-        if (!r.ok) throw new Error('no encontrado');
-        return r.json();
-    })
-    .then(({ profile: p }) => {
-        populateBook(p);
-        populateMobile(p);
-    })
-    .catch(() => { location.href = 'portafolio.html'; });
+    const STORAGE_KEY = 'share_ok_' + shareId;
+    const gate  = document.getElementById('shareGate');
+    const btn   = document.getElementById('gateBtn');
+    const pwEl  = document.getElementById('gatePw');
+    const errEl = document.getElementById('gateError');
+
+    document.getElementById('gateUser').value = shareId;
+
+    function unlockGate(userId) {
+        sessionStorage.setItem(STORAGE_KEY, userId);
+        gate.classList.add('hidden');
+        // Redirigir a la misma página con ?id= para cargar el perfil
+        const newUrl = location.pathname + '?id=' + encodeURIComponent(userId);
+        history.replaceState(null, '', newUrl);
+    }
+
+    // Si ya fue autenticado en esta sesión de navegador
+    const cached = sessionStorage.getItem(STORAGE_KEY);
+    if (cached) { unlockGate(cached); return; }
+
+    // Mostrar gate
+    gate.classList.remove('hidden');
+    pwEl.focus();
+
+    async function tryAuth() {
+        const password = pwEl.value.trim();
+        if (!password) { errEl.textContent = 'Ingresa la contraseña.'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Verificando…';
+        errEl.textContent = '';
+        try {
+            const r = await fetch('/api/share-links/' + encodeURIComponent(shareId) + '/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const d = await r.json();
+            if (d.ok) {
+                unlockGate(d.userId);
+            } else {
+                errEl.textContent = d.message || 'Contraseña incorrecta.';
+                pwEl.value = '';
+                pwEl.focus();
+            }
+        } catch(e) {
+            errEl.textContent = 'Error de conexión. Intenta de nuevo.';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Acceder';
+        }
+    }
+
+    btn.addEventListener('click', tryAuth);
+    pwEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryAuth(); });
+})();
+
+/* ── Cargar perfil ── */
+const _qs    = new URLSearchParams(location.search);
+const userId = _qs.get('id');
+if (!userId && !_qs.get('share')) { location.href = 'portafolio.html'; }
+
+if (userId) {
+    fetch('/api/profile/' + userId)
+        .then(r => {
+            if (!r.ok) throw new Error('no encontrado');
+            return r.json();
+        })
+        .then(({ profile: p }) => {
+            populateBook(p);
+            populateMobile(p);
+        })
+        .catch(() => { location.href = 'portafolio.html'; });
+}
 
 /* ── Poblar libro ── */
 function populateBook(p) {

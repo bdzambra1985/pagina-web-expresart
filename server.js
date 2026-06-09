@@ -19,7 +19,8 @@ const USERS_FILE    = path.join(DATA_DIR, 'users.json');
 const PROFILES_DIR  = path.join(DATA_DIR, 'profiles');
 const CONTENT_FILE  = path.join(DATA_DIR, 'content.json');
 const EVENTS_FILE   = path.join(DATA_DIR, 'events.json');
-const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const SESSIONS_FILE    = path.join(DATA_DIR, 'sessions.json');
+const SHARE_LINKS_FILE = path.join(DATA_DIR, 'share-links.json');
 const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 
 [DATA_DIR, PROFILES_DIR, UPLOADS_DIR].forEach(d => {
@@ -81,8 +82,17 @@ function htmlEncode(s) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
-function readUsers()   { return readJSON(USERS_FILE, []); }
-function writeUsers(d) { writeJSON(USERS_FILE, d); }
+function readUsers()        { return readJSON(USERS_FILE, []); }
+function writeUsers(d)      { writeJSON(USERS_FILE, d); }
+function readShareLinks()   { return readJSON(SHARE_LINKS_FILE, []); }
+function writeShareLinks(d) { writeJSON(SHARE_LINKS_FILE, d); }
+function randomAlphaNum(len) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const bytes = crypto.randomBytes(len);
+    let s = '';
+    for (let i = 0; i < len; i++) s += chars[bytes[i] % chars.length];
+    return s;
+}
 function readProfile(userId) {
     if (!/^[\w-]+$/.test(userId)) return null;
     return readJSON(path.join(PROFILES_DIR, userId + '.json'), null);
@@ -832,6 +842,72 @@ app.get('/factura/:id', (req, res) => {
     if (order.status !== 'confirmado')
         return res.status(400).send('<h2>El pago aún no ha sido confirmado por EXPRESART.</h2>');
     res.send(generateComprobanteHTML(order, readBankInfo()));
+});
+
+/* ══════════════════════════════════════════
+   ENLACES PRIVADOS DE PORTAFOLIO
+   ══════════════════════════════════════════ */
+
+/* Info pública de un enlace (solo userId, sin hash) */
+app.get('/api/share-links/:shareId/info', (req, res) => {
+    const link = readShareLinks().find(l => l.shareId === req.params.shareId && l.active !== false);
+    if (!link) return res.status(404).json({ ok: false, message: 'Enlace no válido o inactivo' });
+    res.json({ ok: true, userId: link.userId });
+});
+
+/* Verificar contraseña del enlace */
+app.post('/api/share-links/:shareId/auth', loginLimiter, (req, res) => {
+    const { password } = req.body || {};
+    if (!password) return res.status(400).json({ ok: false, message: 'Contraseña requerida' });
+    const link = readShareLinks().find(l => l.shareId === req.params.shareId && l.active !== false);
+    if (!link) return res.status(404).json({ ok: false, message: 'Enlace no válido' });
+    if (!verifyPassword(password, link.passwordHash))
+        return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
+    res.json({ ok: true, userId: link.userId });
+});
+
+/* Crear enlace privado */
+app.post('/api/share-links', (req, res) => {
+    const sess = requireAuth(req, res);
+    if (!sess) return;
+    const { label } = req.body || {};
+    const shareId  = randomAlphaNum(10);
+    const password = randomAlphaNum(8);
+    const links = readShareLinks();
+    links.push({
+        shareId,
+        userId: sess.userId,
+        passwordHash: hashPassword(password),
+        label: String(label || '').trim().slice(0, 80),
+        active: true,
+        createdAt: new Date().toISOString()
+    });
+    writeShareLinks(links);
+    const base = process.env.BASE_URL || (req.protocol + '://' + req.get('host'));
+    res.json({ ok: true, shareId, password, url: base + '/portafolio-alumno.html?share=' + shareId });
+});
+
+/* Listar mis enlaces */
+app.get('/api/share-links', (req, res) => {
+    const sess = requireAuth(req, res);
+    if (!sess) return;
+    const all = readShareLinks();
+    const mine = sess.role === 'admin' ? all : all.filter(l => l.userId === sess.userId);
+    res.json(mine.map(({ shareId, label, active, createdAt }) => ({ shareId, label, active, createdAt })));
+});
+
+/* Revocar enlace */
+app.delete('/api/share-links/:shareId', (req, res) => {
+    const sess = requireAuth(req, res);
+    if (!sess) return;
+    const links = readShareLinks();
+    const idx = links.findIndex(l => l.shareId === req.params.shareId);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'No encontrado' });
+    if (links[idx].userId !== sess.userId && sess.role !== 'admin')
+        return res.status(403).json({ ok: false, message: 'No autorizado' });
+    links.splice(idx, 1);
+    writeShareLinks(links);
+    res.json({ ok: true });
 });
 
 /* ══════════════════════════════════════════
