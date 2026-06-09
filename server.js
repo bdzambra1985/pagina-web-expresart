@@ -144,7 +144,8 @@ function initAdmin() {
 }
 
 /* ── Sesiones persistidas en disco ── */
-const SESSION_TTL = 1 * 60 * 60 * 1000; // 1 hora
+const SESSION_TTL   = 1 * 60 * 60 * 1000;       // 1 hora  (usuarios normales)
+const SHARE_TTL     = 24 * 60 * 60 * 1000;       // 24 horas (tokens de enlace privado)
 
 function loadSessions() {
     try {
@@ -152,7 +153,9 @@ function loadSessions() {
         const now = Date.now();
         const map = new Map();
         Object.entries(raw).forEach(([k, v]) => {
-            if (now - v.ts <= SESSION_TTL) map.set(k, v);
+            // Respetar expiresAt si existe, si no usar SESSION_TTL
+            const expiry = v.expiresAt || (v.ts + SESSION_TTL);
+            if (now < expiry) map.set(k, v);
         });
         return map;
     } catch(e) { return new Map(); }
@@ -170,8 +173,10 @@ function getSession(req) {
     if (!token) return null;
     const sess = sessions.get(token);
     if (!sess) return null;
-    if (Date.now() - sess.ts > SESSION_TTL) { sessions.delete(token); saveSessions(sessions); return null; }
-    sess.ts = Date.now();
+    const expiry = sess.expiresAt || (sess.ts + SESSION_TTL);
+    if (Date.now() >= expiry) { sessions.delete(token); saveSessions(sessions); return null; }
+    // Solo refrescar actividad en sesiones de usuario normal (no en tokens de enlace)
+    if (!sess.expiresAt) sess.ts = Date.now();
     return sess;
 }
 function requireAuth(req, res) {
@@ -855,7 +860,7 @@ app.get('/api/share-links/:shareId/info', (req, res) => {
     res.json({ ok: true, userId: link.userId });
 });
 
-/* Verificar contraseña del enlace */
+/* Verificar contraseña del enlace — emite token con TTL de 24 h */
 app.post('/api/share-links/:shareId/auth', loginLimiter, (req, res) => {
     const { password } = req.body || {};
     if (!password) return res.status(400).json({ ok: false, message: 'Contraseña requerida' });
@@ -863,7 +868,11 @@ app.post('/api/share-links/:shareId/auth', loginLimiter, (req, res) => {
     if (!link) return res.status(404).json({ ok: false, message: 'Enlace no válido' });
     if (!verifyPassword(password, link.passwordHash))
         return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
-    res.json({ ok: true, userId: link.userId });
+    const token     = newToken();
+    const expiresAt = Date.now() + SHARE_TTL;
+    sessions.set(token, { role: 'share', shareId: req.params.shareId, userId: link.userId, ts: Date.now(), expiresAt });
+    saveSessions(sessions);
+    res.json({ ok: true, userId: link.userId, token, expiresAt });
 });
 
 /* Crear enlace privado */

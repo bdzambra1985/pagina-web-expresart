@@ -1112,7 +1112,6 @@ initNavAuth();
     document.getElementById('gateUser').value = shareId;
 
     function unlockGate(userId) {
-        sessionStorage.setItem(STORAGE_KEY, userId);
         sessionStorage.setItem('share_mode', '1');
         gate.classList.add('hidden');
         applyShareMode();
@@ -1120,9 +1119,20 @@ initNavAuth();
         history.replaceState(null, '', newUrl);
     }
 
-    // Si ya fue autenticado en esta sesión de navegador
-    const cached = sessionStorage.getItem(STORAGE_KEY);
-    if (cached) { unlockGate(cached); return; }
+    // Verificar caché: solo válido si el token no expiró
+    const cachedRaw = sessionStorage.getItem(STORAGE_KEY);
+    if (cachedRaw) {
+        try {
+            const cached = JSON.parse(cachedRaw);
+            if (cached.expiresAt && Date.now() < cached.expiresAt) {
+                unlockGate(cached.userId);
+                return;
+            }
+        } catch(e) {}
+        // Token expirado o inválido — limpiar y mostrar gate
+        sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem('share_mode');
+    }
 
     // Mostrar gate
     gate.classList.remove('hidden');
@@ -1142,6 +1152,11 @@ initNavAuth();
             });
             const d = await r.json();
             if (d.ok) {
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    userId: d.userId,
+                    token: d.token,
+                    expiresAt: d.expiresAt
+                }));
                 unlockGate(d.userId);
             } else {
                 errEl.textContent = d.message || 'Contraseña incorrecta.';
@@ -1179,7 +1194,17 @@ function applyShareMode() {
             'color:rgba(201,162,39,0.65)',
             'backdrop-filter:blur(10px)'
         ].join(';');
-        bar.innerHTML = '<i class="bx bx-lock-alt" style="font-size:0.95rem"></i> Vista privada · EXPRESART';
+        const cachedSession = (function() {
+            try {
+                const keys = Object.keys(sessionStorage).filter(k => k.startsWith('share_ok_'));
+                if (!keys.length) return null;
+                return JSON.parse(sessionStorage.getItem(keys[0]));
+            } catch(e) { return null; }
+        })();
+        const expiryStr = cachedSession && cachedSession.expiresAt
+            ? ' · Expira ' + new Date(cachedSession.expiresAt).toLocaleString('es-EC', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+            : '';
+        bar.innerHTML = '<i class="bx bx-lock-alt" style="font-size:0.95rem"></i> Vista privada · EXPRESART' + expiryStr;
         document.body.prepend(bar);
     }
 }
