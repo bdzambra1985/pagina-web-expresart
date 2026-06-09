@@ -1111,12 +1111,15 @@ initNavAuth();
 
     document.getElementById('gateUser').value = shareId;
 
-    function unlockGate(userId) {
+    // triggerLoad=true solo en primer ingreso (el código inferior no puede hacerlo porque
+    // _qs ya fue evaluado antes de que el usuario ingresara la contraseña)
+    function unlockGate(userId, triggerLoad) {
         sessionStorage.setItem('share_mode', '1');
         gate.classList.add('hidden');
         applyShareMode();
         const newUrl = location.pathname + '?id=' + encodeURIComponent(userId);
         history.replaceState(null, '', newUrl);
+        if (triggerLoad) loadPortfolio(userId);
     }
 
     // Verificar caché: solo válido si el token no expiró
@@ -1125,7 +1128,8 @@ initNavAuth();
         try {
             const cached = JSON.parse(cachedRaw);
             if (cached.expiresAt && Date.now() < cached.expiresAt) {
-                unlockGate(cached.userId);
+                // false: el código inferior carga el perfil (lee ?id= del URL ya reemplazado)
+                unlockGate(cached.userId, false);
                 return;
             }
         } catch(e) {}
@@ -1157,7 +1161,8 @@ initNavAuth();
                     token: d.token,
                     expiresAt: d.expiresAt
                 }));
-                unlockGate(d.userId);
+                // true: _qs fue evaluado antes del auth, hay que disparar la carga aquí
+                unlockGate(d.userId, true);
             } else {
                 errEl.textContent = d.message || 'Contraseña incorrecta.';
                 pwEl.value = '';
@@ -1211,12 +1216,8 @@ function applyShareMode() {
 if (sessionStorage.getItem('share_mode')) applyShareMode();
 
 /* ── Cargar perfil ── */
-const _qs    = new URLSearchParams(location.search);
-const userId = _qs.get('id');
-if (!userId && !_qs.get('share')) { location.href = 'portafolio.html'; }
-
-if (userId) {
-    fetch('/api/profile/' + userId)
+function loadPortfolio(uid) {
+    fetch('/api/profile/' + uid)
         .then(r => {
             if (!r.ok) throw new Error('no encontrado');
             return r.json();
@@ -1227,6 +1228,12 @@ if (userId) {
         })
         .catch(() => { location.href = 'portafolio.html'; });
 }
+
+const _qs    = new URLSearchParams(location.search);
+const userId = _qs.get('id');
+if (!userId && !_qs.get('share')) { location.href = 'portafolio.html'; }
+// userId disponible inmediatamente (acceso normal o caché de share válido)
+if (userId) loadPortfolio(userId);
 
 /* ── Poblar libro ── */
 function populateBook(p) {
