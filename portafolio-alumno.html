@@ -1113,8 +1113,9 @@ initNavAuth();
 
     function unlockGate(userId) {
         sessionStorage.setItem(STORAGE_KEY, userId);
+        sessionStorage.setItem('share_mode', '1');
         gate.classList.add('hidden');
-        // Redirigir a la misma página con ?id= para cargar el perfil
+        applyShareMode();
         const newUrl = location.pathname + '?id=' + encodeURIComponent(userId);
         history.replaceState(null, '', newUrl);
     }
@@ -1158,6 +1159,31 @@ initNavAuth();
     btn.addEventListener('click', tryAuth);
     pwEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryAuth(); });
 })();
+
+/* ── Modo vista privada (sin navegación) ── */
+function applyShareMode() {
+    const nav = document.querySelector('.top-nav');
+    if (nav) nav.style.display = 'none';
+    let bar = document.getElementById('shareModeBar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'shareModeBar';
+        bar.style.cssText = [
+            'position:fixed;top:0;left:0;right:0;z-index:9000',
+            'background:rgba(8,0,2,0.94)',
+            'border-bottom:1px solid rgba(201,162,39,0.28)',
+            'display:flex;align-items:center;justify-content:center;gap:10px',
+            'padding:9px 20px',
+            'font-family:Poppins,sans-serif;font-size:0.70rem',
+            'letter-spacing:2px;text-transform:uppercase',
+            'color:rgba(201,162,39,0.65)',
+            'backdrop-filter:blur(10px)'
+        ].join(';');
+        bar.innerHTML = '<i class="bx bx-lock-alt" style="font-size:0.95rem"></i> Vista privada · EXPRESART';
+        document.body.prepend(bar);
+    }
+}
+if (sessionStorage.getItem('share_mode')) applyShareMode();
 
 /* ── Cargar perfil ── */
 const _qs    = new URLSearchParams(location.search);
