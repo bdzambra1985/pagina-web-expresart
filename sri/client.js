@@ -1,6 +1,7 @@
 'use strict';
 
-const https = require('https');
+const https  = require('https');
+const crypto = require('crypto');
 
 const URLS = {
     recepcion: {
@@ -23,10 +24,11 @@ function soapPost(url, bodyXml) {
         const u    = new URL(url);
         const data = Buffer.from(envelope, 'utf8');
         const opts = {
-            hostname: u.hostname,
-            path:     u.pathname + u.search,
-            port:     443,
-            method:   'POST',
+            hostname:      u.hostname,
+            path:          u.pathname + u.search,
+            port:          443,
+            method:        'POST',
+            secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
             headers: {
                 'Content-Type':   'text/xml;charset=UTF-8',
                 'Content-Length': data.length,
