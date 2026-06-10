@@ -168,6 +168,8 @@ async function emitirFactura(order, secuencial) {
             continue;
         }
 
+        console.log('SRI autorizacion intento', intento, ':', JSON.stringify(autResp));
+
         const auts = autResp.autorizaciones || [];
         if (!auts.length) continue;
 
@@ -185,9 +187,10 @@ async function emitirFactura(order, secuencial) {
         }
 
         if (aut.estado === 'NO AUTORIZADO') {
-            const errMsg = aut.mensajes && aut.mensajes.length > 0
-                ? aut.mensajes.map(m => m.mensaje || '').filter(Boolean).join('; ')
-                : 'Comprobante NO AUTORIZADO por el SRI';
+            const partes = (aut.mensajes || []).map(m =>
+                [m.mensaje, m.informacionAdicional].filter(Boolean).join(' - ')
+            ).filter(Boolean);
+            const errMsg = partes.length > 0 ? partes.join('; ') : 'Comprobante NO AUTORIZADO por el SRI';
             return { ok: false, claveAcceso, xmlSigned, error: errMsg };
         }
 
