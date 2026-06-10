@@ -89,17 +89,12 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     const cert = certBags[certBags.length - 1].cert || certBags[0].cert;
 
     // Datos del certificado
-    const certDer        = forge.pki.certificateToDer(cert);
+    const certDer        = forge.asn1.toDer(forge.pki.certificateToAsn1(cert));
     const certBase64     = forgeBytesToBuffer(certDer.bytes()).toString('base64');
     const issuerDN       = buildIssuerDN(cert.issuer);
     const serialNumber   = cert.serialNumber;
 
-    // Digest SHA1 del certificado (para SignedProperties)
-    const certDigestB64  = sha1Base64(forge.util.decode64(certBase64).length > 0
-        ? forge.pki.certificateToDer(cert).bytes()  // usar bytes binarios
-        : certBase64);
-
-    // Calcular digest del certificado correctamente (binario, no utf8)
+    // Calcular digest SHA1 del certificado (binario)
     const certMd = forge.md.sha1.create();
     certMd.update(certDer.bytes());
     const certDigestBase64 = forgeBytesToBuffer(certMd.digest().bytes()).toString('base64');
