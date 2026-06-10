@@ -628,25 +628,6 @@
     <!-- ══════════════ TAB PAGOS ══════════════ -->
     <div class="tab-panel" id="tab-pagos">
 
-        <!-- Configuración SRI -->
-        <div class="admin-section">
-            <h2 class="section-title"><i class="bx bx-file"></i> Facturación electrónica SRI</h2>
-            <p style="color:rgba(255,200,200,.65);font-size:.85em;margin-bottom:12px">
-                Sube tu firma electrónica (.p12) para que el sistema emita facturas autorizadas automáticamente al confirmar un pago.
-                Las variables de entorno <code>SRI_RUC</code>, <code>SRI_RAZON_SOCIAL</code>, <code>SRI_AMBIENTE</code>, etc. deben estar configuradas en Railway.
-            </p>
-            <div class="field-row">
-                <div class="field-group">
-                    <label class="field-label">Certificado de firma electrónica (.p12)</label>
-                    <div style="display:flex;gap:10px;align-items:center">
-                        <input type="file" id="p12File" accept=".p12" style="color:rgba(255,200,200,.8);font-size:.85em">
-                        <button class="save-btn" id="uploadP12Btn" style="margin:0;padding:6px 18px;font-size:.82em"><i class="bx bx-upload"></i> Subir</button>
-                    </div>
-                    <small id="p12Status" style="color:rgba(255,200,200,.5);font-size:.78em"></small>
-                </div>
-            </div>
-        </div>
-
         <!-- Configurar datos bancarios -->
         <div class="admin-section">
             <h2 class="section-title"><i class="bx bx-bank"></i> Datos bancarios para transferencias</h2>
@@ -1397,23 +1378,6 @@ window.sriRetry = async (id) => {
     loadOrders();
 };
 
-document.getElementById('uploadP12Btn').addEventListener('click', async () => {
-    const file = document.getElementById('p12File').files[0];
-    const status = document.getElementById('p12Status');
-    if (!file) { status.textContent = 'Selecciona un archivo .p12 primero.'; return; }
-    const fd = new FormData();
-    fd.append('p12', file);
-    status.textContent = 'Subiendo…';
-    try {
-        const r = await fetch('/api/p12-upload', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: fd });
-        const d = await r.json();
-        status.style.color = d.ok ? '#5d5' : '#f66';
-        status.textContent = d.ok ? '✓ ' + d.message : '✗ ' + (d.message || 'Error al subir');
-    } catch (e) {
-        status.style.color = '#f66';
-        status.textContent = '✗ Error de red: ' + e.message;
-    }
-});
 
 /* Filtros */
 document.querySelectorAll('.filter-btn').forEach(btn => {
