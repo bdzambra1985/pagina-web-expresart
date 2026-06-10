@@ -776,7 +776,7 @@ app.put('/api/orders/:id/confirm', (req, res) => {
             const all    = readOrders();
             const i2     = all.findIndex(o => o.id === orderId);
             if (i2 === -1) return;
-            if (!result.ok) console.error('SRI error:', result.error);
+            if (!result.ok) console.error('SRI error completo:', JSON.stringify(result));
             all[i2].sri = result.ok
                 ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
                 : { status: 'error', claveAcceso: result.claveAcceso || '', error: result.error };

@@ -141,6 +141,7 @@ async function emitirFactura(order, secuencial) {
 
     // 6) Enviar al SRI
     const recepcion = await enviarComprobante(xmlSigned, cfg.ambiente);
+    console.log('SRI recepcion:', JSON.stringify(recepcion));
 
     if (recepcion.estado !== 'RECIBIDA') {
         const errMsg = recepcion.mensajes && recepcion.mensajes.length > 0
