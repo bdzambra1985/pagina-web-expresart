@@ -324,7 +324,14 @@ app.post('/api/change-password', (req, res) => {
 app.get('/api/auth', (req, res) => {
     const sess = getSession(req);
     if (!sess) return res.json({ ok: false });
-    res.json({ ok: true, userId: sess.userId, role: sess.role });
+    const profile = sess.role === 'alumno' ? (readProfile(sess.userId) || {}) : {};
+    res.json({
+        ok: true,
+        userId: sess.userId,
+        role: sess.role,
+        displayName: profile.displayName || '',
+        photoUrl:    profile.photoUrl    || ''
+    });
 });
 
 /* ══════════════════════════════════════════
