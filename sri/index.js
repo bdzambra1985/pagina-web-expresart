@@ -144,9 +144,13 @@ async function emitirFactura(order, secuencial) {
     console.log('SRI recepcion:', JSON.stringify(recepcion));
 
     if (recepcion.estado !== 'RECIBIDA') {
-        const errMsg = recepcion.mensajes && recepcion.mensajes.length > 0
-            ? recepcion.mensajes.map(m => m.mensaje || m.informacionAdicional || '').filter(Boolean).join('; ')
-            : `Estado SRI: ${recepcion.estado}`;
+        const partes = (recepcion.mensajes || []).map(m =>
+            [m.identificador, m.mensaje, m.informacionAdicional].filter(Boolean).join(' - ')
+        ).filter(Boolean);
+        const errMsg = partes.length > 0
+            ? partes.join('; ')
+            : `Estado SRI: ${recepcion.estado || 'sin respuesta'}`;
+        console.error('SRI recepcion rechazada:', errMsg, JSON.stringify(recepcion));
         return { ok: false, claveAcceso, error: errMsg };
     }
 
