@@ -86,6 +86,7 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el .p12');
 
     // El certificado de entidad final es el primero (los siguientes son CA intermedias/raíz)
+    console.log('Certs en p12:', certBags.length, certBags.map((b,i) => `[${i}] CN=${b.cert?.subject?.getField('CN')?.value} / issuer CN=${b.cert?.issuer?.getField('CN')?.value}`));
     const cert = certBags[0].cert;
 
     // Datos del certificado
