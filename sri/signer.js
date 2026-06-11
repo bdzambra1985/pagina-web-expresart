@@ -85,8 +85,8 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
     if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el .p12');
 
-    // El certificado de entidad final suele ser el último (o el único)
-    const cert = certBags[certBags.length - 1].cert || certBags[0].cert;
+    // El certificado de entidad final es el primero (los siguientes son CA intermedias/raíz)
+    const cert = certBags[0].cert;
 
     // Datos del certificado
     const certDer        = forge.asn1.toDer(forge.pki.certificateToAsn1(cert));
