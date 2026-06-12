@@ -14,6 +14,19 @@ const URLS = {
     },
 };
 
+// Extrae los bloques <mensaje> del XML del SRI correctamente.
+// Usa split por '<mensaje>' para evitar el conflicto con el campo hijo homónimo.
+function parseMensajes(xml) {
+    const mensajesMatch = xml.match(/<mensajes>([\s\S]*?)<\/mensajes>/);
+    if (!mensajesMatch) return [];
+    return mensajesMatch[1].split('<mensaje>').slice(1).map(blk => ({
+        identificador:        tagValue(blk, 'identificador'),
+        tipo:                 tagValue(blk, 'tipo'),
+        mensaje:              tagValue(blk, 'mensaje'),
+        informacionAdicional: tagValue(blk, 'informacionAdicional'),
+    })).filter(m => m.identificador || m.mensaje || m.tipo);
+}
+
 function soapPost(url, bodyXml) {
     const envelope = `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -69,20 +82,10 @@ async function enviarComprobante(xmlSigned, ambiente) {
 
     const url      = URLS.recepcion[String(ambiente)] || URLS.recepcion['1'];
     const response = await soapPost(url, body);
+    console.log('SRI recepcion RAW:', response.slice(0, 2000));
 
     const estado   = tagValue(response, 'estado');
-    const mensajes = [];
-    const re       = /<mensaje>([\s\S]*?)<\/mensaje>/g;
-    let m;
-    while ((m = re.exec(response)) !== null) {
-        const blk = m[1];
-        mensajes.push({
-            tipo:         tagValue(blk, 'tipo'),
-            identificador: tagValue(blk, 'identificador'),
-            mensaje:      tagValue(blk, 'mensaje'),
-            informacionAdicional: tagValue(blk, 'informacionAdicional'),
-        });
-    }
+    const mensajes = parseMensajes(response);
     return { estado, mensajes };
 }
 
@@ -99,28 +102,20 @@ async function autorizarComprobante(claveAcceso, ambiente) {
 
     const url      = URLS.autorizacion[String(ambiente)] || URLS.autorizacion['1'];
     const response = await soapPost(url, body);
+    console.log('SRI autorizacion RAW:', response.slice(0, 2000));
 
     const autorizaciones = [];
     const re = /<autorizacion>([\s\S]*?)<\/autorizacion>/g;
     let m;
     while ((m = re.exec(response)) !== null) {
         const blk = m[1];
-        const mensajes = [];
-        const mre = /<mensaje>([\s\S]*?)<\/mensaje>/g;
-        let mm;
-        while ((mm = mre.exec(blk)) !== null) {
-            mensajes.push({
-                tipo:    tagValue(mm[1], 'tipo'),
-                mensaje: tagValue(mm[1], 'mensaje'),
-            });
-        }
         autorizaciones.push({
             estado:             tagValue(blk, 'estado'),
             numeroAutorizacion: tagValue(blk, 'numeroAutorizacion'),
             fechaAutorizacion:  tagValue(blk, 'fechaAutorizacion'),
             ambiente:           tagValue(blk, 'ambiente'),
             comprobante:        cdataOrText(blk, 'comprobante'),
-            mensajes,
+            mensajes:           parseMensajes(blk),
         });
     }
     return { autorizaciones };
