@@ -88,6 +88,12 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     // El certificado de entidad final es el primero (los siguientes son CA intermedias/raíz)
     const cert = certBags[0].cert;
 
+    // Verificar que la clave privada corresponde al certificado
+    const keyModulus  = privateKey.n.toString(16);
+    const certModulus = cert.publicKey.n.toString(16);
+    console.log('KEY-CERT MATCH:', keyModulus === certModulus);
+    if (keyModulus !== certModulus) throw new Error('La clave privada no corresponde al certificado certBags[0]');
+
     // Datos del certificado
     const certDer        = forge.asn1.toDer(forge.pki.certificateToAsn1(cert));
     const certBase64     = forgeBytesToBuffer(certDer.bytes()).toString('base64');
