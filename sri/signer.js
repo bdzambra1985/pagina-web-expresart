@@ -1,167 +1,204 @@
 'use strict';
 
-/**
- * SRI Ecuador — Firmador XAdES-BES con node-forge
- *
- * Firma un XML de factura con un certificado .p12 y devuelve el XML firmado.
- * Implementación simplificada compatible con el SRI Ecuador.
- */
+const forge          = require('node-forge');
+const crypto         = require('crypto');
+const { SignedXml }  = require('xml-crypto');
+const { DOMParser }  = require('@xmldom/xmldom');
 
-const forge = require('node-forge');
+// ── Constantes ────────────────────────────────────────────────────────────
+const NS_DS    = 'http://www.w3.org/2000/09/xmldsig#';
+const NS_XADES = 'http://uri.etsi.org/01903/v1.3.2#';
+const C14N     = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
+const ENV_SIG  = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
+const SHA1     = `${NS_DS}sha1`;
+const RSA_SHA1 = `${NS_DS}rsa-sha1`;
+const XADES_SP = 'http://uri.etsi.org/01903#SignedProperties';
 
-/**
- * Construye el DN (Distinguished Name) del emisor del certificado.
- * @param {object} certIssuer  forge certificate issuer object
- * @returns {string}
- */
-function buildIssuerDN(certIssuer) {
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function forgeBytesToBuffer(b) { return Buffer.from(b, 'binary'); }
+
+function stripXmlDeclaration(xml) {
+    return xml.replace(/^<\?xml[^?]*\?>\s*/i, '');
+}
+
+function buildIssuerDN(issuer) {
     const order = ['CN', 'OU', 'O', 'L', 'ST', 'C'];
     const parts = [];
-    // Primero los atributos en el orden preferido
-    for (const shortName of order) {
-        const attr = certIssuer.attributes.find(a => a.shortName === shortName);
-        if (attr) parts.push(`${shortName}=${attr.value}`);
+    for (const sn of order) {
+        const a = issuer.attributes.find(x => x.shortName === sn);
+        if (a) parts.push(`${sn}=${a.value}`);
     }
-    // Luego cualquier otro atributo no listado
-    for (const attr of certIssuer.attributes) {
-        if (!order.includes(attr.shortName)) {
-            parts.push(`${(attr.shortName || attr.type)}=${attr.value}`);
-        }
+    for (const a of issuer.attributes) {
+        if (!order.includes(a.shortName))
+            parts.push(`${a.shortName || a.type}=${a.value}`);
     }
     return parts.join(', ');
 }
 
 /**
- * Convierte bytes de node-forge a Buffer Node.js.
- * @param {string} forgeBytes  Bytes en formato forge (latin1)
- * @returns {Buffer}
+ * Calcula el hash SHA-1 de la forma C14N de un nodo DOM.
+ * @param {Node}     node        Nodo parseado por xmldom
+ * @param {string[]} transforms  URIs de los transforms a aplicar
+ * @returns {string} Base64 del digest
  */
-function forgeBytesToBuffer(forgeBytes) {
-    return Buffer.from(forgeBytes, 'binary');
+function c14nDigest(node, transforms) {
+    const sig = new SignedXml();
+    const canonical = sig.getCanonXml(transforms, node);
+    const buf = Buffer.isBuffer(canonical) ? canonical : Buffer.from(canonical, 'utf8');
+    return crypto.createHash('sha1').update(buf).digest('base64');
 }
 
 /**
- * Calcula SHA1 digest de un string y lo devuelve como base64.
- * @param {string} data
- * @returns {string}
+ * Parsea un fragmento XML con un contexto de namespaces del padre.
+ * Devuelve el primer hijo del wrapper (el fragmento raíz).
  */
-function sha1Base64(data) {
-    const md = forge.md.sha1.create();
-    md.update(data, 'utf8');
-    return forgeBytesToBuffer(md.digest().bytes()).toString('base64');
+function parseInContext(fragment, nsMap) {
+    const nsAttrs = Object.entries(nsMap)
+        .map(([p, u]) => `xmlns:${p}="${u}"`)
+        .join(' ');
+    const doc = new DOMParser().parseFromString(
+        `<?xml version="1.0"?><_w ${nsAttrs}>${fragment}</_w>`,
+        'application/xml'
+    );
+    return doc.documentElement.firstChild;
 }
 
-/**
- * Elimina la declaración XML <?xml...?> si existe.
- * @param {string} xml
- * @returns {string}
- */
-function stripXmlDeclaration(xml) {
-    return xml.replace(/^<\?xml[^?]*\?>\s*/i, '');
-}
+// ── Función principal ──────────────────────────────────────────────────────
 
-/**
- * Firma un XML de factura con XAdES-BES usando RSA-SHA1.
- *
- * @param {string} xmlContent    XML original (puede incluir <?xml...?>)
- * @param {Buffer} p12Buffer     Certificado .p12 como Buffer
- * @param {string} p12Password   Contraseña del certificado
- * @returns {string}             XML firmado con <ds:Signature> inyectado
- */
 function signXML(xmlContent, p12Buffer, p12Password) {
-    // Parsear el .p12
+    // 1) Parsear .p12 y extraer clave + certificado
     const p12Der  = forge.util.createBuffer(p12Buffer.toString('binary'));
     const p12Asn1 = forge.asn1.fromDer(p12Der);
     const p12     = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, p12Password);
 
-    // Extraer clave privada
-    const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-    const keyBag  = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]
+    const keyBags  = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+    const keyBag   = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]
         || p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag];
     if (!keyBag || !keyBag[0]) throw new Error('No se encontró clave privada en el .p12');
     const privateKey = keyBag[0].key;
 
-    // Extraer certificado de entidad final (el primero en certBags o el leaf)
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
     if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el .p12');
-
-    // El certificado de entidad final es el primero (los siguientes son CA intermedias/raíz)
     const cert = certBags[0].cert;
 
-    // Verificar que la clave privada corresponde al certificado
-    const keyModulus  = privateKey.n.toString(16);
-    const certModulus = cert.publicKey.n.toString(16);
-    console.log('KEY-CERT MATCH:', keyModulus === certModulus);
-    if (keyModulus !== certModulus) throw new Error('La clave privada no corresponde al certificado certBags[0]');
+    if (privateKey.n.toString(16) !== cert.publicKey.n.toString(16))
+        throw new Error('La clave privada no corresponde al certificado');
 
-    // Datos del certificado
+    // Datos del certificado de firma
     const certDer        = forge.asn1.toDer(forge.pki.certificateToAsn1(cert));
     const certBase64     = forgeBytesToBuffer(certDer.bytes()).toString('base64');
     const issuerDN       = buildIssuerDN(cert.issuer);
-    // SRI requiere el serial en decimal, pero forge lo devuelve en hex
     const serialNumber   = BigInt('0x' + cert.serialNumber).toString(10);
 
-    // Calcular digest SHA1 del certificado (binario)
     const certMd = forge.md.sha1.create();
     certMd.update(certDer.bytes());
-    const certDigestBase64 = forgeBytesToBuffer(certMd.digest().bytes()).toString('base64');
+    const certDigestB64 = forgeBytesToBuffer(certMd.digest().bytes()).toString('base64');
 
-    // IDs únicos para los elementos de firma
-    const sigId         = 'Signature-' + Date.now();
-    const sigPropsId    = 'SignedProperties-' + sigId;
-    const keyInfoId     = 'KeyInfo-' + sigId;
-    const sigObjId      = 'SignedObject-' + sigId;
-    const signingTime   = new Date().toISOString();
+    // IDs únicos
+    const sigId      = 'Signature-'       + Date.now();
+    const sigPropsId = 'SignedProperties-' + sigId;
+    const keyInfoId  = 'KeyInfo-'          + sigId;
+    const sigObjId   = 'SignedObject-'     + sigId;
+    const signingTime = new Date().toISOString();
 
-    // 1) Preparar el contenido del documento (sin declaración XML)
+    // 2) Digest del documento — C14N real sobre el XML limpio
     const xmlStripped = stripXmlDeclaration(xmlContent);
+    const docElem     = new DOMParser()
+        .parseFromString(xmlStripped, 'application/xml')
+        .documentElement;
+    const docDigestB64 = c14nDigest(docElem, [ENV_SIG, C14N]);
 
-    // 2) Calcular digest del documento (Reference URI="" → todo el documento sin Signature)
-    const docDigestB64 = sha1Base64(xmlStripped);
+    // 3) SignedProperties — XML con namespaces explícitos para C14N standalone
+    const signedPropsXml =
+        `<xades:SignedProperties xmlns:ds="${NS_DS}" xmlns:xades="${NS_XADES}" Id="${sigPropsId}">` +
+        `<xades:SignedSignatureProperties>` +
+        `<xades:SigningTime>${signingTime}</xades:SigningTime>` +
+        `<xades:SigningCertificate><xades:Cert>` +
+        `<xades:CertDigest>` +
+        `<ds:DigestMethod Algorithm="${SHA1}"></ds:DigestMethod>` +
+        `<ds:DigestValue>${certDigestB64}</ds:DigestValue>` +
+        `</xades:CertDigest>` +
+        `<xades:IssuerSerial>` +
+        `<ds:X509IssuerName>${issuerDN}</ds:X509IssuerName>` +
+        `<ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber>` +
+        `</xades:IssuerSerial>` +
+        `</xades:Cert></xades:SigningCertificate>` +
+        `</xades:SignedSignatureProperties>` +
+        `</xades:SignedProperties>`;
 
-    // 3) Construir SignedProperties SIN declaraciones xmlns redundantes.
-    // C14N en contexto del documento elimina xmlns que ya declara un ancestro:
-    // - xmlns:xades lo declara xades:QualifyingProperties (padre)
-    // - xmlns:ds lo declara ds:Signature (ancestro)
-    // Hasheamos la forma que C14N produciría, sin xmlns redundantes.
-    // C14N convierte elementos vacíos de <tag/> a <tag></tag> — usamos esa forma.
-    const signedPropsContent = `<xades:SignedProperties Id="${sigPropsId}"><xades:SignedSignatureProperties><xades:SigningTime>${signingTime}</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${certDigestBase64}</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>${issuerDN}</ds:X509IssuerName><ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties>`;
+    const signedPropsNode    = parseInContext(signedPropsXml, { ds: NS_DS, xades: NS_XADES });
+    const signedPropsDigestB64 = c14nDigest(signedPropsNode, [C14N]);
 
-    const signedPropsDigestB64 = sha1Base64(signedPropsContent);
+    // 4) SignedInfo XML — con xmlns explícito (se parsea en contexto ds:Signature)
+    const signedInfoXml =
+        `<ds:SignedInfo xmlns:ds="${NS_DS}">` +
+        `<ds:CanonicalizationMethod Algorithm="${C14N}"></ds:CanonicalizationMethod>` +
+        `<ds:SignatureMethod Algorithm="${RSA_SHA1}"></ds:SignatureMethod>` +
+        `<ds:Reference URI="#comprobante">` +
+        `<ds:Transforms>` +
+        `<ds:Transform Algorithm="${ENV_SIG}"></ds:Transform>` +
+        `<ds:Transform Algorithm="${C14N}"></ds:Transform>` +
+        `</ds:Transforms>` +
+        `<ds:DigestMethod Algorithm="${SHA1}"></ds:DigestMethod>` +
+        `<ds:DigestValue>${docDigestB64}</ds:DigestValue>` +
+        `</ds:Reference>` +
+        // Atributos en orden C14N: Type < URI
+        `<ds:Reference Type="${XADES_SP}" URI="#${sigPropsId}">` +
+        `<ds:DigestMethod Algorithm="${SHA1}"></ds:DigestMethod>` +
+        `<ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue>` +
+        `</ds:Reference>` +
+        `</ds:SignedInfo>`;
 
-    // 4) Construir SignedInfo SIN xmlns:ds redundante.
-    // C14N del <ds:SignedInfo> en contexto de <ds:Signature xmlns:ds="...">
-    // no repite xmlns:ds (ya está en el padre). Firmamos esa forma canónica.
-    // C14N convierte <tag/> a <tag></tag> y ordena atributos alfabéticamente.
-    // "Type" < "URI" → Type debe ir antes que URI en el segundo Reference.
-    const signedInfoContent = `<ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></ds:SignatureMethod><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></ds:Transform><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#${sigPropsId}"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+    // C14N del SignedInfo EN CONTEXTO de ds:Signature (para que no repita xmlns:ds)
+    const signedInfoNode = parseInContext(signedInfoXml, { ds: NS_DS });
+    const sig2           = new SignedXml();
+    const canonSI        = sig2.getCanonXml([C14N], signedInfoNode);
+    const canonSIBuf     = Buffer.isBuffer(canonSI) ? canonSI : Buffer.from(canonSI, 'utf8');
 
-    // 5) Firmar SignedInfo con RSA-SHA1
-    const signedInfoMd = forge.md.sha1.create();
-    signedInfoMd.update(signedInfoContent, 'utf8');
-    const signatureBytes  = privateKey.sign(signedInfoMd);
+    // 5) Firmar el C14N del SignedInfo con RSA-SHA1 (SIN double-hash)
+    const forgeMd = forge.md.sha1.create();
+    forgeMd.update(forge.util.createBuffer(canonSIBuf).bytes());
+    const signatureBytes  = privateKey.sign(forgeMd);
     const signatureValue  = forgeBytesToBuffer(signatureBytes).toString('base64');
 
-    // 6) Construir el bloque <ds:Signature> completo
-    const signatureBlock = `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="${sigId}">
-  ${signedInfoContent}
-  <ds:SignatureValue Id="SignatureValue-${sigId}">${signatureValue}</ds:SignatureValue>
-  <ds:KeyInfo Id="${keyInfoId}">
-    <ds:X509Data>
-      <ds:X509Certificate>${certBase64}</ds:X509Certificate>
-    </ds:X509Data>
-  </ds:KeyInfo>
-  <ds:Object Id="${sigObjId}">
-    <xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Target="#${sigId}">
-      ${signedPropsContent}
-    </xades:QualifyingProperties>
-  </ds:Object>
-</ds:Signature>`;
+    // 6) SignedProperties para embeber (sin xmlns, los hereda del contexto)
+    const signedPropsEmbed =
+        `<xades:SignedProperties Id="${sigPropsId}">` +
+        `<xades:SignedSignatureProperties>` +
+        `<xades:SigningTime>${signingTime}</xades:SigningTime>` +
+        `<xades:SigningCertificate><xades:Cert>` +
+        `<xades:CertDigest>` +
+        `<ds:DigestMethod Algorithm="${SHA1}"></ds:DigestMethod>` +
+        `<ds:DigestValue>${certDigestB64}</ds:DigestValue>` +
+        `</xades:CertDigest>` +
+        `<xades:IssuerSerial>` +
+        `<ds:X509IssuerName>${issuerDN}</ds:X509IssuerName>` +
+        `<ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber>` +
+        `</xades:IssuerSerial>` +
+        `</xades:Cert></xades:SigningCertificate>` +
+        `</xades:SignedSignatureProperties>` +
+        `</xades:SignedProperties>`;
 
-    // 7) Inyectar <ds:Signature> antes de </factura>
-    if (!xmlStripped.includes('</factura>')) {
-        throw new Error('No se encontró la etiqueta </factura> en el XML');
-    }
+    // 7) Bloque <ds:Signature> completo
+    const signatureBlock =
+        `<ds:Signature xmlns:ds="${NS_DS}" Id="${sigId}">\n` +
+        `  ${signedInfoXml}\n` +
+        `  <ds:SignatureValue Id="SignatureValue-${sigId}">${signatureValue}</ds:SignatureValue>\n` +
+        `  <ds:KeyInfo Id="${keyInfoId}">\n` +
+        `    <ds:X509Data>\n` +
+        `      <ds:X509Certificate>${certBase64}</ds:X509Certificate>\n` +
+        `    </ds:X509Data>\n` +
+        `  </ds:KeyInfo>\n` +
+        `  <ds:Object Id="${sigObjId}">\n` +
+        `    <xades:QualifyingProperties xmlns:xades="${NS_XADES}" Target="#${sigId}">\n` +
+        `      ${signedPropsEmbed}\n` +
+        `    </xades:QualifyingProperties>\n` +
+        `  </ds:Object>\n` +
+        `</ds:Signature>`;
+
+    if (!xmlStripped.includes('</factura>'))
+        throw new Error('No se encontró </factura> en el XML');
 
     return xmlStripped.replace('</factura>', signatureBlock + '\n</factura>');
 }
