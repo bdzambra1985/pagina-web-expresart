@@ -113,16 +113,19 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     // 2) Calcular digest del documento (Reference URI="" → todo el documento sin Signature)
     const docDigestB64 = sha1Base64(xmlStripped);
 
-    // 3) Construir SignedProperties (para calcular su digest)
-    const signedPropsContent = `<xades:SignedProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="${sigPropsId}"><xades:SignedSignatureProperties><xades:SigningTime>${signingTime}</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${certDigestBase64}</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${issuerDN}</ds:X509IssuerName><ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">${serialNumber}</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties>`;
+    // 3) Construir SignedProperties SIN declaraciones xmlns redundantes.
+    // C14N en contexto del documento elimina xmlns que ya declara un ancestro:
+    // - xmlns:xades lo declara xades:QualifyingProperties (padre)
+    // - xmlns:ds lo declara ds:Signature (ancestro)
+    // Hasheamos la forma que C14N produciría, sin xmlns redundantes.
+    const signedPropsContent = `<xades:SignedProperties Id="${sigPropsId}"><xades:SignedSignatureProperties><xades:SigningTime>${signingTime}</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${certDigestBase64}</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>${issuerDN}</ds:X509IssuerName><ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties>`;
 
     const signedPropsDigestB64 = sha1Base64(signedPropsContent);
 
-    // 4) Construir SignedInfo
-    // URI="#comprobante" referencia el nodo raíz de la factura (id="comprobante")
-    // La doble transformación: enveloped-signature elimina el bloque <ds:Signature>,
-    // luego c14n canonicaliza — equivalente a hashear el XML limpio antes de firmar.
-    const signedInfoContent = `<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+    // 4) Construir SignedInfo SIN xmlns:ds redundante.
+    // C14N del <ds:SignedInfo> en contexto de <ds:Signature xmlns:ds="...">
+    // no repite xmlns:ds (ya está en el padre). Firmamos esa forma canónica.
+    const signedInfoContent = `<ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
 
     // 5) Firmar SignedInfo con RSA-SHA1
     const signedInfoMd = forge.md.sha1.create();
