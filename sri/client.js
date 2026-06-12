@@ -14,17 +14,38 @@ const URLS = {
     },
 };
 
-// Extrae los bloques <mensaje> del XML del SRI correctamente.
-// Usa split por '<mensaje>' para evitar el conflicto con el campo hijo homónimo.
+// Extrae los bloques <mensaje> del XML del SRI.
+// Usa seguimiento de profundidad porque <mensaje> es también nombre de campo interno.
 function parseMensajes(xml) {
     const mensajesMatch = xml.match(/<mensajes>([\s\S]*?)<\/mensajes>/);
     if (!mensajesMatch) return [];
-    return mensajesMatch[1].split('<mensaje>').slice(1).map(blk => ({
-        identificador:        tagValue(blk, 'identificador'),
-        tipo:                 tagValue(blk, 'tipo'),
-        mensaje:              tagValue(blk, 'mensaje'),
-        informacionAdicional: tagValue(blk, 'informacionAdicional'),
-    })).filter(m => m.identificador || m.mensaje || m.tipo);
+    const src = mensajesMatch[1];
+    const result = [];
+    let depth = 0, start = -1, i = 0;
+    while (i < src.length) {
+        if (src.startsWith('<mensaje>', i)) {
+            if (depth === 0) start = i + '<mensaje>'.length;
+            depth++;
+            i += 9; // '<mensaje>'.length
+        } else if (src.startsWith('</mensaje>', i)) {
+            depth--;
+            if (depth === 0 && start >= 0) {
+                const blk = src.substring(start, i);
+                const msg = {
+                    identificador:        tagValue(blk, 'identificador'),
+                    tipo:                 tagValue(blk, 'tipo'),
+                    mensaje:              tagValue(blk, 'mensaje'),
+                    informacionAdicional: tagValue(blk, 'informacionAdicional'),
+                };
+                if (msg.identificador || msg.mensaje || msg.tipo) result.push(msg);
+                start = -1;
+            }
+            i += 10; // '</mensaje>'.length
+        } else {
+            i++;
+        }
+    }
+    return result;
 }
 
 function soapPost(url, bodyXml) {

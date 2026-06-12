@@ -797,10 +797,16 @@ app.post('/api/orders/:id/sri-retry', (req, res) => {
     const idx    = orders.findIndex(o => o.id === req.params.id);
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
     if (orders[idx].status !== 'confirmado') return res.status(400).json({ ok: false, message: 'Solo se puede reintentar en órdenes confirmadas' });
+
+    // El SRI registra el secuencial aunque rechace el comprobante; hay que usar uno nuevo.
+    const newInvoiceNumber = nextInvoiceNumber();
+    orders[idx].invoiceNumber = newInvoiceNumber;
+    writeOrders(orders);
+
     res.json({ ok: true, message: 'Reintento iniciado' });
 
     const orderId    = req.params.id;
-    const secuencial = orders[idx].invoiceNumber;
+    const secuencial = newInvoiceNumber;
     const orderSnap  = { ...orders[idx], confirmedAt: new Date().toISOString() };
     setImmediate(async () => {
         try {
