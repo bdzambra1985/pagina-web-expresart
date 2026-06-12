@@ -124,14 +124,16 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     // - xmlns:xades lo declara xades:QualifyingProperties (padre)
     // - xmlns:ds lo declara ds:Signature (ancestro)
     // Hasheamos la forma que C14N produciría, sin xmlns redundantes.
-    const signedPropsContent = `<xades:SignedProperties Id="${sigPropsId}"><xades:SignedSignatureProperties><xades:SigningTime>${signingTime}</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${certDigestBase64}</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>${issuerDN}</ds:X509IssuerName><ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties>`;
+    // C14N convierte elementos vacíos de <tag/> a <tag></tag> — usamos esa forma.
+    const signedPropsContent = `<xades:SignedProperties Id="${sigPropsId}"><xades:SignedSignatureProperties><xades:SigningTime>${signingTime}</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${certDigestBase64}</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>${issuerDN}</ds:X509IssuerName><ds:X509SerialNumber>${serialNumber}</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties>`;
 
     const signedPropsDigestB64 = sha1Base64(signedPropsContent);
 
     // 4) Construir SignedInfo SIN xmlns:ds redundante.
     // C14N del <ds:SignedInfo> en contexto de <ds:Signature xmlns:ds="...">
     // no repite xmlns:ds (ya está en el padre). Firmamos esa forma canónica.
-    const signedInfoContent = `<ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+    // C14N convierte <tag/> a <tag></tag>. Todos los elementos vacíos usan end-tag explícito.
+    const signedInfoContent = `<ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></ds:SignatureMethod><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></ds:Transform><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
 
     // 5) Firmar SignedInfo con RSA-SHA1
     const signedInfoMd = forge.md.sha1.create();
