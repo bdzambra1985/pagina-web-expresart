@@ -628,6 +628,32 @@ function nextInvoiceNumber() {
     return '001-001-' + String(maxSeq + 1).padStart(9, '0');
 }
 
+function seqFromInvoice(inv) {
+    return parseInt((inv || '001-001-000000000').split('-').pop(), 10) || 0;
+}
+
+function invoiceFromSeq(n) {
+    return '001-001-' + String(n).padStart(9, '0');
+}
+
+// Llama a emitirFactura incrementando el secuencial automáticamente si el SRI
+// devuelve "ERROR SECUENCIAL REGISTRADO" (ya fue enviado antes aunque no autorizó).
+async function emitirConAutoRetry(orderSnap, startSecuencial, maxAttempts = 15) {
+    let seq = seqFromInvoice(startSecuencial);
+    let result;
+    for (let i = 0; i < maxAttempts; i++) {
+        const inv = invoiceFromSeq(seq);
+        result = await emitirFactura(orderSnap, inv);
+        if (result.ok) return { result, invoiceNumber: inv };
+        if (!result.error || !result.error.includes('SECUENCIAL REGISTRADO')) {
+            return { result, invoiceNumber: inv };
+        }
+        console.log(`Secuencial ${inv} ya registrado en SRI, probando ${invoiceFromSeq(seq + 1)}…`);
+        seq++;
+    }
+    return { result, invoiceNumber: invoiceFromSeq(seq) };
+}
+
 function generateComprobanteHTML(order, info) {
     const fecha = new Date(order.confirmedAt).toLocaleDateString('es-EC',
         { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -775,10 +801,11 @@ app.put('/api/orders/:id/confirm', (req, res) => {
     setImmediate(async () => {
         try {
             if (!getSRIConfig().ruc) return; // SRI no configurado — omitir silenciosamente
-            const result = await emitirFactura(orderSnap, secuencial);
-            const all    = readOrders();
-            const i2     = all.findIndex(o => o.id === orderId);
+            const { result, invoiceNumber: usedInv } = await emitirConAutoRetry(orderSnap, secuencial);
+            const all = readOrders();
+            const i2  = all.findIndex(o => o.id === orderId);
             if (i2 === -1) return;
+            if (usedInv !== all[i2].invoiceNumber) all[i2].invoiceNumber = usedInv;
             if (!result.ok) console.error('SRI error completo:', JSON.stringify(result));
             all[i2].sri = result.ok
                 ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
@@ -801,23 +828,22 @@ app.post('/api/orders/:id/sri-retry', (req, res) => {
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
     if (orders[idx].status !== 'confirmado') return res.status(400).json({ ok: false, message: 'Solo se puede reintentar en órdenes confirmadas' });
 
-    // El SRI registra el secuencial aunque rechace; incrementar desde el último usado.
-    const curSeq = parseInt((orders[idx].invoiceNumber || '001-001-000000000').split('-').pop(), 10) || 0;
-    const newInvoiceNumber = '001-001-' + String(curSeq + 1).padStart(9, '0');
-    orders[idx].invoiceNumber = newInvoiceNumber;
+    // El secuencial anterior quedó registrado en el SRI aunque fallara; empezar desde +1.
+    const startSeq = invoiceFromSeq(seqFromInvoice(orders[idx].invoiceNumber) + 1);
+    orders[idx].invoiceNumber = startSeq;
     writeOrders(orders);
 
     res.json({ ok: true, message: 'Reintento iniciado' });
 
-    const orderId    = req.params.id;
-    const secuencial = newInvoiceNumber;
-    const orderSnap  = { ...orders[idx], confirmedAt: new Date().toISOString() };
+    const orderId   = req.params.id;
+    const orderSnap = { ...orders[idx], confirmedAt: new Date().toISOString() };
     setImmediate(async () => {
         try {
-            const result = await emitirFactura(orderSnap, secuencial);
-            const all    = readOrders();
-            const i2     = all.findIndex(o => o.id === orderId);
+            const { result, invoiceNumber: usedInv } = await emitirConAutoRetry(orderSnap, startSeq);
+            const all = readOrders();
+            const i2  = all.findIndex(o => o.id === orderId);
             if (i2 === -1) return;
+            if (usedInv !== all[i2].invoiceNumber) all[i2].invoiceNumber = usedInv;
             all[i2].sri = result.ok
                 ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
                 : { status: 'error', claveAcceso: result.claveAcceso || '', error: result.error };
