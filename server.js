@@ -801,7 +801,7 @@ app.post('/api/orders/:id/sri-retry', (req, res) => {
 
     const orderId    = req.params.id;
     const secuencial = orders[idx].invoiceNumber;
-    const orderSnap  = { ...orders[idx] };
+    const orderSnap  = { ...orders[idx], confirmedAt: new Date().toISOString() };
     setImmediate(async () => {
         try {
             const result = await emitirFactura(orderSnap, secuencial);
