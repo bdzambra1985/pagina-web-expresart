@@ -25,7 +25,8 @@ function detectarTipoId(doc) {
  * @returns {string}
  */
 function codigoIVA(ivaRate) {
-    if (ivaRate === 15) return '10';
+    if (ivaRate === 15) return '4';
+    if (ivaRate === 13) return '10';
     if (ivaRate === 12) return '2';
     return '2';
 }
