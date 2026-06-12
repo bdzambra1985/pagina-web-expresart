@@ -119,7 +119,10 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     const signedPropsDigestB64 = sha1Base64(signedPropsContent);
 
     // 4) Construir SignedInfo
-    const signedInfoContent = `<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
+    // URI="#comprobante" referencia el nodo raíz de la factura (id="comprobante")
+    // La doble transformación: enveloped-signature elimina el bloque <ds:Signature>,
+    // luego c14n canonicaliza — equivalente a hashear el XML limpio antes de firmar.
+    const signedInfoContent = `<ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#comprobante"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${docDigestB64}</ds:DigestValue></ds:Reference><ds:Reference URI="#${sigPropsId}" Type="http://uri.etsi.org/01903#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>${signedPropsDigestB64}</ds:DigestValue></ds:Reference></ds:SignedInfo>`;
 
     // 5) Firmar SignedInfo con RSA-SHA1
     const signedInfoMd = forge.md.sha1.create();
