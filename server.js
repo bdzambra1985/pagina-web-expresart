@@ -621,8 +621,11 @@ function readBankInfo()   { return readJSON(BANKINFO_FILE, {}); }
 function writeBankInfo(d) { writeJSON(BANKINFO_FILE, d); }
 
 function nextInvoiceNumber() {
-    const count = readOrders().filter(o => o.invoiceNumber).length + 1;
-    return '001-001-' + String(count).padStart(9, '0');
+    const maxSeq = readOrders().reduce((m, o) => {
+        if (!o.invoiceNumber) return m;
+        return Math.max(m, parseInt(o.invoiceNumber.split('-').pop(), 10) || 0);
+    }, 0);
+    return '001-001-' + String(maxSeq + 1).padStart(9, '0');
 }
 
 function generateComprobanteHTML(order, info) {
@@ -798,8 +801,9 @@ app.post('/api/orders/:id/sri-retry', (req, res) => {
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
     if (orders[idx].status !== 'confirmado') return res.status(400).json({ ok: false, message: 'Solo se puede reintentar en órdenes confirmadas' });
 
-    // El SRI registra el secuencial aunque rechace el comprobante; hay que usar uno nuevo.
-    const newInvoiceNumber = nextInvoiceNumber();
+    // El SRI registra el secuencial aunque rechace; incrementar desde el último usado.
+    const curSeq = parseInt((orders[idx].invoiceNumber || '001-001-000000000').split('-').pop(), 10) || 0;
+    const newInvoiceNumber = '001-001-' + String(curSeq + 1).padStart(9, '0');
     orders[idx].invoiceNumber = newInvoiceNumber;
     writeOrders(orders);
 
