@@ -140,6 +140,7 @@ async function emitirFactura(order, secuencial) {
     const xmlSigned = signXML(xmlUnsigned, p12Buffer, cfg.p12Password);
 
     // 6) Enviar al SRI
+    console.log('XML enviado al SRI (inicio):', xmlSigned.slice(0, 1500));
     const recepcion = await enviarComprobante(xmlSigned, cfg.ambiente);
     console.log('SRI recepcion:', JSON.stringify(recepcion));
 

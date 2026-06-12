@@ -862,6 +862,8 @@ app.get('/factura/:id', (req, res) => {
         return res.status(403).send('<h2>Acceso no autorizado</h2>');
     if (order.status !== 'confirmado')
         return res.status(400).send('<h2>El pago aún no ha sido confirmado por EXPRESART.</h2>');
+    if (!order.sri || order.sri.status !== 'autorizado')
+        return res.status(202).send('<h2>La factura electrónica está siendo procesada por el SRI. Por favor intente nuevamente en unos minutos.</h2>');
     res.send(generateComprobanteHTML(order, readBankInfo()));
 });
 
