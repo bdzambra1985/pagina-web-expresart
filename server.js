@@ -848,7 +848,15 @@ app.put('/api/orders/:id/reject', (req, res) => {
 app.get('/factura/:id', (req, res) => {
     const order = readOrders().find(o => o.id === req.params.id);
     if (!order) return res.status(404).send('<h2>Comprobante no encontrado</h2>');
-    const sess    = getSession(req);
+    // getSession lee del header; también aceptar ?t= para navegación directa desde admin
+    let sess = getSession(req);
+    if (!sess && req.query.t) {
+        const s = sessions.get(req.query.t);
+        if (s) {
+            const expiry = s.expiresAt || (s.ts + SESSION_TTL);
+            if (Date.now() < expiry) sess = s;
+        }
+    }
     const isAdmin = sess && sess.role === 'admin';
     if (!isAdmin && req.query.token !== order.token)
         return res.status(403).send('<h2>Acceso no autorizado</h2>');

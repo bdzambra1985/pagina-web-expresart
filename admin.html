@@ -1300,6 +1300,23 @@ async function loadOrders() {
     const r = await fetch('/api/orders', { headers: { 'x-session-token': TOKEN } });
     allOrders = await r.json();
     renderOrders();
+    maybeStartSriPolling();
+}
+
+let _sriPoll = null;
+function maybeStartSriPolling() {
+    const pending = allOrders.filter(o => o.status === 'confirmado' && (!o.sri || o.sri.status === 'procesando'));
+    if (pending.length && !_sriPoll) {
+        _sriPoll = setInterval(async () => {
+            const r2 = await fetch('/api/orders', { headers: { 'x-session-token': TOKEN } });
+            allOrders = await r2.json();
+            renderOrders();
+            const stillPending = allOrders.filter(o => o.status === 'confirmado' && (!o.sri || o.sri.status === 'procesando'));
+            if (!stillPending.length) { clearInterval(_sriPoll); _sriPoll = null; }
+        }, 3000);
+    } else if (!pending.length && _sriPoll) {
+        clearInterval(_sriPoll); _sriPoll = null;
+    }
 }
 
 function renderOrders() {
@@ -1336,7 +1353,7 @@ function renderOrders() {
                 <button onclick="rejectOrder('${o.id}')" class="del-btn" style="padding:4px 10px;font-size:.78em">❌ Rechazar</button>
             ` : o.status === 'confirmado' ? `
                 ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎</a>` : ''}
-                <a href="/factura/${o.id}" target="_blank" class="edit-btn">🧾 Ver factura</a>
+                <a href="/factura/${o.id}?t=${TOKEN}" target="_blank" class="edit-btn">🧾 Ver factura</a>
             ` : `
                 <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
             `;
@@ -1357,7 +1374,7 @@ window.confirmOrder = async (id) => {
     if (!confirm('¿Confirmar este pago y generar el comprobante?')) return;
     const r = await fetch(`/api/orders/${id}/confirm`, { method: 'PUT', headers: { 'x-session-token': TOKEN } });
     const d = await r.json();
-    if (d.ok) { showToast('✓ Pago confirmado — No. ' + d.invoiceNumber); loadOrders(); }
+    if (d.ok) { showToast('✓ Pago confirmado — No. ' + d.invoiceNumber); await loadOrders(); maybeStartSriPolling(); }
     else showToast('Error: ' + d.message, true);
 };
 
