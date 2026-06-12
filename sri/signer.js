@@ -200,7 +200,7 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     if (!xmlStripped.includes('</factura>'))
         throw new Error('No se encontró </factura> en el XML');
 
-    return xmlStripped.replace('</factura>', signatureBlock + '\n</factura>');
+    return xmlStripped.replace('</factura>', signatureBlock + '</factura>');
 }
 
 module.exports = { signXML };
