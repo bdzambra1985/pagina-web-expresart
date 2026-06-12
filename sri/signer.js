@@ -86,14 +86,14 @@ function signXML(xmlContent, p12Buffer, p12Password) {
     if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el .p12');
 
     // El certificado de entidad final es el primero (los siguientes son CA intermedias/raíz)
-    console.log('Certs en p12:', certBags.length, certBags.map((b,i) => `[${i}] CN=${b.cert?.subject?.getField('CN')?.value} / issuer CN=${b.cert?.issuer?.getField('CN')?.value}`));
     const cert = certBags[0].cert;
 
     // Datos del certificado
     const certDer        = forge.asn1.toDer(forge.pki.certificateToAsn1(cert));
     const certBase64     = forgeBytesToBuffer(certDer.bytes()).toString('base64');
     const issuerDN       = buildIssuerDN(cert.issuer);
-    const serialNumber   = cert.serialNumber;
+    // SRI requiere el serial en decimal, pero forge lo devuelve en hex
+    const serialNumber   = BigInt('0x' + cert.serialNumber).toString(10);
 
     // Calcular digest SHA1 del certificado (binario)
     const certMd = forge.md.sha1.create();
