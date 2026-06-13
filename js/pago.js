@@ -6,9 +6,20 @@ initNavAuth();
     fetch('/api/auth', { headers: { 'x-session-token': tok } })
         .then(r => r.json())
         .then(d => {
-            if (d.ok && d.role !== 'admin' && d.displayName) {
+            if (!d.ok || d.role === 'admin') return;
+            if (d.displayName) {
                 const el = document.getElementById('heroTitlePago');
                 if (el) el.textContent = d.displayName;
+            }
+            const bar = document.getElementById('alumnoBar');
+            if (bar) bar.style.display = 'flex';
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': tok } }).catch(() => {});
+                    localStorage.removeItem('exp_token');
+                    location.href = 'login.html';
+                });
             }
         })
         .catch(() => {});
