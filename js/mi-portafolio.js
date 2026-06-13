@@ -662,12 +662,24 @@ function loadPayServices(services) {
 document.getElementById('toggleRegPagoBtn').addEventListener('click', function() {
     const section = document.getElementById('regPagoSection');
     const isOpen  = section.style.display !== 'none';
-    section.style.display = isOpen ? 'none' : 'block';
-    if (!isOpen) {
-        if (!bankInfoLoaded) { loadBankInfo(); bankInfoLoaded = true; }
-        document.getElementById('fMonth').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
-        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    }
+    if (isOpen) { section.style.display = 'none'; return; }
+    // Resetear siempre al abrir
+    document.getElementById('regSuccessPanel').style.display = 'none';
+    document.getElementById('formPanel').style.display       = 'block';
+    document.getElementById('fName').value    = '';
+    document.getElementById('fDoc').value     = '';
+    document.getElementById('fEmail').value   = '';
+    document.getElementById('fConcept').selectedIndex = 0;
+    document.getElementById('fAmount').value  = '';
+    document.getElementById('fNotes').value   = '';
+    document.getElementById('fReceipt').value = '';
+    document.getElementById('uploadName').textContent = '';
+    document.getElementById('uploadZone').classList.remove('has-file');
+    document.getElementById('ivaPreview').style.display = 'none';
+    document.getElementById('fMonth').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
+    if (!bankInfoLoaded) { loadBankInfo(); bankInfoLoaded = true; }
+    section.style.display = 'block';
+    setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 });
 
 document.getElementById('fConcept').addEventListener('change', function() {
