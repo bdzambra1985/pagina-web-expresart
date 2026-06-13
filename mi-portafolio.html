@@ -575,7 +575,7 @@
     <div class="hero-curtain-r"></div>
     <div class="hero-light"></div>
     <div class="hero-content">
-        <h1 class="hero-title" id="heroTitle">Mi Portafolio</h1>
+        <h1 class="hero-title" id="heroTitle" style="visibility:hidden">Mi Portafolio</h1>
         <div class="hero-rule"></div>
     </div>
 </section>
@@ -704,6 +704,16 @@ let profile  = { displayName:'', bio:'', bio_short:'', photoUrl:'', especialidad
 /* ── Auth ── */
 async function init() {
     if (!TOKEN) return (location.href = 'login.html');
+
+    // Apply view state synchronously before any async calls to avoid flash
+    const wantPay = new URLSearchParams(location.search).get('view') === 'pay';
+    if (wantPay) {
+        document.getElementById('editContent').style.display = 'none';
+        document.getElementById('payPanel').classList.add('open');
+        document.getElementById('editToggleBtn').classList.remove('tab-active');
+        document.getElementById('payToggleBtn').classList.add('tab-active');
+    }
+
     const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
     const d = await r.json();
     if (!d.ok || d.role === 'admin') {
@@ -711,13 +721,16 @@ async function init() {
         return (location.href = 'login.html');
     }
     myUserId = d.userId;
-    // Set name immediately to avoid "Mi Portafolio" flash
+    // Reveal hero title with correct name (no flash)
     const earlyName = d.displayName || d.userId;
     const heroEl = document.getElementById('heroTitle');
-    if (heroEl && earlyName) heroEl.textContent = earlyName;
+    if (heroEl && earlyName) {
+        heroEl.textContent = earlyName;
+        heroEl.style.visibility = '';
+    }
     await loadProfile();
     await loadShareLinks();
-    if (new URLSearchParams(location.search).get('view') === 'pay') showPayView();
+    if (wantPay) loadMyOrders();
 }
 init();
 

@@ -113,6 +113,27 @@
             gap: 10px;
         }
         .section-title i { color: #c9a227; font-size: 1.3rem; }
+        .section-title.collapsible { cursor: pointer; user-select: none; }
+        .section-title.collapsible:hover { color: rgba(255,230,200,0.90); }
+        .collapsible-btn {
+            margin-left: auto;
+            flex-shrink: 0;
+            width: 26px; height: 26px;
+            background: rgba(201,162,39,0.12);
+            border: 1px solid rgba(201,162,39,0.35);
+            border-radius: 6px;
+            color: #c9a227;
+            font-size: 1.1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .collapsible-btn:hover { background: rgba(201,162,39,0.28); }
+        .collapsible-body { overflow: hidden; }
+        .collapsible-body.collapsed { display: none; }
 
         /* ── Tabla de alumnos ── */
         .user-table {
@@ -502,23 +523,28 @@
 
         <!-- Crear alumno -->
         <div class="admin-section">
-            <h2 class="section-title"><i class="bx bx-user-plus"></i> Crear cuenta de alumno</h2>
-            <div class="create-form">
-                <div class="field-group">
-                    <label class="field-label">Usuario</label>
-                    <input id="new_username" class="admin-input" type="text" placeholder="nombre.apellido">
+            <h2 class="section-title collapsible" onclick="toggleSection('createUserBody')">
+                <i class="bx bx-user-plus"></i> Crear cuenta de alumno
+                <button class="collapsible-btn" data-collapse="createUserBody">+</button>
+            </h2>
+            <div class="collapsible-body collapsed" id="createUserBody">
+                <div class="create-form">
+                    <div class="field-group">
+                        <label class="field-label">Usuario</label>
+                        <input id="new_username" class="admin-input" type="text" placeholder="nombre.apellido">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Contraseña</label>
+                        <input id="new_password" class="admin-input" type="password" placeholder="••••••••">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Nombre para mostrar</label>
+                        <input id="new_displayName" class="admin-input" type="text" placeholder="María González">
+                    </div>
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Contraseña</label>
-                    <input id="new_password" class="admin-input" type="password" placeholder="••••••••">
+                <div class="btn-row" style="margin-top:14px">
+                    <button class="save-btn" id="createUserBtn"><i class="bx bx-plus"></i> Crear alumno</button>
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Nombre para mostrar</label>
-                    <input id="new_displayName" class="admin-input" type="text" placeholder="María González">
-                </div>
-            </div>
-            <div class="btn-row" style="margin-top:14px">
-                <button class="save-btn" id="createUserBtn"><i class="bx bx-plus"></i> Crear alumno</button>
             </div>
         </div>
 
@@ -566,9 +592,12 @@
 
         <!-- Crear / Editar evento -->
         <div class="admin-section">
-            <h2 class="section-title"><i class="bx bx-calendar-plus"></i>
+            <h2 class="section-title collapsible" onclick="toggleSection('evtFormBody')">
+                <i class="bx bx-calendar-plus"></i>
                 <span id="evtFormTitle">Crear evento</span>
+                <button class="collapsible-btn" data-collapse="evtFormBody">+</button>
             </h2>
+            <div class="collapsible-body collapsed" id="evtFormBody">
             <input type="hidden" id="evtEditId">
             <div class="field-row">
                 <div class="field-group">
@@ -620,6 +649,7 @@
                 <button class="save-btn" id="saveEvtBtn"><i class="bx bx-plus"></i> <span id="saveEvtLabel">Crear evento</span></button>
                 <button class="add-btn" id="cancelEvtBtn" style="display:none"><i class="bx bx-x"></i> Cancelar edición</button>
             </div>
+            </div><!-- /evtFormBody -->
         </div>
 
         <!-- Lista de eventos -->
@@ -725,7 +755,11 @@
 
         <!-- Configurar datos bancarios -->
         <div class="admin-section">
-            <h2 class="section-title"><i class="bx bx-bank"></i> Datos bancarios para transferencias</h2>
+            <h2 class="section-title collapsible" onclick="toggleSection('bankBody')">
+                <i class="bx bx-bank"></i> Datos bancarios para transferencias
+                <button class="collapsible-btn" data-collapse="bankBody">+</button>
+            </h2>
+            <div class="collapsible-body collapsed" id="bankBody">
             <div class="field-row">
                 <div class="field-group">
                     <label class="field-label">Banco</label>
@@ -784,6 +818,7 @@
             <div class="btn-row">
                 <button class="save-btn" id="saveBankBtn"><i class="bx bx-save"></i> Guardar configuración</button>
             </div>
+            </div><!-- /bankBody -->
         </div>
 
         <!-- Lista de pagos -->
@@ -820,6 +855,18 @@ async function checkAuth() {
 checkAuth();
 
 /* ── Toast ── */
+function toggleSection(bodyId) {
+    const body = document.getElementById(bodyId);
+    const collapsed = body.classList.toggle('collapsed');
+    const btn = document.querySelector('[data-collapse="' + bodyId + '"]');
+    if (btn) btn.textContent = collapsed ? '+' : '−';
+}
+
+function expandSection(bodyId) {
+    const body = document.getElementById(bodyId);
+    if (body && body.classList.contains('collapsed')) toggleSection(bodyId);
+}
+
 function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -1405,6 +1452,7 @@ function editEvent(ev) {
     document.getElementById('saveEvtBtn').querySelector('i').className = 'bx bx-save';
     document.getElementById('cancelEvtBtn').style.display = 'inline-flex';
     document.querySelector('[data-tab="agenda"]').click();
+    expandSection('evtFormBody');
     document.getElementById('evtTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
