@@ -22,25 +22,12 @@
         .dash-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             flex-wrap: wrap;
             gap: 12px;
             padding: 24px 0 20px;
             border-bottom: 1px solid rgba(201,162,39,0.22);
             margin-bottom: 28px;
-        }
-        .dash-header-left { display: flex; flex-direction: column; gap: 2px; }
-        .dash-header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.7rem;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(200,30,30,0.40);
-        }
-        .dash-header h1 span { color: #c9a227; }
-        .dash-header .sub {
-            font-size: 0.72rem;
-            color: rgba(255,200,200,0.45);
-            letter-spacing: 1px;
         }
 
         .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -596,10 +583,6 @@
 <div class="dash-wrap">
 
     <div class="dash-header">
-        <div class="dash-header-left">
-            <h1 id="dashH1">Mi <span>Portafolio</span></h1>
-            <span class="sub" id="dashSub">Cargando…</span>
-        </div>
         <div class="header-actions">
             <button class="preview-btn tab-active" id="editToggleBtn" onclick="showEditView()">
                 <i class="bx bx-edit"></i> Editar portafolio
@@ -728,6 +711,10 @@ async function init() {
         return (location.href = 'login.html');
     }
     myUserId = d.userId;
+    // Set name immediately to avoid "Mi Portafolio" flash
+    const earlyName = d.displayName || d.userId;
+    const heroEl = document.getElementById('heroTitle');
+    if (heroEl && earlyName) heroEl.textContent = earlyName;
     await loadProfile();
     await loadShareLinks();
 }
@@ -760,11 +747,8 @@ async function loadProfile() {
 
 function renderAll() {
     const name = profile.displayName || myUserId;
-    document.getElementById('dashSub').textContent = name;
     const heroEl = document.getElementById('heroTitle');
-    const dashEl = document.getElementById('dashH1');
     if (heroEl) heroEl.textContent = name;
-    if (dashEl) dashEl.innerHTML = 'Mi <span>' + esc(name) + '</span>';
     document.getElementById('displayName').value = profile.displayName || '';
     document.getElementById('bio_short').value   = profile.bio_short   || '';
     document.getElementById('bio').value         = profile.bio         || '';
@@ -820,11 +804,8 @@ document.getElementById('saveBasicBtn').onclick = async () => {
         if (d.ok) {
             profile.displayName = document.getElementById('displayName').value.trim();
             const name = profile.displayName || myUserId;
-            document.getElementById('dashSub').textContent = name;
             const heroEl = document.getElementById('heroTitle');
-            const dashEl = document.getElementById('dashH1');
             if (heroEl) heroEl.textContent = name;
-            if (dashEl) dashEl.innerHTML = 'Mi <span>' + esc(name) + '</span>';
             showToast('✓ Información guardada');
         } else {
             showToast(d.message || 'Error', true);

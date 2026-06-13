@@ -347,7 +347,7 @@
     <div class="hero-curtain-r"></div>
     <div class="hero-light"></div>
     <div class="hero-content">
-        <h1 class="hero-title">Pago</h1>
+        <h1 class="hero-title" id="heroTitlePago">Pago</h1>
         <div class="hero-rule"></div>
     </div>
 </section>
@@ -355,7 +355,7 @@
 <div class="pago-wrap">
 
     <div class="pago-heading">
-        <h1>Inscripción y <span>Entradas</span></h1>
+        <h1>Registro de <span>Pago</span></h1>
         <p>Realiza tu transferencia bancaria y envía el comprobante. Confirmamos en menos de 24 horas.</p>
     </div>
 
@@ -455,6 +455,21 @@
 <script src="common.js"></script>
 <script>
 initNavAuth();
+
+/* Mostrar nombre del alumno en el hero si está logueado */
+(function() {
+    const tok = localStorage.getItem('exp_token');
+    if (!tok) return;
+    fetch('/api/auth', { headers: { 'x-session-token': tok } })
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok && d.role !== 'admin' && d.displayName) {
+                const el = document.getElementById('heroTitlePago');
+                if (el) el.textContent = d.displayName;
+            }
+        })
+        .catch(() => {});
+})();
 
 let bankInfo = {};
 
