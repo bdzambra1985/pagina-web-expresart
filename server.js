@@ -311,7 +311,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc:     ["'self'"],
-            scriptSrc:      ["'self'", "'unsafe-inline'"],
+            scriptSrc:      ["'self'"],
             styleSrc:       ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
             fontSrc:        ["'self'", 'https://fonts.gstatic.com', 'https://unpkg.com'],
             imgSrc:         ["'self'", 'https://res.cloudinary.com', 'https://img.youtube.com', 'data:', 'blob:'],
@@ -320,7 +320,7 @@ app.use(helmet({
             frameAncestors: ["'none'"],
             baseUri:        ["'self'"],
             formAction:     ["'self'"],
-            scriptSrcAttr:  ["'unsafe-inline'"],
+            scriptSrcAttr:  ["'none'"],
         }
     },
     crossOriginEmbedderPolicy: false
