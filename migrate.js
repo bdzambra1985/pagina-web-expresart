@@ -28,6 +28,101 @@ function jRead(file, fb) {
 async function migrate() {
     console.log('Iniciando migración JSON → PostgreSQL…\n');
 
+    /* ── Crear tablas si no existen ── */
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            user_id        TEXT PRIMARY KEY,
+            username       TEXT UNIQUE NOT NULL,
+            password_hash  TEXT NOT NULL,
+            display_name   TEXT,
+            role           TEXT NOT NULL DEFAULT 'alumno',
+            active         BOOLEAN NOT NULL DEFAULT TRUE,
+            must_change_pw BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS profiles (
+            user_id          TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+            display_name     TEXT,
+            bio              TEXT,
+            bio_short        TEXT,
+            photo_url        TEXT,
+            especialidades   JSONB NOT NULL DEFAULT '[]',
+            producciones     JSONB NOT NULL DEFAULT '[]',
+            videos           JSONB NOT NULL DEFAULT '[]',
+            portfolio_active BOOLEAN NOT NULL DEFAULT TRUE,
+            updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS events (
+            id          TEXT PRIMARY KEY,
+            title       TEXT NOT NULL,
+            date        TEXT NOT NULL,
+            time        TEXT,
+            location    TEXT,
+            description TEXT,
+            category    TEXT NOT NULL DEFAULT 'otro',
+            audience    TEXT NOT NULL DEFAULT 'publico',
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS content (
+            key   TEXT PRIMARY KEY,
+            value JSONB NOT NULL DEFAULT '{}'
+        );
+        CREATE TABLE IF NOT EXISTS orders (
+            id               TEXT PRIMARY KEY,
+            token            TEXT,
+            status           TEXT NOT NULL DEFAULT 'pendiente',
+            user_id          TEXT,
+            customer_name    TEXT NOT NULL,
+            customer_doc     TEXT NOT NULL,
+            customer_email   TEXT NOT NULL,
+            concept          TEXT NOT NULL,
+            amount           NUMERIC(10,2) NOT NULL,
+            subtotal         NUMERIC(10,2),
+            iva              NUMERIC(10,2),
+            iva_rate         NUMERIC(5,2) NOT NULL DEFAULT 15,
+            receipt_url      TEXT,
+            notes            TEXT,
+            payment_month    TEXT,
+            invoice_number   TEXT,
+            rejection_reason TEXT,
+            sri              JSONB,
+            created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            confirmed_at     TIMESTAMPTZ
+        );
+        CREATE INDEX IF NOT EXISTS idx_orders_user    ON orders(user_id);
+        CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
+        CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
+        CREATE TABLE IF NOT EXISTS bank_info (
+            id             INTEGER PRIMARY KEY DEFAULT 1,
+            bank_name      TEXT,
+            account_number TEXT,
+            account_type   TEXT,
+            account_holder TEXT,
+            ruc            TEXT,
+            address        TEXT,
+            email          TEXT,
+            phone          TEXT,
+            services       JSONB NOT NULL DEFAULT '[]',
+            CONSTRAINT bank_info_one_row CHECK (id = 1)
+        );
+        CREATE TABLE IF NOT EXISTS share_links (
+            share_id      TEXT PRIMARY KEY,
+            user_id       TEXT REFERENCES users(user_id) ON DELETE CASCADE,
+            password_hash TEXT NOT NULL,
+            label         TEXT,
+            active        BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS reset_requests (
+            id           TEXT PRIMARY KEY,
+            user_id      TEXT NOT NULL,
+            username     TEXT NOT NULL,
+            requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            status       TEXT NOT NULL DEFAULT 'pending'
+        );
+    `);
+    console.log('  tablas creadas/verificadas.\n');
+
     /* ── Usuarios ── */
     const users = jRead(path.join(DATA_DIR, 'users.json'), []);
     let usersOk = 0;
