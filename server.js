@@ -345,6 +345,7 @@ app.get('/api/profiles', (req, res) => {
         .filter(u => u.role === 'alumno' && u.active)
         .map(u => {
             const p = readProfile(u.userId) || {};
+            if (p.portfolioActive === false) return null;
             return {
                 userId:         u.userId,
                 displayName:    p.displayName    || u.username,
@@ -354,7 +355,8 @@ app.get('/api/profiles', (req, res) => {
                 producciones:   (p.producciones  || []).length,
                 videos:         (p.videos        || []).length
             };
-        });
+        })
+        .filter(Boolean);
     res.json(profiles);
 });
 
@@ -362,7 +364,10 @@ app.get('/api/profile/:userId', (req, res) => {
     const user = readUsers().find(u => u.userId === req.params.userId);
     if (!user || !user.active || user.role !== 'alumno')
         return res.status(404).json({ ok: false, message: 'Perfil no encontrado' });
-    res.json({ ok: true, profile: readProfile(user.userId) || {} });
+    const profile = readProfile(user.userId) || {};
+    if (profile.portfolioActive === false)
+        return res.status(404).json({ ok: false, message: 'Portafolio no disponible' });
+    res.json({ ok: true, profile });
 });
 
 /* ══════════════════════════════════════════
@@ -378,7 +383,7 @@ app.post('/api/my-profile', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
     const current = readProfile(sess.userId) || emptyProfile(sess.userId);
-    ['displayName', 'bio', 'bio_short', 'especialidades', 'producciones', 'videos'].forEach(k => {
+    ['displayName', 'bio', 'bio_short', 'especialidades', 'producciones', 'videos', 'portfolioActive'].forEach(k => {
         if (req.body[k] !== undefined) current[k] = req.body[k];
     });
     writeProfile(sess.userId, current);

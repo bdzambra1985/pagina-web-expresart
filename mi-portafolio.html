@@ -544,6 +544,59 @@
         .pay-link + .pay-link { margin-left: 6px; }
         .pay-empty { font-size: 0.80em; color: rgba(255,200,200,0.40); padding: 10px 0; }
 
+        /* ── Toggle portafolio activo ── */
+        .portfolio-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.80em;
+            color: rgba(255,200,200,0.70);
+            user-select: none;
+        }
+        .portfolio-toggle.active {
+            background: rgba(10,140,10,0.14);
+            border-color: rgba(40,180,40,0.40);
+            color: #7defa0;
+        }
+        .toggle-dot {
+            width: 36px; height: 20px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.15);
+            position: relative;
+            flex-shrink: 0;
+            transition: background 0.25s;
+        }
+        .portfolio-toggle.active .toggle-dot { background: rgba(40,180,40,0.70); }
+        .toggle-dot::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.25s;
+        }
+        .portfolio-toggle.active .toggle-dot::after { transform: translateX(16px); }
+
+        /* ── Matriz personal de pagos ── */
+        .my-matrix-wrap { margin-top: 28px; }
+        .my-matrix-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .my-matrix-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem; color: #c9a227;
+            flex: 1;
+        }
+
         @media (max-width: 600px) {
             .field-row { grid-template-columns: 1fr; }
             .video-add-row { grid-template-columns: 1fr; }
@@ -588,7 +641,7 @@
                 <i class="bx bx-edit"></i> Editar portafolio
             </button>
             <button class="preview-btn pay-btn" id="payToggleBtn" onclick="showPayView()">
-                <i class="bx bx-credit-card"></i> Pagar clases
+                <i class="bx bx-credit-card"></i> PAGOS
             </button>
             <button class="logout-btn" id="logoutBtn">
                 <i class="bx bx-log-out"></i> Cerrar sesión
@@ -606,6 +659,16 @@
         </div>
         <div id="myOrdersWrap">
             <p class="pay-empty">Cargando…</p>
+        </div>
+        <!-- Matriz personal de pagos -->
+        <div class="my-matrix-wrap" id="myMatrixWrap" style="display:none">
+            <div class="my-matrix-header">
+                <span class="my-matrix-title"><i class="bx bx-table"></i> Mi historial anual</span>
+                <button class="cal-nav-btn" id="myMatPrev">&#8249;</button>
+                <span id="myMatYear" style="font-family:'Poppins',sans-serif;font-size:0.92rem;color:#fff;min-width:44px;text-align:center"></span>
+                <button class="cal-nav-btn" id="myMatNext">&#8250;</button>
+            </div>
+            <div style="overflow-x:auto;"><div id="myPayMatrix"></div></div>
         </div>
     </div>
 
@@ -628,6 +691,12 @@
     <!-- ══ INFORMACIÓN BÁSICA ══ -->
     <div class="dash-section">
         <h2 class="section-title"><i class="bx bxs-user"></i> Información básica</h2>
+        <div style="margin-bottom:16px;">
+            <button id="portfolioToggleBtn" class="portfolio-toggle" onclick="togglePortfolioActive()">
+                <span class="toggle-dot"></span>
+                <span id="portfolioToggleLabel">Portafolio: desactivado</span>
+            </button>
+        </div>
         <div class="field-row">
             <div class="field-group">
                 <label class="field-label">Nombre para mostrar</label>
@@ -769,6 +838,33 @@ function renderAll() {
     renderAvatar();
     renderEsp();
     renderProd();
+    renderPortfolioToggle();
+}
+
+function renderPortfolioToggle() {
+    const btn   = document.getElementById('portfolioToggleBtn');
+    const label = document.getElementById('portfolioToggleLabel');
+    if (!btn) return;
+    const active = profile.portfolioActive !== false; // default: active
+    btn.classList.toggle('active', active);
+    label.textContent = active ? 'Portafolio: visible al público' : 'Portafolio: oculto al público';
+}
+
+async function togglePortfolioActive() {
+    const newVal = profile.portfolioActive === false; // flip
+    try {
+        const r = await fetch('/api/my-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ portfolioActive: newVal })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            profile.portfolioActive = newVal;
+            renderPortfolioToggle();
+            showToast(newVal ? '✓ Portafolio visible al público' : 'Portafolio ocultado al público');
+        }
+    } catch { showToast('Error al cambiar estado', true); }
 }
 
 /* ── Avatar ── */
@@ -1222,11 +1318,66 @@ function showPayView() {
 }
 
 /* ── Historial de pagos ── */
+/* ── Matriz personal de pagos ── */
+const MY_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let myMatYear = new Date().getFullYear();
+let myMatOrders = [];
+
+function renderMyMatrix() {
+    const wrap = document.getElementById('myPayMatrix');
+    const yearEl = document.getElementById('myMatYear');
+    if (yearEl) yearEl.textContent = myMatYear;
+    if (!wrap) return;
+
+    const currentMo = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
+    const paid = {};
+    myMatOrders.filter(o => o.status === 'confirmado').forEach(o => {
+        const mo = o.paymentMonth || (o.confirmedAt
+            ? new Date(o.confirmedAt).toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7)
+            : null);
+        if (mo && mo.startsWith(myMatYear + '')) paid[mo] = true;
+    });
+
+    const thStyle = 'padding:6px 4px;font-size:0.64em;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,162,39,0.70);text-align:center;white-space:nowrap;';
+    const name = esc(profile.displayName || myUserId);
+
+    wrap.innerHTML = `<table style="border-collapse:collapse;width:100%;margin-top:4px;">
+    <thead><tr>
+        <th style="${thStyle}text-align:left;min-width:110px;">Alumno</th>
+        ${MY_MESES.map((mes, m) => {
+            const mo = `${myMatYear}-${String(m+1).padStart(2,'0')}`;
+            return `<th style="${thStyle}${mo === currentMo ? 'color:#f0d060;' : ''}">${mes}</th>`;
+        }).join('')}
+    </tr></thead>
+    <tbody><tr>
+        <td style="padding:8px 8px 8px 0;font-size:0.80em;color:rgba(255,220,220,0.85);white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis;" title="${name}">${name}</td>
+        ${MY_MESES.map((mes, m) => {
+            const mo  = `${myMatYear}-${String(m+1).padStart(2,'0')}`;
+            const cur = mo === currentMo ? 'background:rgba(201,162,39,0.06);' : '';
+            return `<td style="text-align:center;padding:8px 4px;${cur}">
+                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;${paid[mo] ? 'background:#c0392b;' : 'background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.16);'}"></span>
+            </td>`;
+        }).join('')}
+    </tr></tbody>
+    </table>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const prev = document.getElementById('myMatPrev');
+    const next = document.getElementById('myMatNext');
+    if (prev) prev.onclick = () => { myMatYear--; renderMyMatrix(); };
+    if (next) next.onclick = () => { myMatYear++; renderMyMatrix(); };
+});
+
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
     try {
         const r = await fetch('/api/my-orders', { headers: { 'x-session-token': TOKEN } });
         const orders = await r.json();
+        myMatOrders = orders;
+        const matrixWrap = document.getElementById('myMatrixWrap');
+        if (matrixWrap) matrixWrap.style.display = '';
+        renderMyMatrix();
         if (!orders.length) {
             wrap.innerHTML = '<p class="pay-empty">Aún no tienes pagos registrados en esta cuenta.</p>';
             return;
