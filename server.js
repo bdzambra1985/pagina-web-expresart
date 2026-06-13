@@ -656,68 +656,105 @@ async function emitirConAutoRetry(orderSnap, startSecuencial, maxAttempts = 15) 
 
 function generateComprobanteHTML(order, info) {
     const fecha = new Date(order.confirmedAt).toLocaleDateString('es-EC',
-        { day: '2-digit', month: '2-digit', year: 'numeric' });
+        { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Guayaquil' });
+    const sri = order.sri || {};
+    const sriBlock = sri.status === 'autorizado' ? `
+<div class="section sri-box">
+  <h3>Factura Electrónica — Autorizada por el SRI</h3>
+  <table>
+    <tr><td><strong>No. Autorización:</strong></td><td style="font-size:.8rem">${htmlEncode(sri.numeroAutorizacion || '')}</td></tr>
+    <tr><td><strong>Clave de Acceso:</strong></td><td style="font-size:.75rem;word-break:break-all">${htmlEncode(sri.claveAcceso || '')}</td></tr>
+    <tr><td><strong>Fecha Autorización:</strong></td><td>${htmlEncode(sri.fechaAutorizacion || '')}</td></tr>
+  </table>
+</div>` : '';
     return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Comprobante ${order.invoiceNumber}</title>
 <style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#222}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;padding:0 24px;color:#222}
 .no-print{text-align:right;margin-bottom:16px}
-.print-btn{background:#333;color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:.9rem}
-.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c9a227;padding-bottom:16px;margin-bottom:24px;gap:16px}
-.company h1{font-size:1.5rem;margin:0 0 4px;color:#111}.company p{margin:2px 0;font-size:.82rem;color:#555}
-.inv-info{text-align:right;min-width:200px}.inv-info h2{font-size:.85rem;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;color:#777}
-.inv-info p{margin:2px 0;font-size:.88rem}.badge{display:inline-block;background:#2a7a2a;color:#fff;padding:4px 12px;border-radius:4px;font-size:.78rem;font-weight:600;margin-top:6px}
-.section{margin-bottom:22px}.section h3{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #eee}
-table{width:100%;border-collapse:collapse}th{background:#f7f7f7;padding:8px 12px;text-align:left;font-size:.82rem;color:#555}
-td{padding:8px 12px;font-size:.9rem;border-bottom:1px solid #f0f0f0}.totals td{border:none;padding:5px 12px}
-.total-final td{font-size:1.05rem;font-weight:700;border-top:2px solid #333;padding-top:10px}
-.footer{margin-top:32px;text-align:center;font-size:.72rem;color:#bbb;border-top:1px solid #eee;padding-top:16px}
-.note{background:#fffbec;border-left:3px solid #c9a227;padding:8px 12px;font-size:.83rem;color:#666;margin-top:8px;border-radius:0 4px 4px 0}
-@media print{.no-print{display:none}body{margin:0}}
+.print-btn{background:#1a1a1a;color:#fff;border:none;padding:8px 22px;border-radius:6px;cursor:pointer;font-size:.9rem}
+.header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c9a227;padding-bottom:20px;margin-bottom:28px;gap:20px}
+.company{display:flex;align-items:center;gap:16px}
+.company img{height:70px;width:auto;object-fit:contain}
+.company-info h1{font-size:1.4rem;margin:0 0 2px;color:#111;letter-spacing:.5px}
+.company-info p{margin:2px 0;font-size:.8rem;color:#555}
+.inv-info{text-align:right;min-width:190px}
+.inv-info h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;color:#888}
+.inv-info p{margin:3px 0;font-size:.88rem}
+.badge{display:inline-block;background:#1e6e1e;color:#fff;padding:5px 14px;border-radius:4px;font-size:.78rem;font-weight:700;margin-top:8px;letter-spacing:.5px}
+.section{margin-bottom:24px}
+.section h3{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;margin:0 0 10px;padding-bottom:5px;border-bottom:1px solid #eee}
+table{width:100%;border-collapse:collapse}
+th{background:#f5f5f5;padding:9px 12px;text-align:left;font-size:.8rem;color:#555;font-weight:600}
+td{padding:9px 12px;font-size:.88rem;border-bottom:1px solid #f0f0f0}
+td:first-child{color:#666;width:160px}
+.totals td{border:none;padding:5px 12px;width:auto}
+.total-final td{font-size:1.05rem;font-weight:700;border-top:2px solid #222;padding-top:10px;color:#111}
+.note{background:#fffbec;border-left:3px solid #c9a227;padding:9px 13px;font-size:.84rem;color:#555;margin-top:10px;border-radius:0 4px 4px 0}
+.sri-box{background:#f0f7f0;border:1px solid #c3dfc3;border-radius:6px;padding:12px 16px}
+.sri-box h3{color:#2a7a2a;border-bottom-color:#c3dfc3}
+.footer{margin-top:36px;text-align:center;font-size:.71rem;color:#bbb;border-top:1px solid #eee;padding-top:16px;line-height:1.7}
+@media print{.no-print{display:none}body{margin:0;padding:16px}}
 </style></head><body>
-<div class="no-print"><button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button></div>
+<div class="no-print"><button class="print-btn" onclick="window.print()">🖨 Imprimir / Guardar PDF</button></div>
 <div class="header">
   <div class="company">
-    <h1>EXPRESART</h1>
-    <p>Escuela de Actuación</p>
-    ${info.ruc     ? `<p><strong>RUC:</strong> ${htmlEncode(info.ruc)}</p>`   : ''}
-    ${info.address ? `<p>${htmlEncode(info.address)}</p>`                     : ''}
-    ${info.email   ? `<p>${htmlEncode(info.email)}</p>`                       : ''}
-    ${info.phone   ? `<p>${htmlEncode(info.phone)}</p>`                       : ''}
+    <img src="/logo.png" alt="EXPRESART">
+    <div class="company-info">
+      <h1>EXPRESART</h1>
+      <p>Escuela de Actuación</p>
+      ${info.ruc     ? `<p><strong>RUC:</strong> ${htmlEncode(info.ruc)}</p>`   : ''}
+      ${info.address ? `<p>${htmlEncode(info.address)}</p>`                     : ''}
+      ${info.email   ? `<p>${htmlEncode(info.email)}</p>`                       : ''}
+      ${info.phone   ? `<p>${htmlEncode(info.phone)}</p>`                       : ''}
+    </div>
   </div>
   <div class="inv-info">
     <h2>Comprobante de Pago</h2>
-    <p><strong>No.</strong> ${order.invoiceNumber}</p>
+    <p><strong>No.</strong> ${htmlEncode(order.invoiceNumber)}</p>
     <p><strong>Fecha:</strong> ${fecha}</p>
     <span class="badge">✓ PAGO CONFIRMADO</span>
   </div>
 </div>
 <div class="section">
   <h3>Datos del cliente</h3>
-  <table><tr><td><strong>Nombre:</strong></td><td>${htmlEncode(order.customerName)}</td></tr>
-  <tr><td><strong>RUC / Cédula:</strong></td><td>${htmlEncode(order.customerDoc)}</td></tr>
-  <tr><td><strong>Correo:</strong></td><td>${htmlEncode(order.customerEmail)}</td></tr></table>
+  <table>
+    <tr><td><strong>Nombre:</strong></td><td>${htmlEncode(order.customerName)}</td></tr>
+    <tr><td><strong>RUC / Cédula:</strong></td><td>${htmlEncode(order.customerDoc)}</td></tr>
+    <tr><td><strong>Correo:</strong></td><td>${htmlEncode(order.customerEmail)}</td></tr>
+  </table>
 </div>
 <div class="section">
   <h3>Detalle del servicio</h3>
-  <table><thead><tr><th>Concepto</th><th style="text-align:right">Subtotal sin IVA</th></tr></thead>
-  <tbody><tr><td>${htmlEncode(order.concept)}</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr></tbody></table>
+  <table>
+    <thead><tr><th>Concepto</th><th style="text-align:right">Subtotal sin IVA</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>
+          ${htmlEncode(order.concept)}
+          ${order.notes ? `<div class="note">${htmlEncode(order.notes)}</div>` : ''}
+        </td>
+        <td style="text-align:right;vertical-align:top">$${order.subtotal.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 <div class="section">
   <table class="totals">
-    <tr><td>Subtotal (tarifa ${order.ivaRate}% IVA)</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr>
-    <tr><td>IVA ${order.ivaRate}%</td><td style="text-align:right">$${order.iva.toFixed(2)}</td></tr>
+    <tr><td style="color:#666">Subtotal (tarifa ${order.ivaRate || 15}% IVA)</td><td style="text-align:right">$${order.subtotal.toFixed(2)}</td></tr>
+    <tr><td style="color:#666">IVA ${order.ivaRate || 15}%</td><td style="text-align:right">$${order.iva.toFixed(2)}</td></tr>
     <tr class="total-final"><td>TOTAL PAGADO</td><td style="text-align:right">$${order.amount.toFixed(2)}</td></tr>
   </table>
 </div>
 <div class="section">
   <h3>Forma de pago</h3>
-  <p>Transferencia bancaria · ${htmlEncode(info.bankName)} · ${htmlEncode(info.accountType)} No. ${htmlEncode(info.accountNumber)}</p>
-  ${order.notes ? `<div class="note">Nota: ${htmlEncode(order.notes)}</div>` : ''}
+  <p>Transferencia bancaria · <strong>${htmlEncode(info.bankName || '')}</strong> · ${htmlEncode(info.accountType || '')} No. <strong>${htmlEncode(info.accountNumber || '')}</strong></p>
 </div>
+${sriBlock}
 <div class="footer">
   <p>Este comprobante es un documento de respaldo de pago.</p>
-  <p>La factura electrónica autorizada por el SRI será enviada a su correo una vez disponible.</p>
+  <p>La factura electrónica autorizada por el SRI ha sido registrada con los datos indicados.</p>
   <p><strong>EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</strong></p>
 </div>
 </body></html>`;
