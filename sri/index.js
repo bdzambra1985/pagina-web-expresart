@@ -130,7 +130,9 @@ async function emitirFactura(order, secuencial) {
         subtotal:                order.subtotal,
         iva:                     order.iva,
         total:                   order.amount,
-        concepto:                order.concept,
+        concepto:                (order.notes && order.notes.trim()
+            ? `${order.concept}: ${order.notes.trim()}`
+            : order.concept).slice(0, 300),
         email:                   order.customerEmail,
         ivaRate:                 order.ivaRate || 15
     });

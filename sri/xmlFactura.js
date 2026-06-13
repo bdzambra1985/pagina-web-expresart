@@ -157,7 +157,7 @@ function buildFacturaXML({
     <moneda>DOLAR</moneda>
     <pagos>
       <pago>
-        <formaPago>01</formaPago>
+        <formaPago>20</formaPago>
         <total>${totalStr}</total>
         <plazo>0</plazo>
         <unidadTiempo>dias</unidadTiempo>
