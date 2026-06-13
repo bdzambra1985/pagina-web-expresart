@@ -473,6 +473,42 @@
         .share-revoke-btn:hover { background: rgba(200,15,15,0.60); }
         .share-empty { font-size: 0.78em; color: rgba(255,200,200,0.35); padding: 6px 0; }
 
+        /* ── Historial de pagos ── */
+        .pay-table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin-top: 10px; }
+        .pay-table th {
+            text-align: left; padding: 8px 12px;
+            font-family: 'Poppins', sans-serif; font-size: 0.70em;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(201,162,39,0.75);
+            border-bottom: 1px solid rgba(201,162,39,0.20);
+        }
+        .pay-table td {
+            padding: 11px 12px;
+            color: rgba(255,220,220,0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .pay-table tr:last-child td { border-bottom: none; }
+        .pay-table tr:hover td { background: rgba(255,255,255,0.03); }
+        .pay-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 0.78em; font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+        .pay-badge-pending  { background: rgba(201,162,39,0.15); color: #f0d060; border: 1px solid rgba(201,162,39,0.35); }
+        .pay-badge-ok       { background: rgba(10,160,10,0.15);  color: #7defa0; border: 1px solid rgba(40,180,40,0.35); }
+        .pay-badge-rejected { background: rgba(200,10,10,0.15);  color: #ff8888; border: 1px solid rgba(220,40,40,0.35); }
+        .pay-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            color: rgba(201,162,39,0.85); text-decoration: none; font-size: 0.85em;
+            padding: 3px 8px; border-radius: 6px;
+            border: 1px solid rgba(201,162,39,0.25);
+            transition: background 0.2s;
+        }
+        .pay-link:hover { background: rgba(201,162,39,0.12); }
+        .pay-link + .pay-link { margin-left: 6px; }
+        .pay-empty { font-size: 0.80em; color: rgba(255,200,200,0.40); padding: 10px 0; }
+
         @media (max-width: 600px) {
             .field-row { grid-template-columns: 1fr; }
             .video-add-row { grid-template-columns: 1fr; }
@@ -480,6 +516,8 @@
             .prod-collage-grid { grid-template-columns: repeat(5, 1fr); }
             .creds-row { flex-wrap: wrap; }
             .creds-val { word-break: break-all; }
+            .pay-table th:nth-child(3),
+            .pay-table td:nth-child(3) { display: none; }
         }
     </style>
 </head>
@@ -605,6 +643,13 @@
         <div class="share-list" id="shareList"></div>
     </div>
 
+    <!-- ── Historial de pagos ── -->
+    <div class="dash-section">
+        <h2 class="section-title"><i class="bx bx-receipt"></i> Historial de pagos</h2>
+        <div id="myOrdersWrap">
+            <p class="pay-empty">Cargando…</p>
+        </div>
+    </div>
 
 </div>
 
@@ -629,6 +674,7 @@ async function init() {
     document.getElementById('previewBtn').href = 'portafolio-alumno.html?id=' + myUserId;
     await loadProfile();
     await loadShareLinks();
+    loadMyOrders();
 }
 init();
 
@@ -1099,6 +1145,55 @@ window.revokeShareLink = async function(shareId) {
     else showToast(d.message || 'Error', true);
 };
 
+/* ── Historial de pagos ── */
+async function loadMyOrders() {
+    const wrap = document.getElementById('myOrdersWrap');
+    try {
+        const r = await fetch('/api/my-orders', { headers: { 'x-session-token': TOKEN } });
+        const orders = await r.json();
+        if (!orders.length) {
+            wrap.innerHTML = '<p class="pay-empty">Aún no tienes pagos registrados en esta cuenta.</p>';
+            return;
+        }
+        wrap.innerHTML = `
+        <table class="pay-table">
+            <thead><tr>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Documentos</th>
+            </tr></thead>
+            <tbody>
+            ${orders.map(o => {
+                const fecha = new Date(o.confirmedAt || o.createdAt)
+                    .toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:'America/Guayaquil' });
+                const badgeCls = o.status === 'confirmado' ? 'pay-badge-ok'
+                               : o.status === 'rechazado'  ? 'pay-badge-rejected'
+                               : 'pay-badge-pending';
+                const badgeTxt = o.status === 'confirmado' ? 'Confirmado'
+                               : o.status === 'rechazado'  ? 'Rechazado'
+                               : 'Pendiente';
+                const docs = o.status === 'confirmado'
+                    ? `<a class="pay-link" href="/factura/${o.id}" target="_blank"><i class="bx bx-file"></i> Comprobante</a>`
+                    : '';
+                const sri = o.sri && o.sri.status === 'autorizado'
+                    ? `<a class="pay-link" href="/factura/${o.id}#factura" target="_blank"><i class="bx bx-receipt"></i> Factura</a>`
+                    : '';
+                return `<tr>
+                    <td>${fecha}</td>
+                    <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(o.concept)}">${esc(o.concept)}${o.notes ? ` <span style="color:rgba(255,200,200,0.4);font-size:0.85em">— ${esc(o.notes.slice(0,40))}</span>` : ''}</td>
+                    <td>$${parseFloat(o.amount).toFixed(2)}</td>
+                    <td><span class="pay-badge ${badgeCls}">${badgeTxt}</span></td>
+                    <td>${docs}${sri}</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+    } catch {
+        wrap.innerHTML = '<p class="pay-empty">Error al cargar historial.</p>';
+    }
+}
 
 </script>
 </body>

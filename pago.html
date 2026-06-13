@@ -583,8 +583,12 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     fd.append('notes',         notes);
     fd.append('receipt',       receipt);
 
+    // Vincular al usuario si está logueado
+    const sessionTok = localStorage.getItem('exp_token');
+    const headers = sessionTok ? { 'x-session-token': sessionTok } : {};
+
     try {
-        const r    = await fetch('/api/orders', { method: 'POST', body: fd });
+        const r    = await fetch('/api/orders', { method: 'POST', headers, body: fd });
         const data = await r.json();
         if (!data.ok) throw new Error(data.message);
         document.getElementById('successId').textContent = 'Ref: ' + data.orderId;

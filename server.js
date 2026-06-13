@@ -850,10 +850,18 @@ app.post('/api/orders', (req, res) => {
             : '';
         const subtotal = Math.round((amountNum / 1.15) * 100) / 100;
         const iva      = Math.round((amountNum - subtotal) * 100) / 100;
+        // Vincular a cuenta de alumno si envió token de sesión
+        let linkedUserId = null;
+        const sessionTok = req.headers['x-session-token'] || req.body.sessionToken;
+        if (sessionTok) {
+            const sess = sessions.get(sessionTok);
+            if (sess && sess.role === 'alumno') linkedUserId = sess.userId;
+        }
         const order = {
             id:              'ord_' + Date.now(),
             token:           crypto.randomBytes(16).toString('hex'),
             status:          'pendiente',
+            userId:          linkedUserId,
             customerName:    customerName.trim().slice(0, 200),
             customerDoc:     customerDoc.trim().slice(0, 20),
             customerEmail:   customerEmail.trim().slice(0, 200),
@@ -880,6 +888,25 @@ app.post('/api/orders', (req, res) => {
 app.get('/api/orders', (req, res) => {
     if (!requireAdmin(req, res)) return;
     res.json(readOrders().sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+});
+
+/* Historial de pagos del alumno logueado */
+app.get('/api/my-orders', (req, res) => {
+    const sess = requireAuth(req, res);
+    if (!sess) return;
+    const orders = readOrders()
+        .filter(o => o.userId === sess.userId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    res.json(orders);
+});
+
+/* Historial de pagos de un alumno específico (admin) */
+app.get('/api/orders/by-user/:userId', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const orders = readOrders()
+        .filter(o => o.userId === req.params.userId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    res.json(orders);
 });
 
 /* Confirmar pago (admin) */
