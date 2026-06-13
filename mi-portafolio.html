@@ -514,6 +514,12 @@
             border-color: rgba(201,162,39,0.50) !important;
             color: #f0d060 !important;
         }
+        .tab-active {
+            background: rgba(201,162,39,0.28) !important;
+            border-color: rgba(201,162,39,0.65) !important;
+            color: #f5d860 !important;
+            box-shadow: 0 0 14px rgba(201,162,39,0.22);
+        }
 
         /* ── Historial de pagos ── */
         .pay-table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin-top: 10px; }
@@ -568,9 +574,10 @@
 <nav class="top-nav">
     <div class="nav-inner">
         <ul class="nav-links">
-            <li><a href="index.html"      class="nav-link">Inicio</a></li>
-            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
-            <li><a href="agenda.html"     class="nav-link">Agenda</a></li>
+            <li><a href="index.html"        class="nav-link">Inicio</a></li>
+            <li><a href="portafolio.html"   class="nav-link">Portafolio</a></li>
+            <li><a href="agenda.html"       class="nav-link">Agenda</a></li>
+            <li><a href="mi-portafolio.html" class="nav-link nav-cta">Mi Perfil</a></li>
         </ul>
     </div>
 </nav>
@@ -581,7 +588,7 @@
     <div class="hero-curtain-r"></div>
     <div class="hero-light"></div>
     <div class="hero-content">
-        <h1 class="hero-title">Mi Portafolio</h1>
+        <h1 class="hero-title" id="heroTitle">Mi Portafolio</h1>
         <div class="hero-rule"></div>
     </div>
 </section>
@@ -590,14 +597,14 @@
 
     <div class="dash-header">
         <div class="dash-header-left">
-            <h1>Mi <span>Portafolio</span></h1>
+            <h1 id="dashH1">Mi <span>Portafolio</span></h1>
             <span class="sub" id="dashSub">Cargando…</span>
         </div>
         <div class="header-actions">
-            <a id="previewBtn" href="#" target="_blank" class="preview-btn">
-                <i class="bx bx-show"></i> Ver mi portafolio
-            </a>
-            <button class="preview-btn pay-btn" id="payToggleBtn" onclick="togglePayPanel()">
+            <button class="preview-btn tab-active" id="editToggleBtn" onclick="showEditView()">
+                <i class="bx bx-edit"></i> Editar portafolio
+            </button>
+            <button class="preview-btn pay-btn" id="payToggleBtn" onclick="showPayView()">
                 <i class="bx bx-credit-card"></i> Pagar clases
             </button>
             <button class="logout-btn" id="logoutBtn">
@@ -619,6 +626,7 @@
         </div>
     </div>
 
+    <div id="editContent">
     <!-- ══ FOTO DE PERFIL ══ -->
     <div class="dash-section">
         <h2 class="section-title"><i class="bx bx-camera"></i> Foto de perfil</h2>
@@ -698,6 +706,7 @@
         <div class="share-list" id="shareList"></div>
     </div>
 
+    </div><!-- /#editContent -->
 
 </div>
 
@@ -719,7 +728,6 @@ async function init() {
         return (location.href = 'login.html');
     }
     myUserId = d.userId;
-    document.getElementById('previewBtn').href = 'portafolio-alumno.html?id=' + myUserId;
     await loadProfile();
     await loadShareLinks();
 }
@@ -751,7 +759,12 @@ async function loadProfile() {
 }
 
 function renderAll() {
-    document.getElementById('dashSub').textContent = profile.displayName || myUserId;
+    const name = profile.displayName || myUserId;
+    document.getElementById('dashSub').textContent = name;
+    const heroEl = document.getElementById('heroTitle');
+    const dashEl = document.getElementById('dashH1');
+    if (heroEl) heroEl.textContent = name;
+    if (dashEl) dashEl.innerHTML = 'Mi <span>' + esc(name) + '</span>';
     document.getElementById('displayName').value = profile.displayName || '';
     document.getElementById('bio_short').value   = profile.bio_short   || '';
     document.getElementById('bio').value         = profile.bio         || '';
@@ -806,7 +819,12 @@ document.getElementById('saveBasicBtn').onclick = async () => {
         const d = await r.json();
         if (d.ok) {
             profile.displayName = document.getElementById('displayName').value.trim();
-            document.getElementById('dashSub').textContent = profile.displayName || myUserId;
+            const name = profile.displayName || myUserId;
+            document.getElementById('dashSub').textContent = name;
+            const heroEl = document.getElementById('heroTitle');
+            const dashEl = document.getElementById('dashH1');
+            if (heroEl) heroEl.textContent = name;
+            if (dashEl) dashEl.innerHTML = 'Mi <span>' + esc(name) + '</span>';
             showToast('✓ Información guardada');
         } else {
             showToast(d.message || 'Error', true);
@@ -1192,13 +1210,20 @@ window.revokeShareLink = async function(shareId) {
     else showToast(d.message || 'Error', true);
 };
 
-/* ── Toggle panel de pagos ── */
-function togglePayPanel() {
-    const panel = document.getElementById('payPanel');
-    const btn   = document.getElementById('payToggleBtn');
-    const open  = panel.classList.toggle('open');
-    btn.classList.toggle('pay-btn-active', open);
-    if (open) loadMyOrders();
+/* ── Vistas: Editar portafolio / Pagar clases ── */
+function showEditView() {
+    document.getElementById('editContent').style.display = '';
+    document.getElementById('payPanel').classList.remove('open');
+    document.getElementById('editToggleBtn').classList.add('tab-active');
+    document.getElementById('payToggleBtn').classList.remove('tab-active');
+}
+
+function showPayView() {
+    document.getElementById('editContent').style.display = 'none';
+    document.getElementById('payPanel').classList.add('open');
+    document.getElementById('editToggleBtn').classList.remove('tab-active');
+    document.getElementById('payToggleBtn').classList.add('tab-active');
+    loadMyOrders();
 }
 
 /* ── Historial de pagos ── */
