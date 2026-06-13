@@ -742,6 +742,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
         document.getElementById('regSuccessId').textContent = 'Ref: ' + data.orderId;
         document.getElementById('formPanel').style.display        = 'none';
         document.getElementById('regSuccessPanel').style.display  = 'block';
+        btnDone(btn);
         loadMyOrders();
     } catch (e) {
         showToast('Error al enviar: ' + e.message, true);
