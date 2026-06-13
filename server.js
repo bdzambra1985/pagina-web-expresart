@@ -19,8 +19,9 @@ const USERS_FILE    = path.join(DATA_DIR, 'users.json');
 const PROFILES_DIR  = path.join(DATA_DIR, 'profiles');
 const CONTENT_FILE  = path.join(DATA_DIR, 'content.json');
 const EVENTS_FILE   = path.join(DATA_DIR, 'events.json');
-const SESSIONS_FILE    = path.join(DATA_DIR, 'sessions.json');
-const SHARE_LINKS_FILE = path.join(DATA_DIR, 'share-links.json');
+const SESSIONS_FILE        = path.join(DATA_DIR, 'sessions.json');
+const SHARE_LINKS_FILE     = path.join(DATA_DIR, 'share-links.json');
+const RESET_REQUESTS_FILE  = path.join(DATA_DIR, 'reset-requests.json');
 const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 
 [DATA_DIR, PROFILES_DIR, UPLOADS_DIR].forEach(d => {
@@ -82,10 +83,12 @@ function htmlEncode(s) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
-function readUsers()        { return readJSON(USERS_FILE, []); }
-function writeUsers(d)      { writeJSON(USERS_FILE, d); }
-function readShareLinks()   { return readJSON(SHARE_LINKS_FILE, []); }
-function writeShareLinks(d) { writeJSON(SHARE_LINKS_FILE, d); }
+function readUsers()           { return readJSON(USERS_FILE, []); }
+function writeUsers(d)         { writeJSON(USERS_FILE, d); }
+function readShareLinks()      { return readJSON(SHARE_LINKS_FILE, []); }
+function writeShareLinks(d)    { writeJSON(SHARE_LINKS_FILE, d); }
+function readResetRequests()   { return readJSON(RESET_REQUESTS_FILE, []); }
+function writeResetRequests(d) { writeJSON(RESET_REQUESTS_FILE, d); }
 function randomAlphaNum(len) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = crypto.randomBytes(len);
@@ -509,6 +512,67 @@ app.delete('/api/users/:userId', (req, res) => {
             fs.rmdirSync(uploadDir);
         }
     }
+    res.json({ ok: true });
+});
+
+/* ── Admin: resetear clave de un alumno ── */
+app.post('/api/users/:userId/reset-password', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const users = readUsers();
+    const idx   = users.findIndex(u => u.userId === req.params.userId);
+    if (idx === -1) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
+    if (users[idx].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede resetear el admin' });
+    const tempPassword = randomAlphaNum(10);
+    users[idx].passwordHash        = hashPassword(tempPassword);
+    users[idx].mustChangePassword  = true;
+    writeUsers(users);
+    // Marcar solicitudes pendientes de este usuario como resueltas
+    const requests = readResetRequests().map(r =>
+        r.userId === users[idx].userId ? { ...r, status: 'done' } : r
+    );
+    writeResetRequests(requests);
+    res.json({ ok: true, tempPassword });
+});
+
+/* ── Alumno: solicitar reseteo de clave (público, limitado) ── */
+const resetRequestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
+app.post('/api/reset-request', resetRequestLimiter, (req, res) => {
+    const { username } = req.body;
+    if (!username || typeof username !== 'string')
+        return res.status(400).json({ ok: false, message: 'Usuario requerido' });
+    const user = readUsers().find(u => u.username === username.trim() && u.role !== 'admin');
+    // Responder siempre ok para no revelar qué usuarios existen
+    if (!user) return res.json({ ok: true });
+    const requests = readResetRequests();
+    // No duplicar si ya hay una pendiente del mismo usuario
+    const ya = requests.find(r => r.userId === user.userId && r.status === 'pending');
+    if (!ya) {
+        requests.push({
+            id:          'rr_' + Date.now(),
+            userId:      user.userId,
+            username:    user.username,
+            requestedAt: new Date().toISOString(),
+            status:      'pending'
+        });
+        writeResetRequests(requests);
+    }
+    res.json({ ok: true });
+});
+
+/* ── Admin: listar solicitudes de reseteo pendientes ── */
+app.get('/api/reset-requests', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const all = readResetRequests().filter(r => r.status === 'pending');
+    res.json(all);
+});
+
+/* ── Admin: rechazar/descartar solicitud ── */
+app.delete('/api/reset-requests/:id', (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const requests = readResetRequests().map(r =>
+        r.id === req.params.id ? { ...r, status: 'dismissed' } : r
+    );
+    writeResetRequests(requests);
     res.json({ ok: true });
 });
 

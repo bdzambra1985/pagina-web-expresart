@@ -205,6 +205,45 @@
         }
         .back-link:hover { color: rgba(255,200,200,0.85); }
 
+        .forgot-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72em;
+            color: rgba(201,162,39,0.65);
+            text-decoration: none;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            width: 100%;
+            padding: 0;
+        }
+        .forgot-link:hover { color: rgba(201,162,39,1); }
+
+        .reset-panel {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.09);
+        }
+        .reset-panel.visible { display: block; }
+
+        .login-success {
+            margin-top: 14px;
+            padding: 10px 14px;
+            background: rgba(10,120,10,0.22);
+            border: 1px solid rgba(40,180,40,0.35);
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.78em;
+            color: #aaffaa;
+            text-align: center;
+            display: none;
+        }
+
         /* Separador dorado */
         .gold-line {
             width: 50px; height: 1px;
@@ -251,6 +290,19 @@
         <div class="login-error" id="loginError"></div>
     </form>
 
+    <button class="forgot-link" onclick="document.getElementById('resetPanel').classList.toggle('visible')">¿Olvidaste tu contraseña?</button>
+
+    <div class="reset-panel" id="resetPanel">
+        <p style="font-family:'Poppins',sans-serif;font-size:0.75em;color:rgba(255,200,200,0.6);text-align:center;margin:0 0 14px;">Ingresa tu usuario y el administrador recibirá tu solicitud de reseteo.</p>
+        <div class="field-group">
+            <label class="field-label" for="resetUsername">Usuario</label>
+            <input id="resetUsername" class="login-input" type="text" placeholder="tu.usuario" autocomplete="username">
+        </div>
+        <button class="login-btn" id="resetBtn" style="margin-top:10px;" onclick="sendResetRequest()">Solicitar reseteo</button>
+        <div class="login-error"  id="resetError"></div>
+        <div class="login-success" id="resetSuccess"></div>
+    </div>
+
     <a href="index.html" class="back-link">← Volver al sitio</a>
 </div>
 
@@ -265,6 +317,34 @@
         fetch('/api/auth', { headers: { 'x-session-token': tok } })
             .then(r => r.json())
             .then(d => { if (d.ok) redirectByRole(d.role); });
+    }
+
+    async function sendResetRequest() {
+        const btn  = document.getElementById('resetBtn');
+        const err  = document.getElementById('resetError');
+        const succ = document.getElementById('resetSuccess');
+        const user = document.getElementById('resetUsername').value.trim();
+        err.style.display  = 'none';
+        succ.style.display = 'none';
+        if (!user) { err.textContent = 'Ingresa tu nombre de usuario'; err.style.display = 'block'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Enviando…';
+        try {
+            await fetch('/api/reset-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user })
+            });
+            succ.textContent   = 'Solicitud enviada. El administrador te comunicará tu nueva clave.';
+            succ.style.display = 'block';
+            document.getElementById('resetUsername').value = '';
+        } catch {
+            err.textContent  = 'Error al enviar la solicitud. Intenta más tarde.';
+            err.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Solicitar reseteo';
+        }
     }
 
     document.getElementById('loginForm').onsubmit = async (e) => {
