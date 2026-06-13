@@ -1401,8 +1401,11 @@ async function loadMyOrders() {
                 const badgeTxt = o.status === 'confirmado' ? 'Confirmado'
                                : o.status === 'rechazado'  ? 'Rechazado'
                                : 'Pendiente';
-                const docs = o.receiptUrl
-                    ? `<a class="pay-link" href="${esc(o.receiptUrl)}" target="_blank"><i class="bx bx-image-alt"></i> Comprobante</a>`
+                const receiptHref = o.receiptUrl && o.receiptUrl.startsWith('/uploads/')
+                    ? o.receiptUrl + '?t=' + encodeURIComponent(TOKEN)
+                    : (o.receiptUrl || '');
+                const docs = receiptHref
+                    ? `<a class="pay-link" href="${esc(receiptHref)}" target="_blank"><i class="bx bx-image-alt"></i> Comprobante</a>`
                     : '';
                 const sri = o.sri && o.sri.status === 'autorizado'
                     ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-receipt"></i> Factura SRI</a>`

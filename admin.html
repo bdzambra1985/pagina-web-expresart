@@ -1653,8 +1653,11 @@ function renderOrders() {
                     sriBadge = '<span style="color:#c9a227;font-size:.78em">⏳ Procesando</span>';
                 }
             }
-            const receiptLink = o.receiptUrl
-                ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
+            const receiptHref = o.receiptUrl && o.receiptUrl.startsWith('/uploads/')
+                ? o.receiptUrl + '?t=' + encodeURIComponent(TOKEN)
+                : (o.receiptUrl || '');
+            const receiptLink = receiptHref
+                ? `<a href="${receiptHref}" target="_blank" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
                 : '';
             const actions = o.status === 'pendiente' ? `
                 <button onclick="verifyOrder('${o.id}')" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px;background:rgba(201,162,39,.25);color:#c9a227;border:1px solid rgba(201,162,39,.5)">🔍 Verificar</button>
@@ -1711,15 +1714,19 @@ window.sriRetry = async (id) => {
 window.verifyOrder = (id) => {
     const o = allOrders.find(x => x.id === id);
     if (!o) return;
-    const isImg = o.receiptUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(o.receiptUrl);
-    const isPdf = o.receiptUrl && /\.pdf(\?|$)/i.test(o.receiptUrl);
-    const preview = !o.receiptUrl
+    const rawReceiptUrl = o.receiptUrl || '';
+    const authReceiptUrl = rawReceiptUrl.startsWith('/uploads/')
+        ? rawReceiptUrl + '?t=' + encodeURIComponent(TOKEN)
+        : rawReceiptUrl;
+    const isImg = rawReceiptUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(rawReceiptUrl);
+    const isPdf = rawReceiptUrl && /\.pdf(\?|$)/i.test(rawReceiptUrl);
+    const preview = !authReceiptUrl
         ? `<div class="vm-no-receipt">Sin comprobante adjunto</div>`
         : isImg
-        ? `<img src="${o.receiptUrl}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
+        ? `<img src="${authReceiptUrl}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
         : isPdf
-        ? `<iframe src="${o.receiptUrl}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
-        : `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
+        ? `<iframe src="${authReceiptUrl}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
+        : `<a href="${authReceiptUrl}" target="_blank" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
 
     document.getElementById('vmPreview').innerHTML = preview;
     document.getElementById('vmName').textContent    = o.customerName;

@@ -29,7 +29,6 @@ const UPLOADS_DIR  = path.join(__dirname, 'uploads');
 });
 
 /* ── Cloudinary (activo solo si las tres variables están definidas) ── */
-/* Acepta CLOUDINARY_URL, o las variables individuales en cualquier variante de nombre */
 const CLD_NAME   = process.env.CLOUDINARY_NAME   || process.env.CLOUDINARY_CLOUD_NAME;
 const CLD_KEY    = process.env.CLOUDINARY_KEY    || process.env.CLOUDINARY_API_KEY;
 const CLD_SECRET = process.env.CLOUDINARY_SECRET || process.env.CLOUDINARY_API_SECRET;
@@ -146,17 +145,31 @@ function initAdmin() {
     }
 }
 
-/* ── Sesiones persistidas en disco ── */
-const SESSION_TTL   = 1 * 60 * 60 * 1000;       // 1 hora  (usuarios normales)
-const SHARE_TTL     = 24 * 60 * 60 * 1000;       // 24 horas (tokens de enlace privado)
+/* ══════════════════════════════════════════
+   SEGURIDAD — SESIONES Y TOKENS
+   ══════════════════════════════════════════ */
 
+const SESSION_TTL = 1 * 60 * 60 * 1000;   // 1 hora
+const SHARE_TTL   = 24 * 60 * 60 * 1000;  // 24 horas
+
+/* Los tokens se guardan hasheados (SHA-256) — nunca en claro en disco */
+function tokenHash(token) {
+    return crypto.createHash('sha256').update(String(token)).digest('hex');
+}
+function newToken() { return crypto.randomBytes(32).toString('hex'); }
+
+/*
+ * Versión 2 del formato de sesiones: claves = SHA-256(rawToken).
+ * Si el archivo no tiene _v:2, se descartan todas las sesiones (migración segura).
+ */
 function loadSessions() {
     try {
         const raw = readJSON(SESSIONS_FILE, {});
+        if (raw._v !== 2) return new Map(); // formato anterior o vacío — sesiones descartadas
         const now = Date.now();
         const map = new Map();
         Object.entries(raw).forEach(([k, v]) => {
-            // Respetar expiresAt si existe, si no usar SESSION_TTL
+            if (k === '_v') return;
             const expiry = v.expiresAt || (v.ts + SESSION_TTL);
             if (now < expiry) map.set(k, v);
         });
@@ -164,24 +177,34 @@ function loadSessions() {
     } catch(e) { return new Map(); }
 }
 function saveSessions(map) {
-    const obj = {};
+    const obj = { _v: 2 };
     map.forEach((v, k) => { obj[k] = v; });
     writeJSON(SESSIONS_FILE, obj);
 }
 const sessions = loadSessions();
 
-function newToken() { return crypto.randomBytes(32).toString('hex'); }
 function getSession(req) {
-    const token = req.headers['x-session-token'];
-    if (!token) return null;
-    const sess = sessions.get(token);
+    const rawToken = req.headers['x-session-token'];
+    if (!rawToken) return null;
+    const key  = tokenHash(rawToken);
+    const sess = sessions.get(key);
     if (!sess) return null;
     const expiry = sess.expiresAt || (sess.ts + SESSION_TTL);
-    if (Date.now() >= expiry) { sessions.delete(token); saveSessions(sessions); return null; }
-    // Solo refrescar actividad en sesiones de usuario normal (no en tokens de enlace)
-    if (!sess.expiresAt) sess.ts = Date.now();
+    if (Date.now() >= expiry) { sessions.delete(key); saveSessions(sessions); return null; }
+    if (!sess.expiresAt) sess.ts = Date.now(); // refrescar actividad (solo sesiones normales)
     return sess;
 }
+
+/* Buscar sesión por rawToken directamente (para query params ?t=) */
+function getSessionByRawToken(rawToken) {
+    if (!rawToken) return null;
+    const sess = sessions.get(tokenHash(rawToken));
+    if (!sess) return null;
+    const expiry = sess.expiresAt || (sess.ts + SESSION_TTL);
+    if (Date.now() >= expiry) return null;
+    return sess;
+}
+
 function requireAuth(req, res) {
     const sess = getSession(req);
     if (!sess) { res.status(401).json({ ok: false, message: 'No autorizado' }); return null; }
@@ -194,8 +217,46 @@ function requireAdmin(req, res) {
     return sess;
 }
 
+/* Revocar todas las sesiones activas de un usuario (usar tras cambio de contraseña) */
+function revokeUserSessions(userId) {
+    for (const [k, v] of sessions) {
+        if (v.userId === userId) sessions.delete(k);
+    }
+    saveSessions(sessions);
+}
+
+/* ══════════════════════════════════════════
+   SEGURIDAD — LOCKOUT POR USUARIO
+   ══════════════════════════════════════════ */
+
+const loginAttempts   = new Map(); // username_lower → { count, lockedUntil }
+const LOGIN_MAX_TRIES = 5;
+const LOGIN_LOCK_MS   = 15 * 60 * 1000; // 15 minutos
+
+/* ══════════════════════════════════════════
+   SEGURIDAD — VALIDACIÓN DE TIPO DE ARCHIVO (magic bytes)
+   ══════════════════════════════════════════ */
+
+const MAGIC = [
+    { mime: 'image/jpeg',      check: b => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF },
+    { mime: 'image/png',       check: b => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 },
+    { mime: 'image/webp',      check: b => b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50 },
+    { mime: 'image/gif',       check: b => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 },
+    { mime: 'application/pdf', check: b => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 },
+];
+const ALLOWED_MIMES_IMAGE   = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_MIMES_RECEIPT = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+
+function detectMime(buffer) {
+    if (!buffer || buffer.length < 4) return null;
+    for (const { mime, check } of MAGIC) {
+        if (check(buffer)) return mime;
+    }
+    return null;
+}
+
 /* ── Multer + Cloudinary ── */
-const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf']);
 const uploader = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
@@ -279,6 +340,16 @@ app.use(express.static(__dirname, {
             res.setHeader('Cache-Control', 'no-cache');
     }
 }));
+
+/* Comprobantes de pago — requieren sesión activa */
+app.use('/uploads/receipts', (req, res, next) => {
+    const rawTok = req.query.t || req.headers['x-session-token'];
+    if (!rawTok) return res.status(401).send('<!DOCTYPE html><html lang="es"><body style="font-family:sans-serif;padding:40px"><h2>Acceso no autorizado</h2><p><a href="/login.html">Iniciar sesión</a></p></body></html>');
+    const sess = getSessionByRawToken(rawTok);
+    if (!sess) return res.status(401).send('<!DOCTYPE html><html lang="es"><body style="font-family:sans-serif;padding:40px"><h2>Sesión inválida o expirada</h2><p><a href="/login.html">Iniciar sesión</a></p></body></html>');
+    next();
+});
+
 app.use('/uploads', express.static(UPLOADS_DIR, {
     setHeaders(res) { res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}`); }
 }));
@@ -290,20 +361,33 @@ app.post('/api/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password || typeof username !== 'string' || typeof password !== 'string')
         return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
+
+    /* Lockout por username */
+    const uname = username.trim().toLowerCase();
+    const att   = loginAttempts.get(uname) || { count: 0, lockedUntil: 0 };
+    if (Date.now() < att.lockedUntil)
+        return res.status(429).json({ ok: false, message: 'Cuenta bloqueada temporalmente. Intenta en 15 minutos.' });
+
     const user = readUsers().find(u => u.username === username.trim());
-    if (!user || !verifyPassword(password, user.passwordHash))
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+        att.count++;
+        if (att.count >= LOGIN_MAX_TRIES) { att.lockedUntil = Date.now() + LOGIN_LOCK_MS; att.count = 0; }
+        loginAttempts.set(uname, att);
         return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos' });
+    }
     if (!user.active)
         return res.status(403).json({ ok: false, message: 'Cuenta inactiva — contacta a EXPRESART' });
+
+    loginAttempts.delete(uname);
     const token = newToken();
-    sessions.set(token, { ts: Date.now(), userId: user.userId, role: user.role });
+    sessions.set(tokenHash(token), { ts: Date.now(), userId: user.userId, role: user.role });
     saveSessions(sessions);
     res.json({ ok: true, token, role: user.role, mustChangePassword: !!user.mustChangePassword });
 });
 
 app.post('/api/logout', (req, res) => {
-    const token = req.headers['x-session-token'];
-    if (token) { sessions.delete(token); saveSessions(sessions); }
+    const rawToken = req.headers['x-session-token'];
+    if (rawToken) { sessions.delete(tokenHash(rawToken)); saveSessions(sessions); }
     res.json({ ok: true });
 });
 
@@ -321,6 +405,7 @@ app.post('/api/change-password', (req, res) => {
     users[idx].passwordHash = hashPassword(newPassword);
     delete users[idx].mustChangePassword;
     writeUsers(users);
+    revokeUserSessions(sess.userId); // forzar re-login en todos los dispositivos
     res.json({ ok: true });
 });
 
@@ -397,6 +482,9 @@ app.post('/api/upload-photo', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
+        const mime = detectMime(req.file.buffer);
+        if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
+            return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes (JPEG, PNG, WebP, GIF)' });
         try {
             const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
             const p   = readProfile(sess.userId) || emptyProfile(sess.userId);
@@ -417,6 +505,9 @@ app.post('/api/upload-prod-photo', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
+        const mime = detectMime(req.file.buffer);
+        if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
+            return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes (JPEG, PNG, WebP, GIF)' });
         try {
             const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
             res.json({ ok: true, url });
@@ -504,6 +595,7 @@ app.delete('/api/users/:userId', (req, res) => {
     const userId = users[idx].userId;
     users.splice(idx, 1);
     writeUsers(users);
+    revokeUserSessions(userId);
     const profileFile = path.join(PROFILES_DIR, userId + '.json');
     if (fs.existsSync(profileFile)) fs.unlinkSync(profileFile);
     if (USE_CLOUDINARY) {
@@ -528,10 +620,10 @@ app.post('/api/users/:userId/reset-password', (req, res) => {
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
     if (users[idx].role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede resetear el admin' });
     const tempPassword = randomAlphaNum(10);
-    users[idx].passwordHash        = hashPassword(tempPassword);
-    users[idx].mustChangePassword  = true;
+    users[idx].passwordHash       = hashPassword(tempPassword);
+    users[idx].mustChangePassword = true;
     writeUsers(users);
-    // Marcar solicitudes pendientes de este usuario como resueltas
+    revokeUserSessions(users[idx].userId); // forzar re-login del alumno
     const requests = readResetRequests().map(r =>
         r.userId === users[idx].userId ? { ...r, status: 'done' } : r
     );
@@ -549,7 +641,6 @@ app.post('/api/reset-request', resetRequestLimiter, (req, res) => {
     // Responder siempre ok para no revelar qué usuarios existen
     if (!user) return res.json({ ok: true });
     const requests = readResetRequests();
-    // No duplicar si ya hay una pendiente del mismo usuario
     const ya = requests.find(r => r.userId === user.userId && r.status === 'pending');
     if (!ya) {
         requests.push({
@@ -669,6 +760,9 @@ app.post('/api/upload', (req, res) => {
     uploader.single('photo')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         if (!req.file) return res.status(400).json({ ok: false, message: 'No se recibió imagen' });
+        const mime = detectMime(req.file.buffer);
+        if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
+            return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes (JPEG, PNG, WebP, GIF)' });
         const url  = await saveFile(req.file.buffer, req.file.originalname, 'admin');
         const data = readContent();
         data.destacada       = data.destacada || {};
@@ -705,8 +799,6 @@ function invoiceFromSeq(n) {
     return '001-001-' + String(n).padStart(9, '0');
 }
 
-// Llama a emitirFactura incrementando el secuencial automáticamente si el SRI
-// devuelve "ERROR SECUENCIAL REGISTRADO" (ya fue enviado antes aunque no autorizó).
 async function emitirConAutoRetry(orderSnap, startSecuencial, maxAttempts = 15) {
     let seq = seqFromInvoice(startSecuencial);
     let result;
@@ -850,16 +942,25 @@ app.post('/api/orders', (req, res) => {
         const amountNum = parseFloat(amount);
         if (isNaN(amountNum) || amountNum <= 0)
             return res.status(400).json({ ok: false, message: 'Monto inválido' });
+
+        /* Validar MIME del comprobante si se adjuntó */
+        if (req.file) {
+            const mime = detectMime(req.file.buffer);
+            if (!mime || !ALLOWED_MIMES_RECEIPT.has(mime))
+                return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes o PDF como comprobante' });
+        }
+
         const receiptUrl = req.file
             ? await saveFile(req.file.buffer, req.file.originalname, 'receipts')
             : '';
         const subtotal = Math.round((amountNum / 1.15) * 100) / 100;
         const iva      = Math.round((amountNum - subtotal) * 100) / 100;
-        // Vincular a cuenta de alumno si envió token de sesión
+
+        /* Vincular a cuenta de alumno si hay sesión activa */
         let linkedUserId = null;
-        const sessionTok = req.headers['x-session-token'] || req.body.sessionToken;
-        if (sessionTok) {
-            const sess = sessions.get(sessionTok);
+        const rawSessTok = req.headers['x-session-token'] || req.body.sessionToken;
+        if (rawSessTok) {
+            const sess = sessions.get(tokenHash(rawSessTok));
             if (sess && sess.role === 'alumno') linkedUserId = sess.userId;
         }
         const order = {
@@ -928,13 +1029,12 @@ app.put('/api/orders/:id/confirm', (req, res) => {
     writeOrders(orders);
     res.json({ ok: true, invoiceNumber: orders[idx].invoiceNumber });
 
-    /* Lanzar flujo SRI de forma asíncrona sin bloquear la respuesta */
     const orderId     = req.params.id;
     const secuencial  = orders[idx].invoiceNumber;
     const orderSnap   = { ...orders[idx] };
     setImmediate(async () => {
         try {
-            if (!getSRIConfig().ruc) return; // SRI no configurado — omitir silenciosamente
+            if (!getSRIConfig().ruc) return;
             const { result, invoiceNumber: usedInv } = await emitirConAutoRetry(orderSnap, secuencial);
             const all = readOrders();
             const i2  = all.findIndex(o => o.id === orderId);
@@ -962,7 +1062,6 @@ app.post('/api/orders/:id/sri-retry', (req, res) => {
     if (idx === -1) return res.status(404).json({ ok: false, message: 'Orden no encontrada' });
     if (orders[idx].status !== 'confirmado') return res.status(400).json({ ok: false, message: 'Solo se puede reintentar en órdenes confirmadas' });
 
-    // El secuencial anterior quedó registrado en el SRI aunque fallara; empezar desde +1.
     const startSeq = invoiceFromSeq(seqFromInvoice(orders[idx].invoiceNumber) + 1);
     orders[idx].invoiceNumber = startSeq;
     writeOrders(orders);
@@ -1018,14 +1117,9 @@ app.put('/api/orders/:id/reject', (req, res) => {
 app.get('/factura/:id', (req, res) => {
     const order = readOrders().find(o => o.id === req.params.id);
     if (!order) return res.status(404).send('<h2>Comprobante no encontrado</h2>');
-    // getSession lee del header; también aceptar ?t= para navegación directa desde admin
     let sess = getSession(req);
     if (!sess && req.query.t) {
-        const s = sessions.get(req.query.t);
-        if (s) {
-            const expiry = s.expiresAt || (s.ts + SESSION_TTL);
-            if (Date.now() < expiry) sess = s;
-        }
+        sess = getSessionByRawToken(req.query.t);
     }
     const isAdmin = sess && sess.role === 'admin';
     if (!isAdmin && req.query.token !== order.token)
@@ -1039,14 +1133,12 @@ app.get('/factura/:id', (req, res) => {
    ENLACES PRIVADOS DE PORTAFOLIO
    ══════════════════════════════════════════ */
 
-/* Info pública de un enlace (solo userId, sin hash) */
 app.get('/api/share-links/:shareId/info', (req, res) => {
     const link = readShareLinks().find(l => l.shareId === req.params.shareId && l.active !== false);
     if (!link) return res.status(404).json({ ok: false, message: 'Enlace no válido o inactivo' });
     res.json({ ok: true, userId: link.userId });
 });
 
-/* Verificar contraseña del enlace — emite token con TTL de 24 h */
 app.post('/api/share-links/:shareId/auth', loginLimiter, (req, res) => {
     const { password } = req.body || {};
     if (!password) return res.status(400).json({ ok: false, message: 'Contraseña requerida' });
@@ -1056,12 +1148,11 @@ app.post('/api/share-links/:shareId/auth', loginLimiter, (req, res) => {
         return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
     const token     = newToken();
     const expiresAt = Date.now() + SHARE_TTL;
-    sessions.set(token, { role: 'share', shareId: req.params.shareId, userId: link.userId, ts: Date.now(), expiresAt });
+    sessions.set(tokenHash(token), { role: 'share', shareId: req.params.shareId, userId: link.userId, ts: Date.now(), expiresAt });
     saveSessions(sessions);
     res.json({ ok: true, userId: link.userId, token, expiresAt });
 });
 
-/* Crear enlace privado */
 app.post('/api/share-links', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
@@ -1082,7 +1173,6 @@ app.post('/api/share-links', (req, res) => {
     res.json({ ok: true, shareId, password, url: base + '/portafolio-alumno.html?share=' + shareId });
 });
 
-/* Listar mis enlaces */
 app.get('/api/share-links', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
@@ -1091,7 +1181,6 @@ app.get('/api/share-links', (req, res) => {
     res.json(mine.map(({ shareId, label, active, createdAt }) => ({ shareId, label, active, createdAt })));
 });
 
-/* Revocar enlace */
 app.delete('/api/share-links/:shareId', (req, res) => {
     const sess = requireAuth(req, res);
     if (!sess) return;
