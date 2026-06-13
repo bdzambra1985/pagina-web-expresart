@@ -1433,9 +1433,12 @@ window.verifyOrder = (id) => {
     document.getElementById('verifyModal').style.display = 'flex';
 };
 
-document.getElementById('vmClose').onclick  = () => { document.getElementById('verifyModal').style.display = 'none'; };
-document.getElementById('verifyModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('verifyModal')) document.getElementById('verifyModal').style.display = 'none';
+// Los listeners del modal se registran después de que el DOM esté completo
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('vmClose').onclick = () => { document.getElementById('verifyModal').style.display = 'none'; };
+    document.getElementById('verifyModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('verifyModal')) document.getElementById('verifyModal').style.display = 'none';
+    });
 });
 
 /* Filtros */
