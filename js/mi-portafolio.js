@@ -661,9 +661,7 @@ function loadPayServices(services) {
 
 document.getElementById('toggleRegPagoBtn').addEventListener('click', function() {
     const section = document.getElementById('regPagoSection');
-    const isOpen  = section.style.display !== 'none';
-    if (isOpen) { section.style.display = 'none'; return; }
-    // Resetear siempre al abrir
+    // Siempre resetear al formulario vacío
     document.getElementById('regSuccessPanel').style.display = 'none';
     document.getElementById('formPanel').style.display       = 'block';
     document.getElementById('fName').value    = '';
