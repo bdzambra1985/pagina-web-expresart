@@ -87,10 +87,9 @@ async function emitirFactura(order, secuencial) {
     // Validar configuración mínima
     if (!cfg.ruc) throw new Error('SRI_RUC no configurado');
 
-    // 1) Fecha de emisión
-    const fecha = order.confirmedAt
-        ? order.confirmedAt.slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
+    // 1) Fecha de emisión en zona horaria Ecuador (UTC-5) para evitar error 65
+    const fechaBase = order.confirmedAt ? new Date(order.confirmedAt) : new Date();
+    const fecha = fechaBase.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
 
     // Extraer solo la parte numérica del secuencial si viene como "001-001-000000001"
     let secNum = secuencial;
