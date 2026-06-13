@@ -408,6 +408,9 @@
                     <div class="upload-name" id="uploadName"></div>
                 </div>
 
+                <label class="f-label">Mes que estás pagando</label>
+                <input id="fMonth" class="f-input" type="month" style="color-scheme:dark">
+
                 <label class="f-label">Notas adicionales (opcional)</label>
                 <textarea id="fNotes" class="f-textarea" placeholder="Ej: Pago para el nivel 2, grupo tarde…"></textarea>
 
@@ -559,8 +562,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     const email   = document.getElementById('fEmail').value.trim();
     const concept = document.getElementById('fConcept').value;
     const amount  = document.getElementById('fAmount').value;
-    const notes   = document.getElementById('fNotes').value.trim();
-    const receipt = document.getElementById('fReceipt').files[0];
+    const notes        = document.getElementById('fNotes').value.trim();
+    const paymentMonth = document.getElementById('fMonth').value;
+    const receipt      = document.getElementById('fReceipt').files[0];
 
     if (!name || !doc || !email || !concept || !amount) {
         alert('Por favor completa todos los campos obligatorios.');
@@ -581,6 +585,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     fd.append('concept',       concept);
     fd.append('amount',        amount);
     fd.append('notes',         notes);
+    fd.append('paymentMonth',  paymentMonth);
     fd.append('receipt',       receipt);
 
     // Vincular al usuario si está logueado
@@ -599,6 +604,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
         btnDone(btn);
     }
 });
+
+// Mes actual como valor por defecto
+document.getElementById('fMonth').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
 
 loadBankInfo();
 </script>

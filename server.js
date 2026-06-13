@@ -839,7 +839,7 @@ app.post('/api/bank-info', (req, res) => {
 app.post('/api/orders', (req, res) => {
     uploader.single('receipt')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
-        const { customerName, customerDoc, customerEmail, concept, amount, notes } = req.body;
+        const { customerName, customerDoc, customerEmail, concept, amount, notes, paymentMonth } = req.body;
         if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
             return res.status(400).json({ ok: false, message: 'Todos los campos son requeridos' });
         const amountNum = parseFloat(amount);
@@ -872,6 +872,7 @@ app.post('/api/orders', (req, res) => {
             ivaRate:         15,
             receiptUrl,
             notes:           (notes || '').trim().slice(0, 500),
+            paymentMonth:    /^\d{4}-\d{2}$/.test(paymentMonth || '') ? paymentMonth : null,
             invoiceNumber:   null,
             rejectionReason: '',
             createdAt:       new Date().toISOString(),
@@ -1026,8 +1027,6 @@ app.get('/factura/:id', (req, res) => {
         return res.status(403).send('<h2>Acceso no autorizado</h2>');
     if (order.status !== 'confirmado')
         return res.status(400).send('<h2>El pago aún no ha sido confirmado por EXPRESART.</h2>');
-    if (!order.sri || order.sri.status !== 'autorizado')
-        return res.status(202).send('<h2>La factura electrónica está siendo procesada por el SRI. Por favor intente nuevamente en unos minutos.</h2>');
     res.send(generateComprobanteHTML(order, readBankInfo()));
 });
 

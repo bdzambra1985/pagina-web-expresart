@@ -534,19 +534,21 @@
                 <p style="color:rgba(255,200,200,0.5);font-size:0.82em;">Cargando…</p>
             </div>
 
-            <!-- ── Calendario de pagos por alumno ── -->
+            <!-- ── Tabla de pagos: alumnos × meses ── -->
             <div class="pay-cal-wrap">
-                <h2 class="section-title"><i class="bx bx-calendar-check"></i> Historial de pagos por alumno</h2>
-                <div class="pay-cal-controls">
-                    <select id="calUserSelect" class="pay-cal-select">
-                        <option value="">— Seleccionar alumno —</option>
-                    </select>
+                <h2 class="section-title" style="margin-top:0"><i class="bx bx-table"></i> Historial de pagos por alumno</h2>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
                     <button class="cal-nav-btn" id="calPrev">&#8249;</button>
-                    <span class="cal-month-label" id="calMonthLabel"></span>
+                    <span class="cal-month-label" id="calYearLabel" style="min-width:60px;font-size:1.1rem;"></span>
                     <button class="cal-nav-btn" id="calNext">&#8250;</button>
+                    <span style="font-size:0.75em;color:rgba(255,200,200,0.45);margin-left:8px;">
+                        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c0392b;vertical-align:middle;margin-right:4px;"></span>Pagó
+                        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);vertical-align:middle;margin:0 4px 0 10px;"></span>Sin pago
+                    </span>
                 </div>
-                <div id="calGrid"></div>
-                <div id="calDetail"></div>
+                <div style="overflow-x:auto;">
+                    <div id="payMatrix"></div>
+                </div>
             </div>
         </div>
 
@@ -826,7 +828,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'alumnos') { loadUsers(); loadResetRequests(); loadCalUsers(); }
+        if (btn.dataset.tab === 'alumnos') { loadUsers(); loadResetRequests(); loadCalUsers(); renderMatrix(); }
     };
 });
 
@@ -968,120 +970,102 @@ async function dismissResetRequest(id) {
 }
 
 /* ══════════════════════════════════════
-   CALENDARIO DE PAGOS POR ALUMNO
+   TABLA PAGOS: ALUMNOS × MESES
    ══════════════════════════════════════ */
-let calOrders = [];
-let calYear   = new Date().getFullYear();
-let calMonth  = new Date().getMonth(); // 0-based
-
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let matrixYear  = new Date().getFullYear();
+let matrixUsers = [];
+let matrixAllOrders = []; // todas las órdenes
 
 async function loadCalUsers() {
-    const r    = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
-    const data = await r.json();
-    const sel  = document.getElementById('calUserSelect');
-    const alumnos = data.filter(u => u.role !== 'admin');
-    sel.innerHTML = '<option value="">— Seleccionar alumno —</option>'
-        + alumnos.map(u => `<option value="${u.userId}">${u.username}</option>`).join('');
+    const [usersRes, ordersRes] = await Promise.all([
+        fetch('/api/users',  { headers: { 'x-session-token': TOKEN } }),
+        fetch('/api/orders', { headers: { 'x-session-token': TOKEN } })
+    ]);
+    const users  = await usersRes.json();
+    const orders = await ordersRes.json();
+    matrixUsers     = users.filter(u => u.role !== 'admin');
+    matrixAllOrders = orders;
+    renderMatrix();
 }
 
-async function loadCalOrders(userId) {
-    if (!userId) { calOrders = []; renderCalendar(); return; }
-    const r = await fetch('/api/orders/by-user/' + userId, { headers: { 'x-session-token': TOKEN } });
-    calOrders = await r.json();
-    renderCalendar();
-}
-
-function renderCalendar() {
-    const grid   = document.getElementById('calGrid');
-    const detail = document.getElementById('calDetail');
-    detail.innerHTML = '';
-    document.getElementById('calMonthLabel').textContent = MESES[calMonth] + ' ' + calYear;
-
-    // Pagos confirmados de este mes (usar confirmedAt)
-    const payDays = {};
-    calOrders.forEach(o => {
-        if (o.status !== 'confirmado' || !o.confirmedAt) return;
+// Determina el mes de pago de una orden:
+// Usa paymentMonth si existe, sino el mes de confirmedAt
+function orderMonth(o) {
+    if (o.paymentMonth) return o.paymentMonth; // "YYYY-MM"
+    if (o.confirmedAt) {
         const d = new Date(o.confirmedAt);
-        const ecd = new Date(d.toLocaleString('en-US', { timeZone: 'America/Guayaquil' }));
-        if (ecd.getFullYear() !== calYear || ecd.getMonth() !== calMonth) return;
-        const day = ecd.getDate();
-        if (!payDays[day]) payDays[day] = [];
-        payDays[day].push(o);
+        const y = d.toLocaleString('en-US', { timeZone: 'America/Guayaquil', year: 'numeric' });
+        const m = d.toLocaleString('en-US', { timeZone: 'America/Guayaquil', month: '2-digit' });
+        return `${y}-${m}`;
+    }
+    return null;
+}
+
+function renderMatrix() {
+    document.getElementById('calYearLabel').textContent = matrixYear;
+    const wrap = document.getElementById('payMatrix');
+
+    if (!matrixUsers.length) {
+        wrap.innerHTML = '<p class="cal-no-user">No hay alumnos registrados.</p>';
+        return;
+    }
+
+    // Construir mapa: userId → Set de meses pagados ese año
+    const paid = {}; // paid[userId][monthStr] = [orders]
+    matrixUsers.forEach(u => { paid[u.userId] = {}; });
+    matrixAllOrders.forEach(o => {
+        if (o.status !== 'confirmado' || !o.userId) return;
+        const mo = orderMonth(o);
+        if (!mo || !mo.startsWith(matrixYear + '')) return;
+        if (!paid[o.userId]) return;
+        if (!paid[o.userId][mo]) paid[o.userId][mo] = [];
+        paid[o.userId][mo].push(o);
     });
 
-    const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const today = new Date();
-    const todayECStr = today.toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
+    // Tabla: filas = meses (Ene…Dic), columnas = alumnos
+    const colStyle = 'min-width:100px;text-align:center;padding:8px 6px;font-size:0.80em;';
+    const thStyle  = 'padding:8px 6px;font-size:0.68em;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,162,39,0.70);text-align:center;white-space:nowrap;';
 
-    let html = DIAS.map(d => `<div class="cal-head">${d}</div>`).join('');
-    for (let i = 0; i < firstDay; i++) html += '<div></div>';
+    let html = `<table style="border-collapse:collapse;width:100%;">
+    <thead><tr>
+        <th style="${thStyle}text-align:left;padding-left:4px;">Mes</th>
+        ${matrixUsers.map(u => `<th style="${thStyle}">${u.username}</th>`).join('')}
+    </tr></thead>
+    <tbody>`;
 
-    for (let d = 1; d <= daysInMonth; d++) {
-        const isToday = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` === todayECStr;
-        const pays = payDays[d];
-        if (pays) {
-            html += `<div class="cal-day has-pay${isToday?' today':''}" onclick="showCalDay(${d})">${d}<div class="pay-dot"></div></div>`;
-        } else {
-            html += `<div class="cal-day${isToday?' today':''}">${d}</div>`;
-        }
+    for (let m = 0; m < 12; m++) {
+        const mo = `${matrixYear}-${String(m + 1).padStart(2, '0')}`;
+        const isCurrentMonth = mo === new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
+        html += `<tr style="${isCurrentMonth ? 'background:rgba(201,162,39,0.06);' : ''}">
+            <td style="padding:8px 10px 8px 4px;font-size:0.82em;color:rgba(255,200,200,0.65);white-space:nowrap;">
+                ${isCurrentMonth ? `<strong style="color:#f0d060;">${MESES_CORTO[m]}</strong>` : MESES_CORTO[m]}
+            </td>
+            ${matrixUsers.map(u => {
+                const ords = (paid[u.userId] || {})[mo] || [];
+                if (ords.length) {
+                    const total = ords.reduce((s, o) => s + o.amount, 0);
+                    const tip   = ords.map(o => `${o.customerName} $${o.amount.toFixed(2)}`).join(', ');
+                    return `<td style="${colStyle}" title="${tip}">
+                        <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#c0392b;cursor:default;"
+                              title="$${total.toFixed(2)} — ${tip}"></span>
+                    </td>`;
+                }
+                return `<td style="${colStyle}">
+                    <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.16);"></span>
+                </td>`;
+            }).join('')}
+        </tr>`;
     }
-    grid.innerHTML = `<div class="cal-grid">${html}</div>`;
 
-    // Resumen del mes debajo
-    const monthPays = Object.values(payDays).flat();
-    if (monthPays.length) {
-        const total = monthPays.reduce((s, o) => s + o.amount, 0);
-        document.getElementById('calDetail').innerHTML =
-            `<p style="font-size:0.80em;color:rgba(201,162,39,0.70);margin-top:12px;">
-                ${monthPays.length} pago(s) en ${MESES[calMonth]} — Total: <strong style="color:#f0d060">$${total.toFixed(2)}</strong>
-             </p>`;
-    }
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
 }
 
-window.showCalDay = function(day) {
-    const ecd = new Date(calYear, calMonth, day);
-    const dayOrders = calOrders.filter(o => {
-        if (o.status !== 'confirmado' || !o.confirmedAt) return false;
-        const d = new Date(o.confirmedAt);
-        const loc = new Date(d.toLocaleString('en-US', { timeZone: 'America/Guayaquil' }));
-        return loc.getFullYear() === calYear && loc.getMonth() === calMonth && loc.getDate() === day;
-    });
-    const detail = document.getElementById('calDetail');
-    const dateStr = `${String(day).padStart(2,'0')}/${String(calMonth+1).padStart(2,'0')}/${calYear}`;
-    detail.innerHTML = `<div class="cal-day-detail">
-        <p style="font-size:0.75em;color:rgba(201,162,39,0.70);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Pagos del ${dateStr}</p>
-        ${dayOrders.map(o => `
-        <div class="cal-detail-row">
-            <div>
-                <div style="font-weight:600;color:#fff;">${o.customerName}</div>
-                <div style="font-size:0.87em;color:rgba(255,200,200,0.55);">${o.concept}${o.notes?` — ${o.notes.slice(0,40)}`:''}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-                <span style="color:#f0d060;font-weight:600;">$${parseFloat(o.amount).toFixed(2)}</span>
-                <a href="/factura/${o.id}" target="_blank" style="color:rgba(201,162,39,0.80);font-size:0.82em;text-decoration:none;border:1px solid rgba(201,162,39,0.30);padding:3px 8px;border-radius:5px;">
-                    <i class="bx bx-file"></i> Ver
-                </a>
-            </div>
-        </div>`).join('')}
-    </div>`;
-};
-
-document.getElementById('calUserSelect').onchange = e => loadCalOrders(e.target.value);
-document.getElementById('calPrev').onclick = () => {
-    if (calMonth === 0) { calMonth = 11; calYear--; } else calMonth--;
-    renderCalendar();
-};
-document.getElementById('calNext').onclick = () => {
-    if (calMonth === 11) { calMonth = 0; calYear++; } else calMonth++;
-    renderCalendar();
-};
+document.getElementById('calPrev').onclick = () => { matrixYear--; renderMatrix(); };
+document.getElementById('calNext').onclick = () => { matrixYear++; renderMatrix(); };
 
 loadCalUsers();
-renderCalendar();
 
 document.getElementById('createUserBtn').onclick = async () => {
     const username    = document.getElementById('new_username').value.trim();

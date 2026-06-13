@@ -473,6 +473,48 @@
         .share-revoke-btn:hover { background: rgba(200,15,15,0.60); }
         .share-empty { font-size: 0.78em; color: rgba(255,200,200,0.35); padding: 6px 0; }
 
+        /* ── Panel pago / historial ── */
+        .pay-panel {
+            display: none;
+            margin-top: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(201,162,39,0.25);
+            border-radius: 14px;
+            padding: 22px 24px;
+            animation: fadeSlide 0.25s ease-out;
+        }
+        @keyframes fadeSlide {
+            from { opacity:0; transform: translateY(-8px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+        .pay-panel.open { display: block; }
+        .pay-panel-top {
+            display: flex; align-items: center;
+            justify-content: space-between; flex-wrap: wrap;
+            gap: 10px; margin-bottom: 18px;
+        }
+        .pay-panel-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem; color: #c9a227;
+        }
+        .go-pay-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 20px;
+            background: rgba(160,10,10,0.70);
+            border: 1px solid rgba(220,40,40,0.55);
+            border-radius: 9px;
+            font-family: 'Poppins', sans-serif; font-size: 0.80em;
+            font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+            color: #fff; text-decoration: none;
+            transition: background 0.2s;
+        }
+        .go-pay-btn:hover { background: rgba(200,15,15,0.85); }
+        .pay-btn-active {
+            background: rgba(201,162,39,0.18) !important;
+            border-color: rgba(201,162,39,0.50) !important;
+            color: #f0d060 !important;
+        }
+
         /* ── Historial de pagos ── */
         .pay-table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin-top: 10px; }
         .pay-table th {
@@ -555,12 +597,25 @@
             <a id="previewBtn" href="#" target="_blank" class="preview-btn">
                 <i class="bx bx-show"></i> Ver mi portafolio
             </a>
-            <a href="pago.html" class="preview-btn pay-btn">
+            <button class="preview-btn pay-btn" id="payToggleBtn" onclick="togglePayPanel()">
                 <i class="bx bx-credit-card"></i> Pagar clases
-            </a>
+            </button>
             <button class="logout-btn" id="logoutBtn">
                 <i class="bx bx-log-out"></i> Cerrar sesión
             </button>
+        </div>
+    </div>
+
+    <!-- ══ PANEL PAGAR CLASES / HISTORIAL ══ -->
+    <div class="pay-panel" id="payPanel">
+        <div class="pay-panel-top">
+            <span class="pay-panel-title"><i class="bx bx-receipt"></i> Mis pagos</span>
+            <a href="pago.html" class="go-pay-btn">
+                <i class="bx bx-plus"></i> Registrar nuevo pago
+            </a>
+        </div>
+        <div id="myOrdersWrap">
+            <p class="pay-empty">Cargando…</p>
         </div>
     </div>
 
@@ -643,13 +698,6 @@
         <div class="share-list" id="shareList"></div>
     </div>
 
-    <!-- ── Historial de pagos ── -->
-    <div class="dash-section">
-        <h2 class="section-title"><i class="bx bx-receipt"></i> Historial de pagos</h2>
-        <div id="myOrdersWrap">
-            <p class="pay-empty">Cargando…</p>
-        </div>
-    </div>
 
 </div>
 
@@ -674,7 +722,6 @@ async function init() {
     document.getElementById('previewBtn').href = 'portafolio-alumno.html?id=' + myUserId;
     await loadProfile();
     await loadShareLinks();
-    loadMyOrders();
 }
 init();
 
@@ -1145,6 +1192,15 @@ window.revokeShareLink = async function(shareId) {
     else showToast(d.message || 'Error', true);
 };
 
+/* ── Toggle panel de pagos ── */
+function togglePayPanel() {
+    const panel = document.getElementById('payPanel');
+    const btn   = document.getElementById('payToggleBtn');
+    const open  = panel.classList.toggle('open');
+    btn.classList.toggle('pay-btn-active', open);
+    if (open) loadMyOrders();
+}
+
 /* ── Historial de pagos ── */
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
@@ -1175,10 +1231,10 @@ async function loadMyOrders() {
                                : o.status === 'rechazado'  ? 'Rechazado'
                                : 'Pendiente';
                 const docs = o.status === 'confirmado'
-                    ? `<a class="pay-link" href="/factura/${o.id}" target="_blank"><i class="bx bx-file"></i> Comprobante</a>`
+                    ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-file"></i> Comprobante</a>`
                     : '';
                 const sri = o.sri && o.sri.status === 'autorizado'
-                    ? `<a class="pay-link" href="/factura/${o.id}#factura" target="_blank"><i class="bx bx-receipt"></i> Factura</a>`
+                    ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-receipt"></i> Factura</a>`
                     : '';
                 return `<tr>
                     <td>${fecha}</td>
