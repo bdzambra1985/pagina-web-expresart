@@ -601,6 +601,157 @@ document.addEventListener('DOMContentLoaded', () => {
     if (next) next.onclick = () => { myMatYear++; renderMyMatrix(); };
 });
 
+/* ══════════════════════════════════════════
+   REGISTRO DE PAGO INLINE
+   ══════════════════════════════════════════ */
+let bankInfoLoaded = false;
+let bankInfoData   = {};
+
+async function loadBankInfo() {
+    try {
+        const r    = await fetch('/api/bank-info');
+        bankInfoData = await r.json();
+        renderBankInfo(bankInfoData);
+        loadPayServices(bankInfoData.services || []);
+    } catch {
+        const el = document.getElementById('bankData');
+        if (el) el.innerHTML = '<p class="no-bank">No se pudieron cargar los datos bancarios.</p>';
+    }
+}
+
+function renderBankInfo(info) {
+    const el = document.getElementById('bankData');
+    if (!el) return;
+    if (!info.bankName && !info.accountNumber) {
+        el.innerHTML = '<p class="no-bank">Los datos bancarios aún no han sido configurados.</p>';
+        return;
+    }
+    const rows = [
+        { label: 'Banco',          value: info.bankName      || '' },
+        { label: 'Tipo de cuenta', value: info.accountType   || '' },
+        { label: 'No. de cuenta',  value: info.accountNumber || '', copy: true },
+        { label: 'Titular',        value: info.accountHolder || '' },
+        { label: 'RUC / Cédula',   value: info.ruc           || '' },
+    ].filter(r => r.value);
+    el.innerHTML = rows.map(r => `
+        <div class="bank-row">
+            <span class="bank-label">${r.label}</span>
+            <span class="bank-value">${r.value}${r.copy ? ` <button class="copy-btn" data-action="copy-bank" data-val="${r.value}">Copiar</button>` : ''}</span>
+        </div>`).join('');
+}
+
+function loadPayServices(services) {
+    const sel = document.getElementById('fConcept');
+    if (!sel) return;
+    sel.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+    services.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.name + (s.price ? ` — $${s.price}` : '');
+        opt.textContent = s.name + (s.price ? ` — $${parseFloat(s.price).toFixed(2)}` : '');
+        if (s.price) opt.dataset.price = s.price;
+        sel.appendChild(opt);
+    });
+    const other = document.createElement('option');
+    other.value = 'Otro'; other.textContent = 'Otro (especificar en notas)';
+    sel.appendChild(other);
+}
+
+document.getElementById('toggleRegPagoBtn').addEventListener('click', function() {
+    const section = document.getElementById('regPagoSection');
+    const isOpen  = section.style.display !== 'none';
+    section.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+        if (!bankInfoLoaded) { loadBankInfo(); bankInfoLoaded = true; }
+        document.getElementById('fMonth').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
+        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+});
+
+document.getElementById('fConcept').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt && opt.dataset.price) {
+        document.getElementById('fAmount').value = parseFloat(opt.dataset.price).toFixed(2);
+        updateRegIVA();
+    }
+});
+
+function updateRegIVA() {
+    const amount  = parseFloat(document.getElementById('fAmount').value);
+    const preview = document.getElementById('ivaPreview');
+    if (!amount || amount <= 0) { preview.style.display = 'none'; return; }
+    const subtotal = (amount / 1.15).toFixed(2);
+    const iva      = (amount - subtotal).toFixed(2);
+    document.getElementById('ivaSubtotal').textContent = '$' + subtotal;
+    document.getElementById('ivaAmount').textContent   = '$' + iva;
+    document.getElementById('ivaTotal').textContent    = '$' + amount.toFixed(2);
+    preview.style.display = 'block';
+}
+document.getElementById('fAmount').addEventListener('input', updateRegIVA);
+
+document.getElementById('fReceipt').addEventListener('change', function() {
+    const zone = document.getElementById('uploadZone');
+    const name = document.getElementById('uploadName');
+    if (this.files[0]) { name.textContent = '✓ ' + this.files[0].name; zone.classList.add('has-file'); }
+    else               { name.textContent = ''; zone.classList.remove('has-file'); }
+});
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action="copy-bank"]');
+    if (btn) navigator.clipboard.writeText(btn.dataset.val).catch(() => {});
+});
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
+    const name    = document.getElementById('fName').value.trim();
+    const doc     = document.getElementById('fDoc').value.trim();
+    const email   = document.getElementById('fEmail').value.trim();
+    const concept = document.getElementById('fConcept').value;
+    const amount  = document.getElementById('fAmount').value;
+    const notes   = document.getElementById('fNotes').value.trim();
+    const month   = document.getElementById('fMonth').value;
+    const receipt = document.getElementById('fReceipt').files[0];
+    if (!name || !doc || !email || !concept || !amount) { showToast('Completa todos los campos obligatorios', true); return; }
+    if (!receipt) { showToast('Adjunta el comprobante de transferencia', true); return; }
+    const btn = document.getElementById('submitBtn');
+    btnLoad(btn);
+    const fd = new FormData();
+    fd.append('customerName',  name);
+    fd.append('customerDoc',   doc);
+    fd.append('customerEmail', email);
+    fd.append('concept',       concept);
+    fd.append('amount',        amount);
+    fd.append('notes',         notes);
+    fd.append('paymentMonth',  month);
+    fd.append('receipt',       receipt);
+    try {
+        const r    = await fetch('/api/orders', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: fd });
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.message);
+        document.getElementById('regSuccessId').textContent = 'Ref: ' + data.orderId;
+        document.getElementById('formPanel').style.display        = 'none';
+        document.getElementById('regSuccessPanel').style.display  = 'block';
+        loadMyOrders();
+    } catch (e) {
+        showToast('Error al enviar: ' + e.message, true);
+        btnDone(btn);
+    }
+});
+
+document.getElementById('backHistBtn').addEventListener('click', function() {
+    document.getElementById('regPagoSection').style.display  = 'none';
+    document.getElementById('regSuccessPanel').style.display = 'none';
+    document.getElementById('formPanel').style.display       = 'block';
+    document.getElementById('fName').value    = '';
+    document.getElementById('fDoc').value     = '';
+    document.getElementById('fEmail').value   = '';
+    document.getElementById('fConcept').selectedIndex = 0;
+    document.getElementById('fAmount').value  = '';
+    document.getElementById('fNotes').value   = '';
+    document.getElementById('fReceipt').value = '';
+    document.getElementById('uploadName').textContent = '';
+    document.getElementById('uploadZone').classList.remove('has-file');
+    document.getElementById('ivaPreview').style.display = 'none';
+});
+
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
     try {
