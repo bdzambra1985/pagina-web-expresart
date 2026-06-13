@@ -547,6 +547,9 @@ function showPayView() {
     document.getElementById('payPanel').classList.add('open');
     document.getElementById('editToggleBtn').classList.remove('tab-active');
     document.getElementById('payToggleBtn').classList.add('tab-active');
+    document.getElementById('regPagoSection').style.display = 'none';
+    document.getElementById('regSuccessPanel').style.display = 'none';
+    document.getElementById('formPanel').style.display = 'block';
     loadMyOrders();
 }
 
