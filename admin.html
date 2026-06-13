@@ -1653,15 +1653,20 @@ function renderOrders() {
                     sriBadge = '<span style="color:#c9a227;font-size:.78em">⏳ Procesando</span>';
                 }
             }
+            const receiptLink = o.receiptUrl
+                ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
+                : '';
             const actions = o.status === 'pendiente' ? `
                 <button onclick="verifyOrder('${o.id}')" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px;background:rgba(201,162,39,.25);color:#c9a227;border:1px solid rgba(201,162,39,.5)">🔍 Verificar</button>
+                ${receiptLink}
             ` : o.status === 'confirmado' ? `
-                ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎</a>` : ''}
+                ${receiptLink}
                 ${o.sri && o.sri.status === 'autorizado'
-                    ? `<a href="/factura/${o.id}?t=${TOKEN}" target="_blank" class="edit-btn">🧾 Ver factura</a>`
+                    ? `<a href="/factura/${o.id}?t=${TOKEN}" target="_blank" class="edit-btn">🧾 Factura SRI</a>`
                     : ''}
             ` : `
                 <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
+                ${receiptLink}
             `;
             return `<tr>
                 <td style="font-size:.8em">${fecha}</td>

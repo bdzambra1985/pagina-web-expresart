@@ -32,6 +32,9 @@ function initNavAuth() {
                 link.href = 'mi-portafolio.html';
                 link.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 6px;line-height:1';
                 link.innerHTML = avatarHTML + '<span style="font-size:0.60rem;letter-spacing:1px;color:rgba(255,255,255,0.70);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(firstName) + '</span>';
+                // Show "Mi Perfil" nav-cta if the page has it
+                var miPerfilItem = document.getElementById('navMiPerfilItem');
+                if (miPerfilItem) miPerfilItem.style.display = '';
             }
         })
         .catch(function() {});

@@ -1250,11 +1250,11 @@ async function loadMyOrders() {
                 const badgeTxt = o.status === 'confirmado' ? 'Confirmado'
                                : o.status === 'rechazado'  ? 'Rechazado'
                                : 'Pendiente';
-                const docs = o.status === 'confirmado'
-                    ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-file"></i> Comprobante</a>`
+                const docs = o.receiptUrl
+                    ? `<a class="pay-link" href="${esc(o.receiptUrl)}" target="_blank"><i class="bx bx-image-alt"></i> Comprobante</a>`
                     : '';
                 const sri = o.sri && o.sri.status === 'autorizado'
-                    ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-receipt"></i> Factura</a>`
+                    ? `<a class="pay-link" href="/factura/${o.id}?token=${o.token}" target="_blank"><i class="bx bx-receipt"></i> Factura SRI</a>`
                     : '';
                 return `<tr>
                     <td>${fecha}</td>
