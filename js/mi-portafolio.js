@@ -736,21 +736,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('backHistBtn').addEventListener('click', function() {
-    document.getElementById('regPagoSection').style.display  = 'none';
-    document.getElementById('regSuccessPanel').style.display = 'none';
-    document.getElementById('formPanel').style.display       = 'block';
-    document.getElementById('fName').value    = '';
-    document.getElementById('fDoc').value     = '';
-    document.getElementById('fEmail').value   = '';
-    document.getElementById('fConcept').selectedIndex = 0;
-    document.getElementById('fAmount').value  = '';
-    document.getElementById('fNotes').value   = '';
-    document.getElementById('fReceipt').value = '';
-    document.getElementById('uploadName').textContent = '';
-    document.getElementById('uploadZone').classList.remove('has-file');
-    document.getElementById('ivaPreview').style.display = 'none';
-});
 
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
