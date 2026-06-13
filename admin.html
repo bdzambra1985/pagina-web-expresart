@@ -1348,9 +1348,7 @@ function renderOrders() {
                 }
             }
             const actions = o.status === 'pendiente' ? `
-                ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎 Comprobante</a>` : ''}
-                <button onclick="confirmOrder('${o.id}')" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px">✅ Confirmar</button>
-                <button onclick="rejectOrder('${o.id}')" class="del-btn" style="padding:4px 10px;font-size:.78em">❌ Rechazar</button>
+                <button onclick="verifyOrder('${o.id}')" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px;background:rgba(201,162,39,.25);color:#c9a227;border:1px solid rgba(201,162,39,.5)">🔍 Verificar</button>
             ` : o.status === 'confirmado' ? `
                 ${o.receiptUrl ? `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="margin-right:4px">📎</a>` : ''}
                 ${o.sri && o.sri.status === 'autorizado'
@@ -1398,6 +1396,48 @@ window.sriRetry = async (id) => {
 };
 
 
+/* ── Modal de verificación de comprobante ───────────────────────── */
+window.verifyOrder = (id) => {
+    const o = allOrders.find(x => x.id === id);
+    if (!o) return;
+    const isImg = o.receiptUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(o.receiptUrl);
+    const isPdf = o.receiptUrl && /\.pdf(\?|$)/i.test(o.receiptUrl);
+    const preview = !o.receiptUrl
+        ? `<div class="vm-no-receipt">Sin comprobante adjunto</div>`
+        : isImg
+        ? `<img src="${o.receiptUrl}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
+        : isPdf
+        ? `<iframe src="${o.receiptUrl}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
+        : `<a href="${o.receiptUrl}" target="_blank" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
+
+    document.getElementById('vmPreview').innerHTML = preview;
+    document.getElementById('vmName').textContent    = o.customerName;
+    document.getElementById('vmDoc').textContent     = o.customerDoc;
+    document.getElementById('vmEmail').textContent   = o.customerEmail;
+    document.getElementById('vmConcept').textContent = o.concept;
+    document.getElementById('vmNotes').textContent   = o.notes || '—';
+    document.getElementById('vmAmount').textContent  = '$' + parseFloat(o.amount).toFixed(2);
+    document.getElementById('vmSubtotal').textContent= '$' + parseFloat(o.subtotal || 0).toFixed(2);
+    document.getElementById('vmIva').textContent     = '$' + parseFloat(o.iva || 0).toFixed(2);
+    document.getElementById('vmDate').textContent    = new Date(o.createdAt).toLocaleString('es-EC');
+
+    document.getElementById('vmConfirm').onclick = async () => {
+        document.getElementById('verifyModal').style.display = 'none';
+        await confirmOrder(id);
+    };
+    document.getElementById('vmReject').onclick = async () => {
+        document.getElementById('verifyModal').style.display = 'none';
+        await rejectOrder(id);
+    };
+
+    document.getElementById('verifyModal').style.display = 'flex';
+};
+
+document.getElementById('vmClose').onclick  = () => { document.getElementById('verifyModal').style.display = 'none'; };
+document.getElementById('verifyModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('verifyModal')) document.getElementById('verifyModal').style.display = 'none';
+});
+
 /* Filtros */
 document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.onclick = () => {
@@ -1416,5 +1456,72 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 </script>
+
+<!-- Modal verificación comprobante -->
+<div id="verifyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:12px;width:100%;max-width:900px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+    <!-- Cabecera -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1)">
+      <h3 style="margin:0;font-size:1rem;color:#c9a227">🔍 Verificar comprobante de pago</h3>
+      <button id="vmClose" style="background:none;border:none;color:rgba(255,200,200,.6);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <!-- Cuerpo (dos columnas) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;overflow:auto;flex:1">
+      <!-- Izquierda: comprobante -->
+      <div style="padding:20px;border-right:1px solid rgba(255,255,255,.08);background:#111;overflow:auto">
+        <p style="margin:0 0 12px;font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#666">Comprobante subido por el alumno</p>
+        <div id="vmPreview"></div>
+      </div>
+      <!-- Derecha: datos ingresados -->
+      <div style="padding:20px;overflow:auto">
+        <p style="margin:0 0 14px;font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#666">Datos ingresados en el formulario</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5);width:110px">Nombre</td>
+            <td id="vmName" style="padding:8px 4px;font-weight:600;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Cédula/RUC</td>
+            <td id="vmDoc" style="padding:8px 4px;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Correo</td>
+            <td id="vmEmail" style="padding:8px 4px;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Concepto</td>
+            <td id="vmConcept" style="padding:8px 4px;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Notas</td>
+            <td id="vmNotes" style="padding:8px 4px;color:#aaa;font-style:italic"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Subtotal</td>
+            <td id="vmSubtotal" style="padding:8px 4px;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">IVA 15%</td>
+            <td id="vmIva" style="padding:8px 4px;color:#eee"></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">TOTAL</td>
+            <td id="vmAmount" style="padding:8px 4px;font-size:1.1rem;font-weight:700;color:#c9a227"></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 4px;color:rgba(255,200,200,.5)">Enviado</td>
+            <td id="vmDate" style="padding:8px 4px;color:#aaa;font-size:.82rem"></td>
+          </tr>
+        </table>
+        <!-- Acciones -->
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button id="vmConfirm" class="save-btn" style="flex:1;padding:10px">✅ Confirmar pago</button>
+          <button id="vmReject" class="del-btn" style="flex:1;padding:10px">❌ Rechazar</button>
+        </div>
+        <p style="margin:10px 0 0;font-size:.75rem;color:rgba(255,200,200,.35);text-align:center">Compara el nombre y monto del comprobante con los datos del formulario antes de confirmar</p>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
