@@ -130,7 +130,7 @@ async function toggleUser(userId, currentlyActive) {
         body: JSON.stringify({ active: !currentlyActive })
     });
     const d = await r.json();
-    if (d.ok) { showToast(currentlyActive ? '✓ Alumno desactivado' : '✓ Alumno activado'); loadUsers(); }
+    if (d.ok) { showToast(currentlyActive ? '✓ Alumno desactivado' : '✓ Alumno activado'); loadUsers(); loadResetRequests(); loadCalUsers(); renderMatrix(); }
     else        showToast(d.message || 'Error', true);
 }
 
@@ -141,7 +141,7 @@ async function deleteUser(userId, username) {
         headers: { 'x-session-token': TOKEN }
     });
     const d = await r.json();
-    if (d.ok) { showToast('✓ Alumno eliminado'); loadUsers(); }
+    if (d.ok) { showToast('✓ Alumno eliminado'); loadUsers(); loadResetRequests(); loadCalUsers(); renderMatrix(); }
     else        showToast(d.message || 'Error', true);
 }
 
@@ -945,7 +945,7 @@ document.addEventListener('click', function(e) {
     if (action === 'toggle-user') {
         toggleUser(el.dataset.uid, el.dataset.active === 'true');
     } else if (action === 'view-portfolio') {
-        window.open('portafolio-alumno.html?id=' + el.dataset.uid, '_blank');
+        location.href = 'portafolio-alumno.html?id=' + el.dataset.uid;
     } else if (action === 'admin-reset-pw') {
         adminResetPassword(el.dataset.uid, el.dataset.username);
     } else if (action === 'delete-user') {
