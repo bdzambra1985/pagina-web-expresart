@@ -23,18 +23,22 @@ function initNavAuth() {
                 link.textContent = 'Admin';
                 link.href = 'admin.html';
             } else {
-                // Reemplazar el <a> con un widget foto + nombre
-                var name = d.displayName || 'Mi Perfil';
-                var firstName = name.split(' ')[0];
-                var avatarHTML = d.photoUrl
-                    ? '<img src="' + esc(d.photoUrl) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(201,162,39,0.55);pointer-events:none;flex-shrink:0">'
-                    : '<span style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,0.18);border:1.5px solid rgba(201,162,39,0.40);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.78rem;color:#c9a227">' + esc(firstName.charAt(0).toUpperCase()) + '</span>';
-                link.href = 'mi-portafolio.html';
-                link.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 6px;line-height:1';
-                link.innerHTML = avatarHTML + '<span style="font-size:0.60rem;letter-spacing:1px;color:rgba(255,255,255,0.70);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(firstName) + '</span>';
-                // Show "Mi Perfil" nav-cta if the page has it
                 var miPerfilItem = document.getElementById('navMiPerfilItem');
-                if (miPerfilItem) miPerfilItem.style.display = '';
+                if (miPerfilItem) {
+                    // Página con navMiPerfilItem: mostrar el botón y ocultar el link de login
+                    miPerfilItem.style.display = '';
+                    link.style.display = 'none';
+                } else {
+                    // Sin navMiPerfilItem: usar widget foto + nombre en el link de login
+                    var name = d.displayName || 'Mi Perfil';
+                    var firstName = name.split(' ')[0];
+                    var avatarHTML = d.photoUrl
+                        ? '<img src="' + esc(d.photoUrl) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(201,162,39,0.55);pointer-events:none;flex-shrink:0">'
+                        : '<span style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,39,0.18);border:1.5px solid rgba(201,162,39,0.40);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.78rem;color:#c9a227">' + esc(firstName.charAt(0).toUpperCase()) + '</span>';
+                    link.href = 'mi-portafolio.html';
+                    link.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 6px;line-height:1';
+                    link.innerHTML = avatarHTML + '<span style="font-size:0.60rem;letter-spacing:1px;color:rgba(255,255,255,0.70);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(firstName) + '</span>';
+                }
             }
         })
         .catch(function() {});
