@@ -717,6 +717,7 @@ async function init() {
     if (heroEl && earlyName) heroEl.textContent = earlyName;
     await loadProfile();
     await loadShareLinks();
+    if (new URLSearchParams(location.search).get('view') === 'pay') showPayView();
 }
 init();
 
