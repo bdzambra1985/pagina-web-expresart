@@ -517,6 +517,7 @@
         }
 
         /* ── Historial de pagos ── */
+        #myOrdersWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .pay-table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin-top: 10px; }
         .pay-table th {
             text-align: left; padding: 8px 12px;
@@ -612,8 +613,8 @@
             .prod-collage-grid { grid-template-columns: repeat(5, 1fr); }
             .creds-row { flex-wrap: wrap; }
             .creds-val { word-break: break-all; }
-            .pay-table th:nth-child(3),
-            .pay-table td:nth-child(3) { display: none; }
+            .pay-table th:nth-child(1),
+            .pay-table td:nth-child(1) { display: none; }
         }
 
         /* ── Registro de pago inline ── */

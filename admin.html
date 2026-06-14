@@ -136,6 +136,12 @@
         .collapsible-body.collapsed { display: none; }
 
         /* ── Tabla de alumnos ── */
+        #usersTableWrap,
+        #eventsListWrap,
+        #ordersWrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         .user-table {
             width: 100%;
             border-collapse: collapse;
@@ -392,7 +398,7 @@
             .admin-section { padding: 18px 14px; }
             .tabs {
                 gap: 0;
-                overflow-x: visible;
+                overflow-x: auto;
                 flex-wrap: nowrap;
                 top: 50px;
             }
@@ -404,6 +410,23 @@
                 gap: 4px;
                 letter-spacing: 0.5px;
             }
+            /* Ocultar columnas secundarias en móvil */
+            #usersTableWrap .user-table th:nth-child(2),
+            #usersTableWrap .user-table td:nth-child(2),
+            #usersTableWrap .user-table th:nth-child(3),
+            #usersTableWrap .user-table td:nth-child(3) { display: none; }
+
+            #eventsListWrap .user-table th:nth-child(3),
+            #eventsListWrap .user-table td:nth-child(3),
+            #eventsListWrap .user-table th:nth-child(4),
+            #eventsListWrap .user-table td:nth-child(4),
+            #eventsListWrap .user-table th:nth-child(5),
+            #eventsListWrap .user-table td:nth-child(5) { display: none; }
+
+            #ordersWrap .user-table th:nth-child(3),
+            #ordersWrap .user-table td:nth-child(3),
+            #ordersWrap .user-table th:nth-child(6),
+            #ordersWrap .user-table td:nth-child(6) { display: none; }
         }
         /* ── Calendario de pagos ── */
         .pay-cal-wrap { margin-top: 32px; }
