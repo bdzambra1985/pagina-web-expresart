@@ -78,6 +78,22 @@ document.getElementById('resetPwCloseBtn').addEventListener('click', function() 
     document.getElementById('resetPwModal').style.display = 'none';
 });
 
+/* ── Paginación ── */
+const PAGE_SIZE = 8;
+let usersPage  = 0;
+let eventsPage = 0;
+let ordersPage = 0;
+
+function buildPager(total, page, action) {
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (pages <= 1) return '';
+    return `<div class="pager">
+        <button class="pager-btn" data-action="${action}" data-page="${page - 1}" ${page === 0 ? 'disabled' : ''}>‹ Anterior</button>
+        <span class="pager-info">Página ${page + 1} de ${pages}</span>
+        <button class="pager-btn" data-action="${action}" data-page="${page + 1}" ${page >= pages - 1 ? 'disabled' : ''}>Siguiente ›</button>
+    </div>`;
+}
+
 /* ══════════════════════
    TAB ALUMNOS
    ══════════════════════ */
@@ -92,6 +108,10 @@ async function loadUsers() {
         return;
     }
 
+    const page  = Math.min(usersPage, Math.max(0, Math.ceil(alumnos.length / PAGE_SIZE) - 1));
+    usersPage   = page;
+    const slice = alumnos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
     wrap.innerHTML = `
         <table class="user-table">
             <thead>
@@ -103,7 +123,7 @@ async function loadUsers() {
                 </tr>
             </thead>
             <tbody>
-                ${alumnos.map(u => `
+                ${slice.map(u => `
                 <tr data-uid="${u.userId}">
                     <td>${u.username}</td>
                     <td>
@@ -133,7 +153,8 @@ async function loadUsers() {
                     </td>
                 </tr>`).join('')}
             </tbody>
-        </table>`;
+        </table>
+        ${buildPager(alumnos.length, page, 'page-users')}`;
 }
 
 async function toggleUser(userId, currentlyActive) {
@@ -722,6 +743,10 @@ async function loadEvents() {
 
     adminEvts.sort((a,b) => a.date.localeCompare(b.date));
 
+    const page  = Math.min(eventsPage, Math.max(0, Math.ceil(adminEvts.length / PAGE_SIZE) - 1));
+    eventsPage  = page;
+    const slice = adminEvts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
     wrap.innerHTML = `
         <table class="user-table">
             <thead>
@@ -735,7 +760,7 @@ async function loadEvents() {
                 </tr>
             </thead>
             <tbody>
-                ${adminEvts.map(ev => {
+                ${slice.map(ev => {
                     const cat = EVT_CATS[ev.category] || EVT_CATS.otro;
                     const [y,m,d] = (ev.date||'').split('-');
                     const dateLabel = d ? parseInt(d)+' '+MONTHS_ES_SHORT[parseInt(m)-1]+' '+y : ev.date;
@@ -757,7 +782,8 @@ async function loadEvents() {
                     </tr>`;
                 }).join('')}
             </tbody>
-        </table>`;
+        </table>
+        ${buildPager(adminEvts.length, page, 'page-events')}`;
 }
 
 function editEvent(ev) {
@@ -946,16 +972,20 @@ function maybeStartSriPolling() {
 }
 
 function renderOrders() {
-    const wrap = document.getElementById('ordersWrap');
-    const list = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
+    const wrap    = document.getElementById('ordersWrap');
+    const list    = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
     if (!list.length) { wrap.innerHTML = '<p class="no-users">Sin pagos en esta categoría.</p>'; return; }
+
+    const page    = Math.min(ordersPage, Math.max(0, Math.ceil(list.length / PAGE_SIZE) - 1));
+    ordersPage    = page;
+    const slice   = list.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     wrap.innerHTML = `<table class="user-table">
         <thead><tr>
             <th>Fecha</th><th>Cliente</th><th>Concepto</th>
             <th>Total</th><th>Estado</th><th>SRI</th><th>Acciones</th>
         </tr></thead>
-        <tbody>${list.map(o => {
+        <tbody>${slice.map(o => {
             const fecha = new Date(o.createdAt).toLocaleDateString('es-EC');
             const badge = o.status === 'confirmado'
                 ? '<span style="color:#5d5;font-size:.8em">✅ Confirmado</span>'
@@ -1001,7 +1031,8 @@ function renderOrders() {
                 <td>${actions}</td>
             </tr>`;
         }).join('')}</tbody>
-    </table>`;
+    </table>
+    ${buildPager(list.length, page, 'page-orders')}`;
 }
 
 window.confirmOrder = async (id) => {
@@ -1091,6 +1122,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.filter;
+        ordersPage = 0;
         renderOrders();
     };
 });
@@ -1128,5 +1160,11 @@ document.addEventListener('click', function(e) {
         window.sriRetry(el.dataset.id);
     } else if (action === 'verify-order') {
         window.verifyOrder(el.dataset.id);
+    } else if (action === 'page-users') {
+        usersPage = parseInt(el.dataset.page); loadUsers();
+    } else if (action === 'page-events') {
+        eventsPage = parseInt(el.dataset.page); loadEvents();
+    } else if (action === 'page-orders') {
+        ordersPage = parseInt(el.dataset.page); renderOrders();
     }
 });

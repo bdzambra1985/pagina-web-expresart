@@ -428,6 +428,32 @@
             #ordersWrap .user-table th:nth-child(6),
             #ordersWrap .user-table td:nth-child(6) { display: none; }
         }
+        /* ── Paginación ── */
+        .pager {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 14px 0 6px;
+        }
+        .pager-btn {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.76em;
+            padding: 5px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(201,162,39,0.35);
+            background: rgba(201,162,39,0.10);
+            color: #c9a227;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pager-btn:hover:not(:disabled) { background: rgba(201,162,39,0.22); }
+        .pager-btn:disabled { opacity: 0.35; cursor: default; }
+        .pager-info {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.76em;
+            color: rgba(255,200,200,0.55);
+        }
         /* ── Calendario de pagos ── */
         .pay-cal-wrap { margin-top: 32px; }
         .pay-cal-controls {
