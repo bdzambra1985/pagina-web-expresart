@@ -127,7 +127,7 @@ function renderUsers() {
     const slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     wrap.innerHTML = `
-        <table class="user-table">
+        <div class="tbl-scroll"><table class="user-table">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -167,7 +167,7 @@ function renderUsers() {
                     </td>
                 </tr>`).join('')}
             </tbody>
-        </table>
+        </table></div>
         ${buildPager(filtered.length, page, 'page-users')}`;
 }
 
@@ -762,7 +762,7 @@ async function loadEvents() {
     const slice = adminEvts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     wrap.innerHTML = `
-        <table class="user-table">
+        <div class="tbl-scroll"><table class="user-table">
             <thead>
                 <tr>
                     <th>Fecha</th>
@@ -796,7 +796,7 @@ async function loadEvents() {
                     </tr>`;
                 }).join('')}
             </tbody>
-        </table>
+        </table></div>
         ${buildPager(adminEvts.length, page, 'page-events')}`;
 }
 
@@ -1005,7 +1005,7 @@ function renderOrders() {
     ordersPage    = page;
     const slice   = list.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-    wrap.innerHTML = `<table class="user-table">
+    wrap.innerHTML = `<div class="tbl-scroll"><table class="user-table">
         <thead><tr>
             <th>Fecha</th><th>Cliente</th><th>Concepto</th>
             <th>Total</th><th>Estado</th><th>SRI</th><th>Acciones</th>
@@ -1056,7 +1056,7 @@ function renderOrders() {
                 <td>${actions}</td>
             </tr>`;
         }).join('')}</tbody>
-    </table>
+    </table></div>
     ${buildPager(list.length, page, 'page-orders')}`;
 }
 
