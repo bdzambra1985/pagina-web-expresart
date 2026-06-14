@@ -464,7 +464,7 @@ app.get('/api/users', async (req, res) => {
         if (!requireAdmin(req, res)) return;
         const users = await db.getUsers();
         res.json(users.map(u => ({
-            userId: u.userId, username: u.username,
+            userId: u.userId, username: u.username, displayName: u.displayName || '',
             role: u.role, active: u.active, createdAt: u.createdAt
         })));
     } catch(e) { console.error(e); res.status(500).json({ ok: false, message: 'Error interno' }); }
@@ -831,12 +831,18 @@ app.post('/api/orders', (req, res) => {
 app.post('/api/orders/cash-invoice', async (req, res) => {
     try {
         if (!requireAdmin(req, res)) return;
-        const { customerName, customerDoc, customerEmail, concept, amount, paymentMonth, notes } = req.body;
+        const { customerName, customerDoc, customerEmail, concept, amount, paymentMonth, notes, userId: linkedUserId } = req.body;
         if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
             return res.status(400).json({ ok: false, message: 'Completa todos los campos obligatorios' });
         const amountNum = parseFloat(amount);
         if (isNaN(amountNum) || amountNum <= 0)
             return res.status(400).json({ ok: false, message: 'Monto inválido' });
+        // Validate linkedUserId exists if provided
+        let resolvedUserId = null;
+        if (linkedUserId) {
+            const linkedUser = await db.getUserById(linkedUserId);
+            if (linkedUser && linkedUser.role === 'alumno') resolvedUserId = linkedUser.userId;
+        }
         const subtotal = parseFloat((amountNum / 1.15).toFixed(2));
         const iva      = parseFloat((amountNum - subtotal).toFixed(2));
         const invoiceNumber = await db.nextInvoiceNumber();
@@ -844,7 +850,7 @@ app.post('/api/orders/cash-invoice', async (req, res) => {
         const orderId = 'ord_' + Date.now();
         const order = {
             id: orderId, token: crypto.randomBytes(16).toString('hex'),
-            status: 'confirmado', userId: null,
+            status: 'confirmado', userId: resolvedUserId,
             customerName: customerName.trim().slice(0, 200),
             customerDoc:  customerDoc.trim().slice(0, 20),
             customerEmail: customerEmail.trim().slice(0, 200),

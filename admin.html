@@ -557,6 +557,13 @@
             <div class="collapsible-body collapsed" id="cashInvoiceBody">
                 <div class="create-form">
                     <div class="field-group">
+                        <label class="field-label">Alumno registrado <small style="color:rgba(255,200,200,0.45);font-weight:400">(opcional — vincula el pago a su historial)</small></label>
+                        <input id="ci_student_search" class="admin-input" type="text" list="ci_student_list" placeholder="Buscar por nombre o usuario…" autocomplete="off">
+                        <datalist id="ci_student_list"></datalist>
+                        <input type="hidden" id="ci_student_uid">
+                        <small id="ci_student_badge" style="display:none;color:#7ed97e;font-size:0.78em;margin-top:4px;display:block"></small>
+                    </div>
+                    <div class="field-group">
                         <label class="field-label">Nombre completo</label>
                         <input id="ci_name" class="admin-input" type="text" placeholder="María García López">
                     </div>

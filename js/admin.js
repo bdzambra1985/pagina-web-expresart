@@ -332,6 +332,56 @@ loadResetRequests();
 /* ══════════════════════
    FACTURA EN EFECTIVO
    ══════════════════════ */
+let _ciStudents = [];
+(async function loadCIStudents() {
+    try {
+        const r = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
+        const users = await r.json();
+        _ciStudents = users.filter(u => u.role !== 'admin');
+        const dl = document.getElementById('ci_student_list');
+        _ciStudents.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = (u.displayName && u.displayName !== u.username)
+                ? u.displayName + ' (' + u.username + ')'
+                : u.username;
+            opt.dataset.uid = u.userId;
+            dl.appendChild(opt);
+        });
+    } catch {}
+})();
+
+document.getElementById('ci_student_search').addEventListener('input', function() {
+    const val = this.value.trim();
+    const match = _ciStudents.find(u => {
+        const label = (u.displayName && u.displayName !== u.username)
+            ? u.displayName + ' (' + u.username + ')'
+            : u.username;
+        return label === val;
+    });
+    const uid   = document.getElementById('ci_student_uid');
+    const badge = document.getElementById('ci_student_badge');
+    if (match) {
+        uid.value = match.userId;
+        badge.textContent = '✓ Pago se asignará al historial de ' + (match.displayName || match.username);
+        badge.style.display = 'block';
+        if (!document.getElementById('ci_name').value)
+            document.getElementById('ci_name').value = match.displayName || match.username;
+    } else {
+        uid.value = '';
+        badge.style.display = 'none';
+        badge.textContent = '';
+    }
+});
+
+document.getElementById('ci_student_search').addEventListener('change', function() {
+    if (!this.value.trim()) {
+        document.getElementById('ci_student_uid').value = '';
+        const badge = document.getElementById('ci_student_badge');
+        badge.style.display = 'none';
+        badge.textContent = '';
+    }
+});
+
 (async function loadCashInvoiceServices() {
     try {
         const r    = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } });
@@ -365,6 +415,7 @@ document.getElementById('cashInvoiceBtn').onclick = async () => {
     const amount  = document.getElementById('ci_amount').value;
     const month   = document.getElementById('ci_month').value;
     const notes   = document.getElementById('ci_notes').value.trim();
+    const userId  = document.getElementById('ci_student_uid').value || null;
     const result  = document.getElementById('cashInvoiceResult');
 
     if (!name || !doc || !email || !concept || !amount) {
@@ -377,11 +428,12 @@ document.getElementById('cashInvoiceBtn').onclick = async () => {
         const r = await fetch('/api/orders/cash-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
-            body: JSON.stringify({ customerName: name, customerDoc: doc, customerEmail: email, concept, amount, paymentMonth: month, notes })
+            body: JSON.stringify({ customerName: name, customerDoc: doc, customerEmail: email, concept, amount, paymentMonth: month, notes, userId })
         });
         const d = await r.json();
         if (d.ok) {
-            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span><br><a href="/factura/${d.orderId}?t=${TOKEN}" target="_blank" style="color:#c9a227;text-decoration:underline">Ver comprobante</a> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
+            const studentInfo = userId ? `<br><span style="color:#7ed97e;font-size:0.9em">✓ Vinculado al historial del alumno</span>` : '';
+            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span>${studentInfo}<br><a href="/factura/${d.orderId}?t=${TOKEN}" target="_blank" style="color:#c9a227;text-decoration:underline">Ver comprobante</a> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
             result.style.display = 'block';
             showToast('✓ Factura en efectivo generada');
         } else {
