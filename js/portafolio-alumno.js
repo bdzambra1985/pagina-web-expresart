@@ -449,6 +449,13 @@ document.getElementById('imgZoomClose').addEventListener('click', function(e) {
 document.getElementById('prodPopup').addEventListener('click', closeProdPopup);
 
 document.querySelector('.prod-popup-box').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (btn) {
+        var action = btn.dataset.action;
+        if (action === 'zoom-img')   { _zoomImg(btn.dataset.src); }
+        else if (action === 'open-videos') { _openVideos(parseInt(btn.dataset.idx)); }
+        else if (action === 'play-video')  { _playVideo(parseInt(btn.dataset.prodIdx), parseInt(btn.dataset.vidIdx)); }
+    }
     e.stopPropagation();
 });
 
