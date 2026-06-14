@@ -78,15 +78,17 @@ document.getElementById('resetPwCloseBtn').addEventListener('click', function() 
     document.getElementById('resetPwModal').style.display = 'none';
 });
 
-/* ── Paginación ── */
-const PAGE_SIZE = 8;
-let usersPage  = 0;
-let eventsPage = 0;
-let ordersPage = 0;
+/* ── Paginación y búsqueda ── */
+const PAGE_SIZE  = 8;
+let usersPage    = 0;
+let eventsPage   = 0;
+let ordersPage   = 0;
+let usersSearch  = '';
+let ordersSearch = '';
 
 function buildPager(total, page, action) {
+    if (total <= PAGE_SIZE) return '';
     const pages = Math.ceil(total / PAGE_SIZE);
-    if (pages <= 1) return '';
     return `<div class="pager">
         <button class="pager-btn" data-action="${action}" data-page="${page - 1}" ${page === 0 ? 'disabled' : ''}>‹ Anterior</button>
         <span class="pager-info">Página ${page + 1} de ${pages}</span>
@@ -97,20 +99,32 @@ function buildPager(total, page, action) {
 /* ══════════════════════
    TAB ALUMNOS
    ══════════════════════ */
-async function loadUsers() {
-    const r    = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
-    const data = await r.json();
-    const wrap = document.getElementById('usersTableWrap');
+let allAlumnos = [];
 
-    const alumnos = data.filter(u => u.role !== 'admin');
-    if (!alumnos.length) {
-        wrap.innerHTML = '<p class="no-users">No hay alumnos registrados todavía.</p>';
+async function loadUsers() {
+    const r  = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
+    const data = await r.json();
+    allAlumnos = data.filter(u => u.role !== 'admin');
+    renderUsers();
+}
+
+function renderUsers() {
+    const wrap = document.getElementById('usersTableWrap');
+    const q    = usersSearch.trim().toLowerCase();
+    const filtered = q
+        ? allAlumnos.filter(u => u.username.toLowerCase().includes(q))
+        : allAlumnos;
+
+    if (!filtered.length) {
+        wrap.innerHTML = q
+            ? '<p class="no-users">Sin resultados para esa búsqueda.</p>'
+            : '<p class="no-users">No hay alumnos registrados todavía.</p>';
         return;
     }
 
-    const page  = Math.min(usersPage, Math.max(0, Math.ceil(alumnos.length / PAGE_SIZE) - 1));
+    const page  = Math.min(usersPage, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1));
     usersPage   = page;
-    const slice = alumnos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     wrap.innerHTML = `
         <table class="user-table">
@@ -154,7 +168,7 @@ async function loadUsers() {
                 </tr>`).join('')}
             </tbody>
         </table>
-        ${buildPager(alumnos.length, page, 'page-users')}`;
+        ${buildPager(filtered.length, page, 'page-users')}`;
 }
 
 async function toggleUser(userId, currentlyActive) {
@@ -972,9 +986,20 @@ function maybeStartSriPolling() {
 }
 
 function renderOrders() {
-    const wrap    = document.getElementById('ordersWrap');
-    const list    = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
-    if (!list.length) { wrap.innerHTML = '<p class="no-users">Sin pagos en esta categoría.</p>'; return; }
+    const wrap = document.getElementById('ordersWrap');
+    let list   = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
+    const q    = ordersSearch.trim().toLowerCase();
+    if (q) list = list.filter(o =>
+        (o.customerName  || '').toLowerCase().includes(q) ||
+        (o.customerEmail || '').toLowerCase().includes(q) ||
+        (o.concept       || '').toLowerCase().includes(q)
+    );
+    if (!list.length) {
+        wrap.innerHTML = q
+            ? '<p class="no-users">Sin resultados para esa búsqueda.</p>'
+            : '<p class="no-users">Sin pagos en esta categoría.</p>';
+        return;
+    }
 
     const page    = Math.min(ordersPage, Math.max(0, Math.ceil(list.length / PAGE_SIZE) - 1));
     ordersPage    = page;
@@ -1131,6 +1156,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.dataset.tab === 'pagos') { loadBankInfo(); loadOrders(); }
     });
+});
+
+/* ── Búsqueda en tablas ── */
+document.getElementById('usersSearch').addEventListener('input', function() {
+    usersSearch = this.value;
+    usersPage   = 0;
+    renderUsers();
+});
+document.getElementById('usersSearch').addEventListener('focus', function() {
+    this.style.borderColor = 'rgba(201,162,39,0.55)';
+});
+document.getElementById('usersSearch').addEventListener('blur', function() {
+    this.style.borderColor = 'rgba(255,255,255,0.15)';
+});
+
+document.getElementById('ordersSearch').addEventListener('input', function() {
+    ordersSearch = this.value;
+    ordersPage   = 0;
+    renderOrders();
+});
+document.getElementById('ordersSearch').addEventListener('focus', function() {
+    this.style.borderColor = 'rgba(201,162,39,0.55)';
+});
+document.getElementById('ordersSearch').addEventListener('blur', function() {
+    this.style.borderColor = 'rgba(255,255,255,0.15)';
 });
 
 /* ── Event delegation for dynamic onclicks ── */
