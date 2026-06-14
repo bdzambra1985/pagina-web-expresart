@@ -774,21 +774,62 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 });
 
 
+const MY_PAGE_SIZE = 8;
+let allMyOrders      = [];
+let myOrdersPage     = 0;
+let myOrdersFilter   = 'todos';
+let myOrdersSearch   = '';
+
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
     try {
-        const r      = await fetch('/api/my-orders', { headers: { 'x-session-token': TOKEN } });
-        const orders = await r.json();
-        myMatOrders  = orders;
+        const r  = await fetch('/api/my-orders', { headers: { 'x-session-token': TOKEN } });
+        allMyOrders  = await r.json();
+        myMatOrders  = allMyOrders;
         const matrixWrap = document.getElementById('myMatrixWrap');
         if (matrixWrap) matrixWrap.style.display = '';
         renderMyMatrix();
-        if (!orders.length) {
-            wrap.innerHTML = '<p class="pay-empty">Aún no tienes pagos registrados en esta cuenta.</p>';
-            return;
-        }
-        wrap.innerHTML = `
-        <table class="pay-table">
+        renderMyOrders();
+    } catch {
+        wrap.innerHTML = '<p class="pay-empty">Error al cargar historial.</p>';
+    }
+}
+
+function buildMyPager(total, page) {
+    if (total <= MY_PAGE_SIZE) return '';
+    const pages = Math.ceil(total / MY_PAGE_SIZE);
+    return `<div class="pager">
+        <button class="pager-btn" data-action="page-my-orders" data-page="${page - 1}" ${page === 0 ? 'disabled' : ''}>‹ Anterior</button>
+        <span class="pager-info">Página ${page + 1} de ${pages}</span>
+        <button class="pager-btn" data-action="page-my-orders" data-page="${page + 1}" ${page >= pages - 1 ? 'disabled' : ''}>Siguiente ›</button>
+    </div>`;
+}
+
+function renderMyOrders() {
+    const wrap = document.getElementById('myOrdersWrap');
+    if (!allMyOrders.length) {
+        wrap.innerHTML = '<p class="pay-empty">Aún no tienes pagos registrados en esta cuenta.</p>';
+        return;
+    }
+
+    const q = myOrdersSearch.trim().toLowerCase();
+    let list = allMyOrders
+        .slice()
+        .sort((a, b) => new Date(b.confirmedAt || b.createdAt) - new Date(a.confirmedAt || a.createdAt));
+    if (myOrdersFilter !== 'todos') list = list.filter(o => o.status === myOrdersFilter);
+    if (q) list = list.filter(o => (o.concept || '').toLowerCase().includes(q) || (o.notes || '').toLowerCase().includes(q));
+
+    if (!list.length) {
+        wrap.innerHTML = '<p class="pay-empty">Sin resultados para ese filtro o búsqueda.</p>';
+        return;
+    }
+
+    const page  = Math.min(myOrdersPage, Math.max(0, Math.ceil(list.length / MY_PAGE_SIZE) - 1));
+    myOrdersPage = page;
+    const slice  = list.slice(page * MY_PAGE_SIZE, (page + 1) * MY_PAGE_SIZE);
+
+    wrap.innerHTML = `
+        <div class="tbl-scroll"><table class="pay-table">
             <thead><tr>
                 <th>Fecha</th>
                 <th>Concepto</th>
@@ -797,7 +838,7 @@ async function loadMyOrders() {
                 <th>Documentos</th>
             </tr></thead>
             <tbody>
-            ${orders.map(o => {
+            ${slice.map(o => {
                 const fecha = new Date(o.confirmedAt || o.createdAt)
                     .toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:'America/Guayaquil' });
                 const badgeCls = o.status === 'confirmado' ? 'pay-badge-ok'
@@ -824,11 +865,25 @@ async function loadMyOrders() {
                 </tr>`;
             }).join('')}
             </tbody>
-        </table>`;
-    } catch {
-        wrap.innerHTML = '<p class="pay-empty">Error al cargar historial.</p>';
-    }
+        </table></div>
+        ${buildMyPager(list.length, page)}`;
 }
+
+document.querySelectorAll('[data-pay-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-pay-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        myOrdersFilter = btn.dataset.payFilter;
+        myOrdersPage   = 0;
+        renderMyOrders();
+    });
+});
+
+document.getElementById('myOrdersSearch').addEventListener('input', function() {
+    myOrdersSearch = this.value;
+    myOrdersPage   = 0;
+    renderMyOrders();
+});
 
 /* ── Event delegation for dynamic onclicks ── */
 document.addEventListener('click', function(e) {
@@ -850,5 +905,8 @@ document.addEventListener('click', function(e) {
         window.revokeShareLink(btn.dataset.shareId);
     } else if (action === 'copy-val') {
         copyVal(btn.dataset.target);
+    } else if (action === 'page-my-orders') {
+        myOrdersPage = parseInt(btn.dataset.page);
+        renderMyOrders();
     }
 });
