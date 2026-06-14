@@ -84,6 +84,7 @@ let usersPage    = 0;
 let eventsPage   = 0;
 let ordersPage   = 0;
 let usersSearch  = '';
+let eventsSearch = '';
 let ordersSearch = '';
 
 function buildPager(total, page, action) {
@@ -111,9 +112,12 @@ async function loadUsers() {
 function renderUsers() {
     const wrap = document.getElementById('usersTableWrap');
     const q    = usersSearch.trim().toLowerCase();
+    const sorted = allAlumnos.slice().sort((a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
     const filtered = q
-        ? allAlumnos.filter(u => u.username.toLowerCase().includes(q))
-        : allAlumnos;
+        ? sorted.filter(u => u.username.toLowerCase().includes(q))
+        : sorted;
 
     if (!filtered.length) {
         wrap.innerHTML = q
@@ -746,20 +750,32 @@ let editingEvtId = null;
 let adminEvts    = [];
 
 async function loadEvents() {
-    const r    = await fetch('/api/events', { headers: { 'x-session-token': TOKEN } });
-    adminEvts  = await r.json();
-    const wrap = document.getElementById('eventsListWrap');
+    const r   = await fetch('/api/events', { headers: { 'x-session-token': TOKEN } });
+    adminEvts = await r.json();
+    renderEvents();
+}
 
-    if (!adminEvts.length) {
-        wrap.innerHTML = '<p class="no-users">No hay eventos creados todavía.</p>';
+function renderEvents() {
+    const wrap = document.getElementById('eventsListWrap');
+    const q    = eventsSearch.trim().toLowerCase();
+    const sorted = adminEvts.slice().sort((a, b) => b.date.localeCompare(a.date));
+    const filtered = q
+        ? sorted.filter(ev =>
+            (ev.title    || '').toLowerCase().includes(q) ||
+            (ev.location || '').toLowerCase().includes(q) ||
+            (ev.category || '').toLowerCase().includes(q))
+        : sorted;
+
+    if (!filtered.length) {
+        wrap.innerHTML = q
+            ? '<p class="no-users">Sin resultados para esa búsqueda.</p>'
+            : '<p class="no-users">No hay eventos creados todavía.</p>';
         return;
     }
 
-    adminEvts.sort((a,b) => a.date.localeCompare(b.date));
-
-    const page  = Math.min(eventsPage, Math.max(0, Math.ceil(adminEvts.length / PAGE_SIZE) - 1));
+    const page  = Math.min(eventsPage, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1));
     eventsPage  = page;
-    const slice = adminEvts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     wrap.innerHTML = `
         <div class="tbl-scroll"><table class="user-table">
@@ -797,7 +813,7 @@ async function loadEvents() {
                 }).join('')}
             </tbody>
         </table></div>
-        ${buildPager(adminEvts.length, page, 'page-events')}`;
+        ${buildPager(filtered.length, page, 'page-events')}`;
 }
 
 function editEvent(ev) {
@@ -987,7 +1003,8 @@ function maybeStartSriPolling() {
 
 function renderOrders() {
     const wrap = document.getElementById('ordersWrap');
-    let list   = currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter);
+    let list   = (currentFilter === 'todos' ? allOrders : allOrders.filter(o => o.status === currentFilter))
+                    .slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const q    = ordersSearch.trim().toLowerCase();
     if (q) list = list.filter(o =>
         (o.customerName  || '').toLowerCase().includes(q) ||
@@ -1171,6 +1188,18 @@ document.getElementById('usersSearch').addEventListener('blur', function() {
     this.style.borderColor = 'rgba(255,255,255,0.15)';
 });
 
+document.getElementById('eventsSearch').addEventListener('input', function() {
+    eventsSearch = this.value;
+    eventsPage   = 0;
+    renderEvents();
+});
+document.getElementById('eventsSearch').addEventListener('focus', function() {
+    this.style.borderColor = 'rgba(201,162,39,0.55)';
+});
+document.getElementById('eventsSearch').addEventListener('blur', function() {
+    this.style.borderColor = 'rgba(255,255,255,0.15)';
+});
+
 document.getElementById('ordersSearch').addEventListener('input', function() {
     ordersSearch = this.value;
     ordersPage   = 0;
@@ -1211,9 +1240,9 @@ document.addEventListener('click', function(e) {
     } else if (action === 'verify-order') {
         window.verifyOrder(el.dataset.id);
     } else if (action === 'page-users') {
-        usersPage = parseInt(el.dataset.page); loadUsers();
+        usersPage = parseInt(el.dataset.page); renderUsers();
     } else if (action === 'page-events') {
-        eventsPage = parseInt(el.dataset.page); loadEvents();
+        eventsPage = parseInt(el.dataset.page); renderEvents();
     } else if (action === 'page-orders') {
         ordersPage = parseInt(el.dataset.page); renderOrders();
     }
