@@ -14,6 +14,16 @@ const db          = require('./db');
 const app  = express();
 const PORT = process.env.PORT || 9090;
 
+/* ── CallMeBot WhatsApp ── */
+const CALLMEBOT_PHONE  = process.env.CALLMEBOT_PHONE;
+const CALLMEBOT_APIKEY = process.env.CALLMEBOT_APIKEY;
+
+function notifyWhatsApp(text) {
+    if (!CALLMEBOT_PHONE || !CALLMEBOT_APIKEY) return;
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(CALLMEBOT_PHONE)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(CALLMEBOT_APIKEY)}`;
+    fetch(url).catch(e => console.error('[CallMeBot]', e.message));
+}
+
 /* ── Cloudinary ── */
 const CLD_NAME   = process.env.CLOUDINARY_NAME   || process.env.CLOUDINARY_CLOUD_NAME;
 const CLD_KEY    = process.env.CLOUDINARY_KEY    || process.env.CLOUDINARY_API_KEY;
@@ -806,6 +816,14 @@ app.post('/api/orders', (req, res) => {
             };
             await db.createOrder(order);
             res.json({ ok: true, orderId: order.id, token: order.token });
+            notifyWhatsApp(
+                `💰 NUEVO PAGO - EXPRESART\n` +
+                `👤 ${order.customerName}\n` +
+                `📋 ${order.concept}\n` +
+                `💵 $${parseFloat(order.amount).toFixed(2)}\n` +
+                `🗓 ${order.paymentMonth || 'Sin mes'}\n` +
+                `🔖 Ref: ${order.id}`
+            );
         } catch(e) { console.error(e); res.status(500).json({ ok: false, message: 'Error interno' }); }
     });
 });
