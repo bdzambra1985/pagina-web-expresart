@@ -354,8 +354,6 @@ let _ciStudents = [];
         badge.textContent  = '✓ Pago vinculado a: ' + label;
         badge.style.display = 'block';
         dd.style.display    = 'none';
-        const nameField = document.getElementById('ci_name');
-        if (!nameField.value) nameField.value = label;
     }
 
     function clearSelection() {
