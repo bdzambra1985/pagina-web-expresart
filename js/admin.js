@@ -1,5 +1,18 @@
 const TOKEN = localStorage.getItem('exp_token');
 
+/* ── Secure URL opener — fetches a short-lived signed URL from the server
+   instead of embedding the session token in query params (OWASP A07) ── */
+async function openProtectedUrl(resourcePath) {
+    try {
+        const r = await fetch('/api/signed-url?path=' + encodeURIComponent(resourcePath), {
+            headers: { 'x-session-token': TOKEN }
+        });
+        const d = await r.json();
+        if (d.ok) { window.open(d.url, '_blank', 'noopener'); }
+        else showToast('Error al generar enlace seguro', true);
+    } catch { showToast('Error de conexión', true); }
+}
+
 async function checkAuth() {
     if (!TOKEN) return (location.href = 'login.html');
     const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
@@ -462,7 +475,7 @@ document.getElementById('cashInvoiceBtn').onclick = async () => {
         const d = await r.json();
         if (d.ok) {
             const studentInfo = userId ? `<br><span style="color:#7ed97e;font-size:0.9em">✓ Vinculado al historial del alumno</span>` : '';
-            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span>${studentInfo}<br><a href="/factura/${d.orderId}?t=${TOKEN}" target="_blank" style="color:#c9a227;text-decoration:underline">Ver comprobante</a> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
+            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span>${studentInfo}<br><button onclick="openProtectedUrl('/factura/${d.orderId}')" style="background:none;border:none;color:#c9a227;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">Ver comprobante</button> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
             result.style.display = 'block';
             showToast('✓ Factura en efectivo generada');
         } else {
@@ -960,19 +973,19 @@ function renderOrders() {
                     sriBadge = '<span style="color:#c9a227;font-size:.78em">⏳ Procesando</span>';
                 }
             }
-            const receiptHref = o.receiptUrl && o.receiptUrl.startsWith('/uploads/')
-                ? o.receiptUrl + '?t=' + encodeURIComponent(TOKEN)
-                : (o.receiptUrl || '');
-            const receiptLink = receiptHref
-                ? `<a href="${receiptHref}" target="_blank" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
-                : '';
+            const receiptPath = o.receiptUrl && o.receiptUrl.startsWith('/uploads/') ? o.receiptUrl : null;
+            const receiptLink = receiptPath
+                ? `<button onclick="openProtectedUrl('${receiptPath.replace(/'/g, "\\'")}')" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227;cursor:pointer">📎 Comprobante</button>`
+                : (o.receiptUrl
+                    ? `<a href="${o.receiptUrl}" target="_blank" rel="noopener" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
+                    : '');
             const actions = o.status === 'pendiente' ? `
                 <button data-action="verify-order" data-id="${o.id}" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px;background:rgba(201,162,39,.25);color:#c9a227;border:1px solid rgba(201,162,39,.5)">🔍 Verificar</button>
                 ${receiptLink}
             ` : o.status === 'confirmado' ? `
                 ${receiptLink}
                 ${o.sri && o.sri.status === 'autorizado'
-                    ? `<a href="/factura/${o.id}?t=${TOKEN}" target="_blank" class="edit-btn">🧾 Factura SRI</a>`
+                    ? `<button onclick="openProtectedUrl('/factura/${o.id}')" class="edit-btn" style="cursor:pointer">🧾 Factura SRI</button>`
                     : ''}
             ` : `
                 <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
@@ -1016,22 +1029,32 @@ window.sriRetry = async (id) => {
     loadOrders();
 };
 
-window.verifyOrder = (id) => {
+window.verifyOrder = async (id) => {
     const o = allOrders.find(x => x.id === id);
     if (!o) return;
-    const rawReceiptUrl  = o.receiptUrl || '';
-    const authReceiptUrl = rawReceiptUrl.startsWith('/uploads/')
-        ? rawReceiptUrl + '?t=' + encodeURIComponent(TOKEN)
-        : rawReceiptUrl;
+    const rawReceiptUrl = o.receiptUrl || '';
+
+    // Get signed URL for local uploads; Cloudinary URLs are self-served
+    let authReceiptUrl = rawReceiptUrl;
+    if (rawReceiptUrl.startsWith('/uploads/')) {
+        try {
+            const r = await fetch('/api/signed-url?path=' + encodeURIComponent(rawReceiptUrl), {
+                headers: { 'x-session-token': TOKEN }
+            });
+            const d = await r.json();
+            if (d.ok) authReceiptUrl = d.url;
+        } catch { /* use raw URL as fallback */ }
+    }
+
     const isImg = rawReceiptUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(rawReceiptUrl);
     const isPdf = rawReceiptUrl && /\.pdf(\?|$)/i.test(rawReceiptUrl);
-    const preview = !authReceiptUrl
+    const preview = !rawReceiptUrl
         ? `<div class="vm-no-receipt">Sin comprobante adjunto</div>`
         : isImg
         ? `<img src="${authReceiptUrl}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
         : isPdf
         ? `<iframe src="${authReceiptUrl}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
-        : `<a href="${authReceiptUrl}" target="_blank" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
+        : `<a href="${authReceiptUrl}" target="_blank" rel="noopener" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
 
     document.getElementById('vmPreview').innerHTML  = preview;
     document.getElementById('vmName').textContent    = o.customerName;
