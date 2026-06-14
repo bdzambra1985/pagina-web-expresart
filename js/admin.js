@@ -330,6 +330,67 @@ loadUsers();
 loadResetRequests();
 
 /* ══════════════════════
+   FACTURA EN EFECTIVO
+   ══════════════════════ */
+(async function loadCashInvoiceServices() {
+    try {
+        const r    = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } });
+        const info = await r.json();
+        const sel  = document.getElementById('ci_concept');
+        (info.services || []).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name + (s.price ? ` — $${s.price}` : '');
+            opt.textContent = opt.value;
+            if (s.price) opt.dataset.price = s.price;
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            if (opt && opt.dataset.price) {
+                document.getElementById('ci_amount').value = parseFloat(opt.dataset.price).toFixed(2);
+                document.getElementById('ci_concept_custom').value = '';
+            }
+        });
+    } catch {}
+    document.getElementById('ci_month').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
+})();
+
+document.getElementById('cashInvoiceBtn').onclick = async () => {
+    const name    = document.getElementById('ci_name').value.trim();
+    const doc     = document.getElementById('ci_doc').value.trim();
+    const email   = document.getElementById('ci_email').value.trim();
+    const selVal  = document.getElementById('ci_concept').value;
+    const custom  = document.getElementById('ci_concept_custom').value.trim();
+    const concept = custom || selVal;
+    const amount  = document.getElementById('ci_amount').value;
+    const month   = document.getElementById('ci_month').value;
+    const notes   = document.getElementById('ci_notes').value.trim();
+    const result  = document.getElementById('cashInvoiceResult');
+
+    if (!name || !doc || !email || !concept || !amount) {
+        showToast('Completa todos los campos obligatorios', true); return;
+    }
+    const btn = document.getElementById('cashInvoiceBtn');
+    btnLoad(btn);
+    result.style.display = 'none';
+    try {
+        const r = await fetch('/api/orders/cash-invoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            body: JSON.stringify({ customerName: name, customerDoc: doc, customerEmail: email, concept, amount, paymentMonth: month, notes })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span><br><a href="/factura/${d.orderId}?t=${TOKEN}" target="_blank" style="color:#c9a227;text-decoration:underline">Ver comprobante</a> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
+            result.style.display = 'block';
+            showToast('✓ Factura en efectivo generada');
+        } else {
+            showToast(d.message || 'Error al generar factura', true);
+        }
+    } finally { btnDone(btn); }
+};
+
+/* ══════════════════════
    TAB CONTENIDO
    ══════════════════════ */
 let content = {};

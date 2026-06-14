@@ -676,6 +676,16 @@ document.getElementById('toggleRegPagoBtn').addEventListener('click', function()
     document.getElementById('ivaPreview').style.display = 'none';
     document.getElementById('fMonth').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' }).slice(0, 7);
     if (!bankInfoLoaded) { loadBankInfo(); bankInfoLoaded = true; }
+    // Pre-rellenar con datos guardados
+    try {
+        const saved = JSON.parse(localStorage.getItem('exp_invoice_data') || 'null');
+        if (saved) {
+            document.getElementById('fName').value  = saved.name  || '';
+            document.getElementById('fDoc').value   = saved.doc   || '';
+            document.getElementById('fEmail').value = saved.email || '';
+            document.getElementById('saveInvoiceData').checked = true;
+        }
+    } catch {}
     section.style.display = 'block';
     setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 });
@@ -739,6 +749,16 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
         const r    = await fetch('/api/orders', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: fd });
         const data = await r.json();
         if (!data.ok) throw new Error(data.message);
+        // Guardar datos si el checkbox está marcado
+        if (document.getElementById('saveInvoiceData').checked) {
+            localStorage.setItem('exp_invoice_data', JSON.stringify({
+                name:  document.getElementById('fName').value.trim(),
+                doc:   document.getElementById('fDoc').value.trim(),
+                email: document.getElementById('fEmail').value.trim()
+            }));
+        } else {
+            localStorage.removeItem('exp_invoice_data');
+        }
         document.getElementById('regSuccessId').textContent = 'Ref: ' + data.orderId;
         document.getElementById('formPanel').style.display        = 'none';
         document.getElementById('regSuccessPanel').style.display  = 'block';

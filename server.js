@@ -810,6 +810,51 @@ app.post('/api/orders', (req, res) => {
     });
 });
 
+app.post('/api/orders/cash-invoice', async (req, res) => {
+    try {
+        if (!requireAdmin(req, res)) return;
+        const { customerName, customerDoc, customerEmail, concept, amount, paymentMonth, notes } = req.body;
+        if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
+            return res.status(400).json({ ok: false, message: 'Completa todos los campos obligatorios' });
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum) || amountNum <= 0)
+            return res.status(400).json({ ok: false, message: 'Monto inválido' });
+        const subtotal = parseFloat((amountNum / 1.15).toFixed(2));
+        const iva      = parseFloat((amountNum - subtotal).toFixed(2));
+        const invoiceNumber = await db.nextInvoiceNumber();
+        const confirmedAt   = new Date().toISOString();
+        const orderId = 'ord_' + Date.now();
+        const order = {
+            id: orderId, token: crypto.randomBytes(16).toString('hex'),
+            status: 'confirmado', userId: null,
+            customerName: customerName.trim().slice(0, 200),
+            customerDoc:  customerDoc.trim().slice(0, 20),
+            customerEmail: customerEmail.trim().slice(0, 200),
+            concept: concept.trim().slice(0, 300),
+            amount: amountNum, subtotal, iva, ivaRate: 15,
+            receiptUrl: null, notes: (notes || '').trim().slice(0, 500),
+            paymentMonth: /^\d{4}-\d{2}$/.test(paymentMonth || '') ? paymentMonth : null,
+            invoiceNumber, rejectionReason: '',
+            createdAt: confirmedAt, confirmedAt
+        };
+        await db.createOrder(order);
+        res.json({ ok: true, orderId, invoiceNumber });
+        setImmediate(async () => {
+            try {
+                if (!getSRIConfig().ruc) return;
+                const { result, invoiceNumber: usedInv } = await emitirConAutoRetry(order, invoiceNumber);
+                const sriData = result.ok
+                    ? { status: 'autorizado', claveAcceso: result.claveAcceso, numeroAutorizacion: result.numeroAutorizacion, fechaAutorizacion: result.fechaAutorizacion }
+                    : { status: 'error', claveAcceso: result.claveAcceso || '', error: result.error };
+                const fields = { sri: sriData };
+                if (usedInv !== invoiceNumber) fields.invoiceNumber = usedInv;
+                if (!result.ok) console.error('SRI cash-invoice error:', JSON.stringify(result));
+                await db.updateOrder(orderId, fields);
+            } catch(e) { console.error('SRI cash-invoice setImmediate error:', e); }
+        });
+    } catch(e) { console.error(e); res.status(500).json({ ok: false, message: 'Error interno' }); }
+});
+
 app.get('/api/orders', async (req, res) => {
     try {
         if (!requireAdmin(req, res)) return;

@@ -548,6 +548,56 @@
             </div>
         </div>
 
+        <!-- Factura en efectivo -->
+        <div class="admin-section">
+            <h2 class="section-title collapsible" data-section-body="cashInvoiceBody">
+                <i class="bx bx-receipt"></i> Factura en efectivo
+                <button class="collapsible-btn" data-collapse="cashInvoiceBody">+</button>
+            </h2>
+            <div class="collapsible-body collapsed" id="cashInvoiceBody">
+                <div class="create-form">
+                    <div class="field-group">
+                        <label class="field-label">Nombre completo</label>
+                        <input id="ci_name" class="admin-input" type="text" placeholder="María García López">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">RUC o Cédula</label>
+                        <input id="ci_doc" class="admin-input" type="text" placeholder="1712345678">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Correo electrónico</label>
+                        <input id="ci_email" class="admin-input" type="email" placeholder="cliente@correo.com">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Concepto / Servicio</label>
+                        <select id="ci_concept" class="admin-input">
+                            <option value="">— Selecciona o escribe abajo —</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Concepto personalizado (si no está arriba)</label>
+                        <input id="ci_concept_custom" class="admin-input" type="text" placeholder="Ej: Taller de actuación nivel 3">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Monto total en USD (con IVA 15%)</label>
+                        <input id="ci_amount" class="admin-input" type="number" min="1" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Mes que corresponde</label>
+                        <input id="ci_month" class="admin-input" type="month" style="color-scheme:dark">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Notas (opcional)</label>
+                        <input id="ci_notes" class="admin-input" type="text" placeholder="Observaciones adicionales">
+                    </div>
+                </div>
+                <div class="btn-row" style="margin-top:14px">
+                    <button class="save-btn" id="cashInvoiceBtn"><i class="bx bx-file"></i> Generar factura en efectivo</button>
+                </div>
+                <div id="cashInvoiceResult" style="margin-top:12px;font-family:'Poppins',sans-serif;font-size:0.84em;display:none"></div>
+            </div>
+        </div>
+
         <!-- Lista de alumnos -->
         <div class="admin-section">
             <h2 class="section-title"><i class="bx bx-key"></i> Solicitudes de reseteo de clave</h2>
