@@ -347,7 +347,10 @@ async function uploadCollagePhoto(prodIdx, slotIdx) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.jpg,.jpeg,.png,.webp,.gif';
+    input.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0';
+    document.body.appendChild(input);
     input.onchange = async () => {
+        document.body.removeChild(input);
         const file = input.files[0];
         if (!file) return;
         const fd = new FormData();
