@@ -98,7 +98,8 @@ function buildFacturaXML({
     total,
     concepto,
     email,
-    ivaRate
+    ivaRate,
+    formaPago
 }) {
     // Normalizar fecha a DD/MM/YYYY
     let fechaEmision = fecha;
@@ -157,7 +158,7 @@ function buildFacturaXML({
     <moneda>DOLAR</moneda>
     <pagos>
       <pago>
-        <formaPago>20</formaPago>
+        <formaPago>${formaPago || '20'}</formaPago>
         <total>${totalStr}</total>
         <plazo>0</plazo>
         <unidadTiempo>dias</unidadTiempo>

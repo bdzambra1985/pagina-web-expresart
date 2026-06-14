@@ -858,7 +858,7 @@ app.post('/api/orders/cash-invoice', async (req, res) => {
             amount: amountNum, subtotal, iva, ivaRate: 15,
             receiptUrl: null, notes: (notes || '').trim().slice(0, 500),
             paymentMonth: /^\d{4}-\d{2}$/.test(paymentMonth || '') ? paymentMonth : null,
-            invoiceNumber, rejectionReason: '',
+            invoiceNumber, rejectionReason: '', formaPago: '01',
             createdAt: confirmedAt, confirmedAt
         };
         await db.createOrder(order);

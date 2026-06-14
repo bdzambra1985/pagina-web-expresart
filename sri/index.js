@@ -133,7 +133,8 @@ async function emitirFactura(order, secuencial) {
             ? `${order.concept}: ${order.notes.trim()}`
             : order.concept).slice(0, 300),
         email:                   order.customerEmail,
-        ivaRate:                 order.ivaRate || 15
+        ivaRate:                 order.ivaRate || 15,
+        formaPago:               order.formaPago || '20'
     });
 
     // 5) Firmar XML
