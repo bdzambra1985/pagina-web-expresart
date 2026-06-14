@@ -338,49 +338,80 @@ let _ciStudents = [];
         const r = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
         const users = await r.json();
         _ciStudents = users.filter(u => u.role !== 'admin');
-        const dl = document.getElementById('ci_student_list');
-        _ciStudents.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = (u.displayName && u.displayName !== u.username)
-                ? u.displayName + ' (' + u.username + ')'
-                : u.username;
-            opt.dataset.uid = u.userId;
-            dl.appendChild(opt);
-        });
     } catch {}
 })();
 
-document.getElementById('ci_student_search').addEventListener('input', function() {
-    const val = this.value.trim();
-    const match = _ciStudents.find(u => {
-        const label = (u.displayName && u.displayName !== u.username)
-            ? u.displayName + ' (' + u.username + ')'
-            : u.username;
-        return label === val;
-    });
-    const uid   = document.getElementById('ci_student_uid');
-    const badge = document.getElementById('ci_student_badge');
-    if (match) {
-        uid.value = match.userId;
-        badge.textContent = '✓ Pago se asignará al historial de ' + (match.displayName || match.username);
-        badge.style.display = 'block';
-        if (!document.getElementById('ci_name').value)
-            document.getElementById('ci_name').value = match.displayName || match.username;
-    } else {
-        uid.value = '';
-        badge.style.display = 'none';
-        badge.textContent = '';
-    }
-});
+(function initCIStudentSearch() {
+    const input  = document.getElementById('ci_student_search');
+    const dd     = document.getElementById('ci_student_dropdown');
+    const uidIn  = document.getElementById('ci_student_uid');
+    const badge  = document.getElementById('ci_student_badge');
 
-document.getElementById('ci_student_search').addEventListener('change', function() {
-    if (!this.value.trim()) {
-        document.getElementById('ci_student_uid').value = '';
-        const badge = document.getElementById('ci_student_badge');
-        badge.style.display = 'none';
-        badge.textContent = '';
+    function selectStudent(u) {
+        const label = u.displayName || u.username;
+        input.value  = label;
+        uidIn.value  = u.userId;
+        badge.textContent  = '✓ Pago vinculado a: ' + label;
+        badge.style.display = 'block';
+        dd.style.display    = 'none';
+        const nameField = document.getElementById('ci_name');
+        if (!nameField.value) nameField.value = label;
     }
-});
+
+    function clearSelection() {
+        uidIn.value = '';
+        badge.style.display = 'none';
+        badge.textContent   = '';
+    }
+
+    function showDropdown(matches) {
+        if (!matches.length) { dd.style.display = 'none'; return; }
+        dd.innerHTML = matches.map(u => {
+            const name = u.displayName || u.username;
+            const sub  = (u.displayName && u.displayName !== u.username)
+                ? '<span style="color:rgba(255,200,200,0.5);font-size:0.82em;margin-left:6px">(' + u.username + ')</span>'
+                : '';
+            return '<div class="ci-sopt" data-uid="' + u.userId + '" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06)">' +
+                   '<span style="color:#f0e8d0">' + name + '</span>' + sub + '</div>';
+        }).join('');
+        dd.style.display = 'block';
+        dd.querySelectorAll('.ci-sopt').forEach(function(opt) {
+            opt.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                const u = _ciStudents.find(function(s) { return s.userId === opt.dataset.uid; });
+                if (u) selectStudent(u);
+            });
+            opt.addEventListener('mouseenter', function() { this.style.background = 'rgba(201,162,39,0.18)'; });
+            opt.addEventListener('mouseleave', function() { this.style.background = ''; });
+        });
+    }
+
+    input.addEventListener('input', function() {
+        clearSelection();
+        const q = this.value.trim().toLowerCase();
+        if (!q) { dd.style.display = 'none'; return; }
+        const matches = _ciStudents.filter(function(u) {
+            return (u.displayName || '').toLowerCase().includes(q) ||
+                   (u.username   || '').toLowerCase().includes(q);
+        });
+        showDropdown(matches);
+    });
+
+    input.addEventListener('blur', function() {
+        setTimeout(function() { dd.style.display = 'none'; }, 180);
+    });
+
+    input.addEventListener('focus', function() {
+        const q = this.value.trim().toLowerCase();
+        if (q && !uidIn.value) {
+            const matches = _ciStudents.filter(function(u) {
+                return (u.displayName || '').toLowerCase().includes(q) ||
+                       (u.username   || '').toLowerCase().includes(q);
+            });
+            showDropdown(matches);
+        }
+    });
+}());
 
 (async function loadCashInvoiceServices() {
     try {
