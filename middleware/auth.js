@@ -44,15 +44,8 @@ function _resolve(rawToken) {
 }
 
 function getSession(req) {
-    // Cookie (HttpOnly) takes precedence — more secure than header
     const cookieToken = req.cookies?.exp_session;
-    if (cookieToken) {
-        const sess = _resolve(cookieToken);
-        if (sess) return sess;
-    }
-    // Fallback: x-session-token header (backward compat)
-    const raw = req.headers['x-session-token'];
-    return raw ? _resolve(raw) : null;
+    return cookieToken ? _resolve(cookieToken) : null;
 }
 
 function getSessionByRawToken(raw) {
@@ -108,6 +101,10 @@ setInterval(() => {
     }
     if (removed > 0)
         console.log(`[Auth GC] ${removed} sesión(es) expirada(s) eliminada(s). Activas: ${sessions.size}`);
+    // Clean up expired login lockout entries
+    for (const [k, att] of loginAttempts) {
+        if (att.lockedUntil && now >= att.lockedUntil + LOGIN_LOCK_MS) loginAttempts.delete(k);
+    }
 }, GC_INTERVAL).unref();
 
 module.exports = {

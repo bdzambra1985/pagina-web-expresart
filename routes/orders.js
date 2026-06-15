@@ -3,6 +3,7 @@ const crypto  = require('crypto');
 const router  = require('express').Router();
 const db      = require('../db');
 const { requireAuth, requireAdmin, getSession } = require('../middleware/auth');
+const { orderLimiter }                         = require('../middleware/rateLimiter');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_RECEIPT } = require('../middleware/upload');
 const { emitirFactura, getSRIConfig }  = require('../sri/index');
 const { notifyEmail }                  = require('../utils/notify');
@@ -32,40 +33,42 @@ const _emailCSS = `
   .note{color:#555;font-size:13px;padding:12px 32px;border-top:1px solid #eee;text-align:center}`;
 
 function _adminEmailHtml({ name, email, doc, concept, amount, month, id }) {
+    const h = htmlEncode;
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
     <div class="card">
       <div class="header"><h1>EXPRESART</h1><p>Nuevo comprobante de pago recibido</p></div>
-      <div class="banner"><h2>${name}</h2></div>
+      <div class="banner"><h2>${h(name)}</h2></div>
       <div class="body">
-        <div class="row"><span class="label">Email</span><span class="value">${email}</span></div>
-        <div class="row"><span class="label">Cédula</span><span class="value">${doc}</span></div>
-        <div class="row"><span class="label">Concepto</span><span class="value">${concept}</span></div>
-        <div class="row"><span class="label">Mes</span><span class="value">${month || 'Sin especificar'}</span></div>
+        <div class="row"><span class="label">Email</span><span class="value">${h(email)}</span></div>
+        <div class="row"><span class="label">Cédula</span><span class="value">${h(doc)}</span></div>
+        <div class="row"><span class="label">Concepto</span><span class="value">${h(concept)}</span></div>
+        <div class="row"><span class="label">Mes</span><span class="value">${h(month || 'Sin especificar')}</span></div>
         <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(amount).toFixed(2)}</span></div>
       </div>
       <div class="footer">
         <a href="${BASE_URL}/admin.html">Ver panel de admin</a>
-        <div class="ref">Ref: ${id}</div>
+        <div class="ref">Ref: ${h(id)}</div>
       </div>
     </div></body></html>`;
 }
 
 function _facturaEmailHtml(order, facturaUrl) {
+    const h = htmlEncode;
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
     <div class="card">
       <div class="header"><h1>EXPRESART</h1><p>Tu factura ha sido autorizada por el SRI</p></div>
-      <div class="banner"><h2>Hola, ${order.customerName}!</h2></div>
+      <div class="banner"><h2>Hola, ${h(order.customerName)}!</h2></div>
       <div class="body">
         <p style="color:#444;font-size:14px;margin:0 0 16px">Tu pago fue <strong>confirmado</strong> y el SRI ha autorizado la factura electrónica.</p>
-        <div class="row"><span class="label">Concepto</span><span class="value">${order.concept}</span></div>
-        <div class="row"><span class="label">Mes</span><span class="value">${order.paymentMonth || 'Sin especificar'}</span></div>
+        <div class="row"><span class="label">Concepto</span><span class="value">${h(order.concept)}</span></div>
+        <div class="row"><span class="label">Mes</span><span class="value">${h(order.paymentMonth || 'Sin especificar')}</span></div>
         <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
-        <div class="row"><span class="label">Factura</span><span class="value">${order.invoiceNumber}</span></div>
+        <div class="row"><span class="label">Factura</span><span class="value">${h(order.invoiceNumber)}</span></div>
       </div>
       <div class="note">La factura electrónica está adjunta a este correo y también la puedes ver en línea.</div>
       <div class="footer">
         <a href="${facturaUrl}">Ver factura en línea</a>
-        <div class="ref">Ref: ${order.id}</div>
+        <div class="ref">Ref: ${h(order.id)}</div>
       </div>
     </div></body></html>`;
 }
@@ -120,7 +123,7 @@ router.post('/bank-info', async (req, res) => {
 });
 
 /* ── Submit payment (student) — must come before /:id routes ── */
-router.post('/orders', (req, res) => {
+router.post('/orders', orderLimiter, (req, res) => {
     uploader.single('receipt')(req, res, async (err) => {
         if (err) return res.status(400).json({ ok: false, message: err.message });
         try {
@@ -425,9 +428,8 @@ router.get('/factura/:id', async (req, res) => {
         if (!order) return res.status(404).send('<h2>Comprobante no encontrado</h2>');
 
         const resourcePath = '/factura/' + req.params.id;
-        const headerSess   = req.headers['x-session-token'];
-        const adminSess    = headerSess ? require('../middleware/auth').getSessionByRawToken(headerSess) : null;
-        const isAdmin      = adminSess && adminSess.role === 'admin';
+        const cookieSess   = getSession(req);
+        const isAdmin      = cookieSess && cookieSess.role === 'admin';
 
         const authorizedViaSignedToken = req.query.sv && verifyViewPath(resourcePath, req.query.sv);
         const authorizedViaOrderToken  = req.query.token === order.token;

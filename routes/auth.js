@@ -64,8 +64,6 @@ router.post('/login', loginLimiter, async (req, res) => {
 router.post('/logout', (req, res) => {
     const cookieToken = req.cookies?.exp_session;
     if (cookieToken) revokeSession(cookieToken);
-    const raw = req.headers['x-session-token'];
-    if (raw) revokeSession(raw);
     res.clearCookie('exp_session', { path: '/' });
     res.clearCookie('exp_role',    { path: '/' });
     res.json({ ok: true });

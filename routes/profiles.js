@@ -125,6 +125,9 @@ router.post('/add-video', async (req, res) => {
         if (!sess) return;
         const { url, title } = req.body;
         if (!url) return res.status(400).json({ ok: false, message: 'URL requerida' });
+        const VIDEO_HOSTS = /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)/i;
+        if (!VIDEO_HOSTS.test(url))
+            return res.status(400).json({ ok: false, message: 'Solo se permiten videos de YouTube o Vimeo' });
         const p = await db.getProfile(sess.userId) || emptyProfile(sess.userId);
         if (!p.videos) p.videos = [];
         p.videos.push({ url, title: title || '' });

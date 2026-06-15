@@ -117,10 +117,10 @@ app.use(express.static(__dirname, {
     }
 }));
 
-/* ── Protected uploads: accept session-header OR signed view token ── */
+/* ── Protected uploads: accept session cookie (admin) OR signed view token ── */
 app.use('/uploads/receipts', (req, res, next) => {
-    const rawTok = req.headers['x-session-token'];
-    if (rawTok && getSessionByRawToken(rawTok)) return next();
+    const cookieTok = req.cookies?.exp_session;
+    if (cookieTok && getSessionByRawToken(cookieTok)) return next();
 
     const sv           = req.query.sv;
     const resourcePath = '/uploads/receipts' + req.path;

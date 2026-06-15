@@ -1,16 +1,21 @@
 'use strict';
 const router = require('express').Router();
 const db     = require('../db');
-const { requireAdmin }                             = require('../middleware/auth');
+const { requireAdmin, getSession }                 = require('../middleware/auth');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_IMAGE } = require('../middleware/upload');
 
 const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
 const VALID_AUDIENCES  = new Set(['publico', 'alumnos']);
 
 /* ── Events ── */
-router.get('/events', async (_req, res) => {
+router.get('/events', async (req, res) => {
     try {
-        res.json((await db.getEvents()).sort((a, b) => a.date.localeCompare(b.date)));
+        const sess = getSession(req);
+        const isAuth = !!(sess && (sess.role === 'admin' || sess.role === 'alumno'));
+        const events = (await db.getEvents())
+            .filter(e => isAuth || e.audience !== 'alumnos')
+            .sort((a, b) => a.date.localeCompare(b.date));
+        res.json(events);
     } catch (e) {
         console.error('[GET /api/events]', e);
         res.status(500).json({ ok: false, message: 'Error interno' });
@@ -50,13 +55,15 @@ router.put('/events/:id', async (req, res) => {
         if (!requireAdmin(req, res)) return;
         const { title, date, time, location, description, category, audience } = req.body;
         const fields = {};
-        if (title       !== undefined) fields.title       = title;
-        if (date        !== undefined) fields.date        = date;
-        if (time        !== undefined) fields.time        = time;
-        if (location    !== undefined) fields.location    = location;
-        if (description !== undefined) fields.description = description;
+        if (title       !== undefined) fields.title       = String(title).trim().slice(0, 200);
+        if (date        !== undefined) fields.date        = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
+        if (time        !== undefined) fields.time        = String(time).slice(0, 10);
+        if (location    !== undefined) fields.location    = String(location).slice(0, 200);
+        if (description !== undefined) fields.description = String(description).slice(0, 1000);
         if (category    !== undefined) fields.category    = VALID_CATEGORIES.has(category) ? category : 'otro';
         if (audience    !== undefined) fields.audience    = VALID_AUDIENCES.has(audience)  ? audience : 'publico';
+        // Remove undefined values introduced by date validation
+        Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
         const ok = await db.updateEvent(req.params.id, fields);
         if (!ok) return res.status(404).json({ ok: false, message: 'Evento no encontrado' });
         res.json({ ok: true });

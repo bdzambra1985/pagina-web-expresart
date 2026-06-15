@@ -25,4 +25,14 @@ const resetRequestLimiter = rateLimit({
     legacyHeaders: false
 });
 
-module.exports = { loginLimiter, apiLimiter, resetRequestLimiter };
+// Limit payment submissions to prevent admin email spam and DB flooding
+const orderLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
+    message: { ok: false, message: 'Demasiados envíos. Espera 10 minutos.' }
+});
+
+module.exports = { loginLimiter, apiLimiter, resetRequestLimiter, orderLimiter };
