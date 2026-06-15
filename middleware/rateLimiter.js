@@ -6,7 +6,7 @@ const loginLimiter = rateLimit({
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.ip || 'unknown',
+    validate: { xForwardedForHeader: false },
     message: { ok: false, message: 'Demasiados intentos. Intenta en 15 minutos.' }
 });
 
