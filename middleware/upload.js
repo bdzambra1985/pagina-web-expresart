@@ -49,12 +49,14 @@ async function compressImage(buffer, mime) {
     // GIFs se pasan tal cual (pueden ser animados)
     if (mime === 'image/gif') return { buffer, ext: '.gif' };
 
-    const pipeline = sharp(buffer).resize({
-        width:             MAX_DIM,
-        height:            MAX_DIM,
-        fit:               'inside',         // mantiene proporción
-        withoutEnlargement: true             // no agranda imágenes pequeñas
-    });
+    const pipeline = sharp(buffer)
+        .rotate()                            // corrige orientación EXIF automáticamente
+        .resize({
+            width:             MAX_DIM,
+            height:            MAX_DIM,
+            fit:               'inside',     // mantiene proporción
+            withoutEnlargement: true         // no agranda imágenes pequeñas
+        });
 
     let compressed, ext;
     if (mime === 'image/webp') {
