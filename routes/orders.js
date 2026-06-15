@@ -9,6 +9,67 @@ const { notifyEmail }                  = require('../utils/notify');
 const { htmlEncode, generateComprobanteHTML } = require('../utils/html');
 const { verifyViewPath }               = require('../utils/crypto');
 
+/* ── Email templates ── */
+const BASE_URL = process.env.BASE_URL || 'https://pagina-web-expresart-production.up.railway.app';
+
+const _emailCSS = `
+  body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px}
+  .card{background:#fff;border-radius:8px;max-width:520px;margin:0 auto;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .header{background:#060002;padding:24px 32px;text-align:center}
+  .header h1{color:#c9a227;margin:0;font-size:22px;letter-spacing:1px}
+  .header p{color:#fff;margin:6px 0 0;font-size:13px;opacity:.7}
+  .banner{background:#c9a227;padding:16px 32px;text-align:center}
+  .banner h2{margin:0;color:#060002;font-size:22px}
+  .body{padding:24px 32px}
+  .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+  .row:last-child{border-bottom:none}
+  .label{color:#888;font-weight:bold;min-width:90px}
+  .value{color:#222;text-align:right}
+  .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
+  .footer{background:#060002;padding:16px 32px;text-align:center}
+  .footer a{display:inline-block;margin-top:8px;background:#c9a227;color:#060002;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:14px}
+  .ref{color:#aaa;font-size:11px;margin-top:8px}
+  .note{color:#555;font-size:13px;padding:12px 32px;border-top:1px solid #eee;text-align:center}`;
+
+function _adminEmailHtml({ name, email, doc, concept, amount, month, id }) {
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
+    <div class="card">
+      <div class="header"><h1>EXPRESART</h1><p>Nuevo comprobante de pago recibido</p></div>
+      <div class="banner"><h2>${name}</h2></div>
+      <div class="body">
+        <div class="row"><span class="label">Email</span><span class="value">${email}</span></div>
+        <div class="row"><span class="label">Cédula</span><span class="value">${doc}</span></div>
+        <div class="row"><span class="label">Concepto</span><span class="value">${concept}</span></div>
+        <div class="row"><span class="label">Mes</span><span class="value">${month || 'Sin especificar'}</span></div>
+        <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(amount).toFixed(2)}</span></div>
+      </div>
+      <div class="footer">
+        <a href="${BASE_URL}/admin.html">Ver panel de admin</a>
+        <div class="ref">Ref: ${id}</div>
+      </div>
+    </div></body></html>`;
+}
+
+function _facturaEmailHtml(order, facturaUrl) {
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
+    <div class="card">
+      <div class="header"><h1>EXPRESART</h1><p>Tu factura ha sido autorizada por el SRI</p></div>
+      <div class="banner"><h2>Hola, ${order.customerName}!</h2></div>
+      <div class="body">
+        <p style="color:#444;font-size:14px;margin:0 0 16px">Tu pago fue <strong>confirmado</strong> y el SRI ha autorizado la factura electrónica.</p>
+        <div class="row"><span class="label">Concepto</span><span class="value">${order.concept}</span></div>
+        <div class="row"><span class="label">Mes</span><span class="value">${order.paymentMonth || 'Sin especificar'}</span></div>
+        <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Factura</span><span class="value">${order.invoiceNumber}</span></div>
+      </div>
+      <div class="note">La factura electrónica está adjunta a este correo y también la puedes ver en línea.</div>
+      <div class="footer">
+        <a href="${facturaUrl}">Ver factura en línea</a>
+        <div class="ref">Ref: ${order.id}</div>
+      </div>
+    </div></body></html>`;
+}
+
 /* ── Helpers ── */
 function seqFromInvoice(inv) {
     return parseInt((inv || '001-001-000000000').split('-').pop(), 10) || 0;
@@ -100,71 +161,11 @@ router.post('/orders', (req, res) => {
             await db.createOrder(order);
             res.json({ ok: true, orderId: order.id, token: order.token });
 
-            const baseUrl  = process.env.BASE_URL || 'https://pagina-web-expresart-production.up.railway.app';
-            const comprobanteUrl = `${baseUrl}/factura/${order.id}?token=${order.token}`;
-            const emailStyles = `
-              body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px}
-              .card{background:#fff;border-radius:8px;max-width:520px;margin:0 auto;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-              .header{background:#060002;padding:24px 32px;text-align:center}
-              .header h1{color:#c9a227;margin:0;font-size:22px;letter-spacing:1px}
-              .header p{color:#fff;margin:6px 0 0;font-size:13px;opacity:.7}
-              .name-banner{background:#c9a227;padding:16px 32px;text-align:center}
-              .name-banner h2{margin:0;color:#060002;font-size:24px}
-              .body{padding:24px 32px}
-              .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
-              .row:last-child{border-bottom:none}
-              .label{color:#888;font-weight:bold;min-width:90px}
-              .value{color:#222;text-align:right}
-              .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
-              .footer{background:#060002;padding:16px 32px;text-align:center}
-              .footer a{display:inline-block;margin-top:8px;background:#c9a227;color:#060002;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:14px}
-              .ref{color:#aaa;font-size:11px;margin-top:8px}
-              .note{color:#555;font-size:13px;padding:16px 32px;border-top:1px solid #eee;text-align:center}`;
-            const orderRows = `
-              <div class="row"><span class="label">Nombre</span><span class="value">${order.customerName}</span></div>
-              <div class="row"><span class="label">Cédula</span><span class="value">${order.customerDoc}</span></div>
-              <div class="row"><span class="label">Concepto</span><span class="value">${order.concept}</span></div>
-              <div class="row"><span class="label">Mes</span><span class="value">${order.paymentMonth || 'Sin especificar'}</span></div>
-              <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>`;
-
             // Email al admin
             notifyEmail(
                 `💰 Nuevo pago — ${order.customerName}`,
-                `Alumno: ${order.customerName}\nEmail: ${order.customerEmail}\nCédula: ${order.customerDoc}\nConcepto: ${order.concept}\nMonto: $${parseFloat(order.amount).toFixed(2)}\nMes: ${order.paymentMonth || 'Sin especificar'}\nRef: ${order.id}\n\nRevisa el panel de administración para aprobar o rechazar el pago.\nSe envió confirmación al alumno a: ${order.customerEmail}`,
-                `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${emailStyles}</style></head><body>
-                <div class="card">
-                  <div class="header"><h1>EXPRESART</h1><p>Nuevo comprobante de pago recibido</p></div>
-                  <div class="name-banner"><h2>${order.customerName}</h2></div>
-                  <div class="body">
-                    <div class="row"><span class="label">Email</span><span class="value">${order.customerEmail}</span></div>
-                    ${orderRows}
-                  </div>
-                  <div class="note">✉️ Se envió confirmación automática al alumno a <strong>${order.customerEmail}</strong></div>
-                  <div class="footer">
-                    <a href="${baseUrl}/admin.html">Ver panel de admin</a>
-                    <div class="ref">Ref: ${order.id}</div>
-                  </div>
-                </div></body></html>`
-            );
-
-            // Email de confirmación al alumno
-            notifyEmail(
-                `✅ Recibimos tu comprobante de pago — EXPRESART`,
-                `Hola ${order.customerName},\n\nRecibimos tu comprobante de pago. Está en revisión y te notificaremos cuando sea aprobado.\n\nDetalles:\nConcepto: ${order.concept}\nMonto: $${parseFloat(order.amount).toFixed(2)}\nMes: ${order.paymentMonth || 'Sin especificar'}\nRef: ${order.id}\n\nPuedes ver tu comprobante en:\n${comprobanteUrl}\n\nGracias,\nEXPRESART`,
-                `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${emailStyles}</style></head><body>
-                <div class="card">
-                  <div class="header"><h1>EXPRESART</h1><p>Confirmación de pago recibido</p></div>
-                  <div class="name-banner"><h2>Hola, ${order.customerName}!</h2></div>
-                  <div class="body">
-                    <p style="color:#444;font-size:14px;margin:0 0 16px">Recibimos tu comprobante de pago. Está <strong>en revisión</strong> y te notificaremos cuando sea aprobado.</p>
-                    ${orderRows}
-                  </div>
-                  <div class="footer">
-                    <a href="${comprobanteUrl}">Ver mi comprobante</a>
-                    <div class="ref">Ref: ${order.id}</div>
-                  </div>
-                </div></body></html>`,
-                order.customerEmail
+                `Alumno: ${order.customerName}\nEmail: ${order.customerEmail}\nCédula: ${order.customerDoc}\nConcepto: ${order.concept}\nMonto: $${parseFloat(order.amount).toFixed(2)}\nMes: ${order.paymentMonth || 'Sin especificar'}\nRef: ${order.id}\n\nRevisa el panel de administración para aprobar o rechazar el pago.`,
+                _adminEmailHtml({ name: order.customerName, email: order.customerEmail, doc: order.customerDoc, concept: order.concept, amount: order.amount, month: order.paymentMonth, id: order.id })
             );
         } catch (e) {
             console.error('[POST /api/orders]', e);
@@ -294,6 +295,16 @@ router.put('/orders/:id/confirm', async (req, res) => {
                 if (usedInv !== invoiceNumber) fields.invoiceNumber = usedInv;
                 if (!result.ok) console.error('[SRI confirm]', JSON.stringify(result));
                 await db.updateOrder(orderId, fields);
+                if (result.ok && orderSnap.customerEmail) {
+                    const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
+                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
+                    await notifyEmail(
+                        `✅ Tu factura electrónica — EXPRESART`,
+                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nDescarga tu factura en:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        _facturaEmailHtml(finalOrder, facturaUrl),
+                        orderSnap.customerEmail
+                    );
+                }
             } catch (e) {
                 console.error('[SRI confirm error]', e.message);
                 await db.updateOrder(orderId, { sri: { status: 'error', error: e.message } });
@@ -329,6 +340,16 @@ router.post('/orders/:id/sri-retry', async (req, res) => {
                 const fields = { sri: sriData };
                 if (usedInv !== startSeq) fields.invoiceNumber = usedInv;
                 await db.updateOrder(orderId, fields);
+                if (result.ok && orderSnap.customerEmail) {
+                    const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
+                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
+                    await notifyEmail(
+                        `✅ Tu factura electrónica — EXPRESART`,
+                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nDescarga tu factura en:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        _facturaEmailHtml(finalOrder, facturaUrl),
+                        orderSnap.customerEmail
+                    );
+                }
             } catch (e) {
                 await db.updateOrder(orderId, { sri: { status: 'error', error: e.message } });
             }
