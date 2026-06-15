@@ -299,21 +299,27 @@ router.put('/orders/:id/confirm', async (req, res) => {
                 if (usedInv !== invoiceNumber) fields.invoiceNumber = usedInv;
                 if (!result.ok) console.error('[SRI confirm]', JSON.stringify(result));
                 await db.updateOrder(orderId, fields);
-                if (result.ok && orderSnap.customerEmail) {
-                    const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
-                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
-                    const facturaHtml = generateComprobanteHTML(finalOrder);
-                    await notifyEmail(
-                        `✅ Tu factura electrónica — EXPRESART`,
-                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
-                        _facturaEmailHtml(finalOrder, facturaUrl),
-                        orderSnap.customerEmail,
-                        [{ filename: `factura-${usedInv}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
-                    );
-                }
             } catch (e) {
                 console.error('[SRI confirm error]', e.message);
                 await db.updateOrder(orderId, { sri: { status: 'error', error: e.message } });
+            }
+            // Email al alumno — bloque separado para no afectar el resultado del SRI
+            try {
+                const updated = await db.getOrderById(orderId);
+                if (updated && updated.sri && updated.sri.status === 'autorizado' && updated.customerEmail) {
+                    const bankInfo  = await db.getBankInfo();
+                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${updated.token}`;
+                    const facturaHtml = generateComprobanteHTML(updated, bankInfo);
+                    await notifyEmail(
+                        `✅ Tu factura electrónica — EXPRESART`,
+                        `Hola ${updated.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${updated.concept}\nMonto: $${parseFloat(updated.amount).toFixed(2)}\nFactura: ${updated.invoiceNumber}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        _facturaEmailHtml(updated, facturaUrl),
+                        updated.customerEmail,
+                        [{ filename: `factura-${updated.invoiceNumber}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
+                    );
+                }
+            } catch (e) {
+                console.error('[Email factura error]', e.message);
             }
         });
     } catch (e) {
@@ -346,20 +352,25 @@ router.post('/orders/:id/sri-retry', async (req, res) => {
                 const fields = { sri: sriData };
                 if (usedInv !== startSeq) fields.invoiceNumber = usedInv;
                 await db.updateOrder(orderId, fields);
-                if (result.ok && orderSnap.customerEmail) {
-                    const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
-                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
-                    const facturaHtml = generateComprobanteHTML(finalOrder);
+            } catch (e) {
+                await db.updateOrder(orderId, { sri: { status: 'error', error: e.message } });
+            }
+            try {
+                const updated = await db.getOrderById(orderId);
+                if (updated && updated.sri && updated.sri.status === 'autorizado' && updated.customerEmail) {
+                    const bankInfo   = await db.getBankInfo();
+                    const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${updated.token}`;
+                    const facturaHtml = generateComprobanteHTML(updated, bankInfo);
                     await notifyEmail(
                         `✅ Tu factura electrónica — EXPRESART`,
-                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
-                        _facturaEmailHtml(finalOrder, facturaUrl),
-                        orderSnap.customerEmail,
-                        [{ filename: `factura-${usedInv}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
+                        `Hola ${updated.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${updated.concept}\nMonto: $${parseFloat(updated.amount).toFixed(2)}\nFactura: ${updated.invoiceNumber}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        _facturaEmailHtml(updated, facturaUrl),
+                        updated.customerEmail,
+                        [{ filename: `factura-${updated.invoiceNumber}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
                     );
                 }
             } catch (e) {
-                await db.updateOrder(orderId, { sri: { status: 'error', error: e.message } });
+                console.error('[Email factura error]', e.message);
             }
         });
     } catch (e) {
