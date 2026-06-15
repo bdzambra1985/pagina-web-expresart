@@ -3,29 +3,37 @@
 const dns        = require('dns');
 const nodemailer = require('nodemailer');
 
-// Railway has no IPv6 egress — force all DNS lookups to return IPv4 first
-dns.setDefaultResultOrder('ipv4first');
-
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL;
 
-const _transporter = nodemailer.createTransport({
-    host:   'smtp.gmail.com',
-    port:   587,
-    secure: false,
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-    },
-});
+// Resolve smtp.gmail.com to IPv4 explicitly — Railway has no IPv6 egress
+let _transporter = null;
+function getTransporter() {
+    if (_transporter) return Promise.resolve(_transporter);
+    return new Promise((resolve, reject) => {
+        dns.resolve4('smtp.gmail.com', (err, addrs) => {
+            if (err) return reject(err);
+            _transporter = nodemailer.createTransport({
+                host:   addrs[0],
+                port:   587,
+                secure: false,
+                auth:   { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
+                tls:    { servername: 'smtp.gmail.com' },
+            });
+            resolve(_transporter);
+        });
+    });
+}
 
 function notifyEmail(subject, text) {
     if (!NOTIFY_EMAIL || !process.env.GMAIL_USER) return;
-    _transporter.sendMail({
-        from: `"EXPRESART" <${process.env.GMAIL_USER}>`,
-        to:   NOTIFY_EMAIL,
-        subject,
-        text,
-    }).catch(e => console.error('[Email notify]', e.message));
+    getTransporter()
+        .then(t => t.sendMail({
+            from: `"EXPRESART" <${process.env.GMAIL_USER}>`,
+            to:   NOTIFY_EMAIL,
+            subject,
+            text,
+        }))
+        .catch(e => console.error('[Email notify]', e.message));
 }
 
-module.exports = { notifyEmail };
+module.exports = { notifyEmail, getTransporter };

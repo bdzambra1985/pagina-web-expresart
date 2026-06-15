@@ -198,11 +198,8 @@ router.post('/test-email', async (req, res) => {
     try {
         const sess = requireAuth(req, res);
         if (!sess || sess.role !== 'admin') return;
-        const nodemailer = require('nodemailer');
-        const t = nodemailer.createTransport({
-            host: 'smtp.gmail.com', port: 587, secure: false, family: 4,
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
-        });
+        const { getTransporter } = require('../utils/notify');
+        const t = await getTransporter();
         await t.verify();
         await t.sendMail({
             from: `"EXPRESART" <${process.env.GMAIL_USER}>`,
