@@ -2,15 +2,16 @@
 
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL;
 
-async function notifyEmail(subject, text, html) {
+async function notifyEmail(subject, text, html, to) {
     const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey || !NOTIFY_EMAIL) return;
+    const recipient = to || NOTIFY_EMAIL;
+    if (!apiKey || !recipient) return;
     try {
         const { Resend } = require('resend');
         const resend = new Resend(apiKey);
         const { error } = await resend.emails.send({
             from:    'EXPRESART <onboarding@resend.dev>',
-            to:      NOTIFY_EMAIL,
+            to:      recipient,
             subject,
             text,
             html,
