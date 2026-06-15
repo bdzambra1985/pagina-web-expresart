@@ -193,4 +193,27 @@ router.get('/backup/:filename', async (req, res) => {
     }
 });
 
+/* ── Test email (admin only, temporal) ── */
+router.post('/test-email', async (req, res) => {
+    try {
+        const sess = requireAuth(req, res);
+        if (!sess || sess.role !== 'admin') return;
+        const nodemailer = require('nodemailer');
+        const t = nodemailer.createTransport({
+            host: 'smtp.gmail.com', port: 587, secure: false, family: 4,
+            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
+        });
+        await t.verify();
+        await t.sendMail({
+            from: `"EXPRESART" <${process.env.GMAIL_USER}>`,
+            to:   process.env.NOTIFY_EMAIL,
+            subject: '✅ Test email desde Railway',
+            text: 'Si recibes esto, las notificaciones funcionan correctamente.'
+        });
+        res.json({ ok: true, from: process.env.GMAIL_USER, to: process.env.NOTIFY_EMAIL });
+    } catch (e) {
+        res.json({ ok: false, error: e.message, code: e.code });
+    }
+});
+
 module.exports = router;
