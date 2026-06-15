@@ -192,4 +192,54 @@ router.get('/backup/:filename', async (req, res) => {
 });
 
 
+/* ── Limpiar pagos de prueba (admin only, temporal) — preserva secuencial SRI ── */
+router.post('/clear-test-orders', async (req, res) => {
+    try {
+        const sess = requireAuth(req, res);
+        if (!sess || sess.role !== 'admin') return res.status(403).json({ ok: false });
+
+        const crypto = require('crypto');
+        const orders = await db.getOrders();
+        if (!orders.length) return res.json({ ok: true, deleted: 0, anchorSeq: null });
+
+        // Find highest invoice number across all orders
+        const maxSeq = orders.reduce((m, o) => {
+            if (!o.invoiceNumber) return m;
+            return Math.max(m, parseInt(o.invoiceNumber.split('-').pop(), 10) || 0);
+        }, 0);
+
+        const anchorInv = maxSeq > 0 ? '001-001-' + String(maxSeq).padStart(9, '0') : null;
+
+        // Delete all orders
+        await db.deleteAllOrders();
+
+        // Re-insert anchor record so sequence doesn't reset
+        if (anchorInv) {
+            await db.createOrder({
+                id: 'seq_anchor_' + Date.now(),
+                token: crypto.randomBytes(8).toString('hex'),
+                status: 'anchor',
+                userId: null,
+                customerName: 'SECUENCIAL SRI',
+                customerDoc: '0000000000',
+                customerEmail: 'anchor@expresart.local',
+                concept: 'Ancla de secuencial — no eliminar',
+                amount: 0, subtotal: 0, iva: 0, ivaRate: 15,
+                receiptUrl: null, notes: '',
+                paymentMonth: null,
+                invoiceNumber: anchorInv,
+                rejectionReason: '',
+                sri: { status: 'autorizado' },
+                createdAt: new Date().toISOString(),
+                confirmedAt: new Date().toISOString()
+            });
+        }
+
+        res.json({ ok: true, deleted: orders.length, anchorSeq: anchorInv });
+    } catch (e) {
+        console.error('[clear-test-orders]', e);
+        res.status(500).json({ ok: false, message: e.message });
+    }
+});
+
 module.exports = router;

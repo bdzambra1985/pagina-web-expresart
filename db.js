@@ -445,6 +445,11 @@ async function updateOrder(id, fields) {
     await pool.query(`UPDATE orders SET ${sets.join(',')} WHERE id=$${vals.length}`, vals);
     return true;
 }
+async function deleteAllOrders() {
+    if (!USE_DB) { jWrite(ORDERS_FILE, []); return; }
+    await pool.query('DELETE FROM orders');
+}
+
 async function nextInvoiceNumber() {
     if (!USE_DB) {
         const orders = jRead(ORDERS_FILE, []);
@@ -600,7 +605,7 @@ module.exports = {
     getContent, saveContentSection, saveContentPhoto,
     /* orders */
     getOrders, getOrdersByUser, getOrderById,
-    createOrder, updateOrder, nextInvoiceNumber,
+    createOrder, updateOrder, deleteAllOrders, nextInvoiceNumber,
     /* bank info */
     getBankInfo, saveBankInfo,
     /* share links */
