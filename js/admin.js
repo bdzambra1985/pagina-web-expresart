@@ -1171,8 +1171,82 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        if (btn.dataset.tab === 'pagos') { loadBankInfo(); loadOrders(); }
+        if (btn.dataset.tab === 'pagos')      { loadBankInfo(); loadOrders(); }
+        if (btn.dataset.tab === 'respaldos')  { loadBackupList(); }
     });
+});
+
+/* ══════════════════════
+   TAB RESPALDOS
+   ══════════════════════ */
+async function loadBackupList() {
+    const wrap = document.getElementById('backupList');
+    wrap.innerHTML = '<p class="no-users">Cargando…</p>';
+    try {
+        const r = await fetch('/api/backup', { headers: { 'x-session-token': TOKEN } });
+        const d = await r.json();
+        if (!d.ok || !d.backups.length) {
+            wrap.innerHTML = '<p class="no-users">No hay respaldos todavía. Crea uno manualmente.</p>';
+            return;
+        }
+        wrap.innerHTML = `<div class="tbl-scroll"><table class="user-table">
+            <thead><tr><th>Fecha</th><th>Tamaño</th><th>Descargar</th></tr></thead>
+            <tbody>${d.backups.map(b => `
+                <tr>
+                    <td style="font-size:.85em">${b.filename.replace('backup-','').replace('.json.gz','')}</td>
+                    <td style="font-size:.82em;color:rgba(255,200,200,.6)">${b.sizeKb} KB</td>
+                    <td><a href="/api/backup/${encodeURIComponent(b.filename)}"
+                            download="${b.filename}"
+                            onclick="this.setAttribute('href', this.href)"
+                            class="tbl-btn tbl-btn-view"
+                            style="text-decoration:none"
+                            data-backup-download="${b.filename}">
+                        <i class="bx bx-download"></i> Descargar
+                    </a></td>
+                </tr>`).join('')}
+            </tbody>
+        </table></div>`;
+
+        // Agregar header de autorización a los links de descarga vía fetch
+        wrap.querySelectorAll('[data-backup-download]').forEach(a => {
+            a.addEventListener('click', async e => {
+                e.preventDefault();
+                const filename = a.dataset.backupDownload;
+                const res = await fetch('/api/backup/' + encodeURIComponent(filename), {
+                    headers: { 'x-session-token': TOKEN }
+                });
+                if (!res.ok) { showToast('Error al descargar', true); return; }
+                const blob = await res.blob();
+                const url  = URL.createObjectURL(blob);
+                const tmp  = document.createElement('a');
+                tmp.href = url; tmp.download = filename;
+                tmp.click();
+                URL.revokeObjectURL(url);
+            });
+        });
+    } catch {
+        wrap.innerHTML = '<p class="no-users">Error al cargar respaldos.</p>';
+    }
+}
+
+document.getElementById('btnRunBackup').addEventListener('click', async () => {
+    const btn    = document.getElementById('btnRunBackup');
+    const status = document.getElementById('backupStatus');
+    btn.disabled = true;
+    status.innerHTML = '<span style="color:#c9a227">⏳ Generando respaldo…</span>';
+    try {
+        const r = await fetch('/api/backup', { method: 'POST', headers: { 'x-session-token': TOKEN } });
+        const d = await r.json();
+        if (d.ok) {
+            status.innerHTML = `<span style="color:#7ed97e">✓ Respaldo creado: ${d.filename} (${d.sizeKb} KB)</span>`;
+            loadBackupList();
+        } else {
+            status.innerHTML = `<span style="color:#f66">Error: ${d.error || d.message}</span>`;
+        }
+    } catch {
+        status.innerHTML = '<span style="color:#f66">Error de conexión</span>';
+    }
+    btn.disabled = false;
 });
 
 /* ── Búsqueda en tablas ── */

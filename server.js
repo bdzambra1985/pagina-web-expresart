@@ -13,6 +13,8 @@ const { apiLimiter }   = require('./middleware/rateLimiter');
 const { getSessionByRawToken } = require('./middleware/auth');
 const { verifyViewPath }       = require('./utils/crypto');
 const { USE_CLOUDINARY, UPLOADS_DIR } = require('./middleware/upload');
+const { runBackup }    = require('./utils/backup');
+const cron             = require('node-cron');
 
 /* ── Route modules ── */
 const authRoutes       = require('./routes/auth');
@@ -147,6 +149,10 @@ app.use((req, res) => {
         await db.initDB();
         cleanupLegacyFiles();
         await initAdmin();
+        /* ── Respaldo diario a las 02:00 (hora del servidor) ── */
+        cron.schedule('0 2 * * *', () => runBackup(), { timezone: 'America/Guayaquil' });
+        console.log('  Respaldo automático: diario a las 02:00 (Guayaquil)');
+
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`\n  EXPRESART server en puerto ${PORT}`);
             console.log(`  DB: ${db.USE_DB ? 'PostgreSQL' : 'JSON files'}`);

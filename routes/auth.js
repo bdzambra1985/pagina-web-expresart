@@ -134,4 +134,52 @@ router.get('/signed-url', (req, res) => {
     }
 });
 
+/* ══════════════════════════════════
+   BACKUP — solo admin
+   ══════════════════════════════════ */
+const { runBackup, listBackups, getBackupPath } = require('../utils/backup');
+
+/* Listar backups disponibles */
+router.get('/backup', async (req, res) => {
+    try {
+        const sess = requireAuth(req, res);
+        if (!sess) return;
+        if (sess.role !== 'admin') return res.status(403).json({ ok: false, message: 'Solo administradores' });
+        res.json({ ok: true, backups: listBackups() });
+    } catch (e) {
+        res.status(500).json({ ok: false, message: 'Error interno' });
+    }
+});
+
+/* Ejecutar backup manual ahora */
+router.post('/backup', async (req, res) => {
+    try {
+        const sess = requireAuth(req, res);
+        if (!sess) return;
+        if (sess.role !== 'admin') return res.status(403).json({ ok: false, message: 'Solo administradores' });
+        const result = await runBackup();
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ ok: false, message: 'Error interno' });
+    }
+});
+
+/* Descargar un backup por nombre */
+router.get('/backup/:filename', (req, res) => {
+    try {
+        const sess = requireAuth(req, res);
+        if (!sess) return;
+        if (sess.role !== 'admin') return res.status(403).json({ ok: false, message: 'Solo administradores' });
+
+        const fp = getBackupPath(req.params.filename);
+        if (!fp) return res.status(404).json({ ok: false, message: 'Backup no encontrado' });
+
+        res.setHeader('Content-Disposition', `attachment; filename="${req.params.filename}"`);
+        res.setHeader('Content-Type', 'application/gzip');
+        res.sendFile(fp);
+    } catch (e) {
+        res.status(500).json({ ok: false, message: 'Error interno' });
+    }
+});
+
 module.exports = router;

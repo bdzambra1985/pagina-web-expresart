@@ -563,6 +563,9 @@
         <button class="tab-btn" data-tab="pagos">
             <i class="bx bx-credit-card"></i> Pagos
         </button>
+        <button class="tab-btn" data-tab="respaldos">
+            <i class="bx bx-data"></i> Respaldos
+        </button>
     </div>
 
     <!-- ══════════════ TAB ALUMNOS ══════════════ -->
@@ -950,6 +953,22 @@
         </div>
 
     </div><!-- /tab-pagos -->
+
+    <!-- ══════════════ TAB RESPALDOS ══════════════ -->
+    <div class="tab-panel" id="tab-respaldos" style="display:none">
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-data"></i> Respaldos de base de datos</h2>
+            <p style="font-size:0.82em;color:rgba(255,200,200,0.55);margin-bottom:20px;">
+                Respaldo automático diario a las 02:00 (Guayaquil). Se conservan los últimos 30 días.<br>
+                El archivo descargado es un JSON comprimido (.json.gz) con todos los datos del sistema.
+            </p>
+            <button id="btnRunBackup" class="add-btn" style="margin-bottom:20px">
+                <i class="bx bx-refresh"></i> Crear respaldo ahora
+            </button>
+            <div id="backupStatus" style="font-size:0.82em;margin-bottom:16px;"></div>
+            <div id="backupList"><p class="no-users">Cargando…</p></div>
+        </div>
+    </div><!-- /tab-respaldos -->
 
 </div>
 
