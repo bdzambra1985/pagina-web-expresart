@@ -110,7 +110,7 @@ router.post('/upload', (req, res) => {
         if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
             return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes' });
         try {
-            const url = await saveFile(req.file.buffer, req.file.originalname, 'admin');
+            const url = await saveFile(req.file.buffer, req.file.originalname, 'admin', { compress: true });
             await db.saveContentPhoto(url);
             res.json({ ok: true, url });
         } catch (e) {

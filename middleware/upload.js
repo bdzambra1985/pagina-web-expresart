@@ -2,6 +2,7 @@
 const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
+const sharp      = require('sharp');
 const cloudinary = require('cloudinary').v2;
 
 /* ── Cloudinary (optional) ── */
@@ -40,17 +41,63 @@ function detectMime(buffer) {
     return null;
 }
 
-/* ── Multer instance (memory storage, 10 MB limit) ── */
+/* ── Image compression ── */
+const MAX_DIM     = 2000;  // px — máxima dimensión (ancho o alto)
+const IMG_QUALITY = 85;    // calidad JPEG/WebP
+
+async function compressImage(buffer, mime) {
+    // GIFs se pasan tal cual (pueden ser animados)
+    if (mime === 'image/gif') return { buffer, ext: '.gif' };
+
+    const pipeline = sharp(buffer).resize({
+        width:             MAX_DIM,
+        height:            MAX_DIM,
+        fit:               'inside',         // mantiene proporción
+        withoutEnlargement: true             // no agranda imágenes pequeñas
+    });
+
+    let compressed, ext;
+    if (mime === 'image/webp') {
+        compressed = await pipeline.webp({ quality: IMG_QUALITY }).toBuffer();
+        ext = '.webp';
+    } else {
+        // JPEG y PNG → JPEG (fotos en PNG son innecesariamente grandes)
+        compressed = await pipeline.jpeg({ quality: IMG_QUALITY, progressive: true }).toBuffer();
+        ext = '.jpg';
+    }
+
+    const before = Math.round(buffer.length / 1024);
+    const after  = Math.round(compressed.length / 1024);
+    console.log(`  [IMG] ${before}KB → ${after}KB (ahorro: ${Math.round((1 - after/before)*100)}%)`);
+
+    return { buffer: compressed, ext };
+}
+
+/* ── Multer instance (memory storage, 15 MB limit) ── */
 const uploader = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: 15 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
         cb(null, ALLOWED_EXTS.has(path.extname(file.originalname).toLowerCase()));
     }
 });
 
-/* ── File save (Cloudinary or local disk) ── */
-async function saveFile(buffer, originalname, userId) {
+/* ── File save (Cloudinary or local disk) ──
+   opts.compress = true → comprime la imagen antes de guardar
+*/
+async function saveFile(buffer, originalname, userId, { compress = false } = {}) {
+    let outBuffer = buffer;
+    let ext = path.extname(originalname).toLowerCase() || '.jpg';
+
+    if (compress) {
+        const mime = detectMime(buffer);
+        if (mime && ALLOWED_MIMES_IMAGE.has(mime)) {
+            const result = await compressImage(buffer, mime);
+            outBuffer = result.buffer;
+            ext       = result.ext;
+        }
+    }
+
     if (USE_CLOUDINARY) {
         return new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -59,14 +106,13 @@ async function saveFile(buffer, originalname, userId) {
                     if (err) return reject(new Error(err.message || JSON.stringify(err)));
                     resolve(result.secure_url);
                 }
-            ).end(buffer);
+            ).end(outBuffer);
         });
     }
     const dest     = path.join(UPLOADS_DIR, userId);
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-    const ext      = path.extname(originalname).toLowerCase();
     const filename = 'foto-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext;
-    fs.writeFileSync(path.join(dest, filename), buffer);
+    fs.writeFileSync(path.join(dest, filename), outBuffer);
     return '/uploads/' + userId + '/' + filename;
 }
 

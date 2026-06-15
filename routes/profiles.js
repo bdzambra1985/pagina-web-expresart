@@ -86,7 +86,7 @@ router.post('/upload-photo', (req, res) => {
         if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
             return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes (JPEG, PNG, WebP, GIF)' });
         try {
-            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
+            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId, { compress: true });
             const p   = await db.getProfile(sess.userId) || emptyProfile(sess.userId);
             p.photoUrl = url;
             await db.upsertProfile(sess.userId, p);
@@ -109,7 +109,7 @@ router.post('/upload-prod-photo', (req, res) => {
         if (!mime || !ALLOWED_MIMES_IMAGE.has(mime))
             return res.status(400).json({ ok: false, message: 'Solo se permiten imágenes (JPEG, PNG, WebP, GIF)' });
         try {
-            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId);
+            const url = await saveFile(req.file.buffer, req.file.originalname, sess.userId, { compress: true });
             res.json({ ok: true, url });
         } catch (e) {
             console.error('[POST /api/upload-prod-photo]', e);
