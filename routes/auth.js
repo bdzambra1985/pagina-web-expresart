@@ -198,16 +198,9 @@ router.post('/test-email', async (req, res) => {
     try {
         const sess = requireAuth(req, res);
         if (!sess || sess.role !== 'admin') return;
-        const { getTransporter } = require('../utils/notify');
-        const t = await getTransporter();
-        await t.verify();
-        await t.sendMail({
-            from: `"EXPRESART" <${process.env.GMAIL_USER}>`,
-            to:   process.env.NOTIFY_EMAIL,
-            subject: '✅ Test email desde Railway',
-            text: 'Si recibes esto, las notificaciones funcionan correctamente.'
-        });
-        res.json({ ok: true, from: process.env.GMAIL_USER, to: process.env.NOTIFY_EMAIL });
+        const { notifyEmail } = require('../utils/notify');
+        await notifyEmail('✅ Test email desde Railway', 'Si recibes esto, las notificaciones funcionan correctamente.');
+        res.json({ ok: true, to: process.env.NOTIFY_EMAIL });
     } catch (e) {
         res.json({ ok: false, error: e.message, code: e.code });
     }
