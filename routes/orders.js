@@ -101,16 +101,48 @@ router.post('/orders', (req, res) => {
             res.json({ ok: true, orderId: order.id, token: order.token });
 
             notifyEmail(
-                `💰 Nuevo pago pendiente — ${order.customerName}`,
-                `Se recibió un comprobante de pago en EXPRESART.\n\n` +
-                `Alumno:  ${order.customerName}\n` +
-                `Email:   ${order.customerEmail}\n` +
-                `Cédula:  ${order.customerDoc}\n` +
-                `Concepto: ${order.concept}\n` +
-                `Monto:   $${parseFloat(order.amount).toFixed(2)}\n` +
-                `Mes:     ${order.paymentMonth || 'Sin especificar'}\n` +
-                `Ref:     ${order.id}\n\n` +
-                `Revisa el panel de administración para aprobar o rechazar el pago.`
+                `💰 Nuevo pago — ${order.customerName}`,
+                `Alumno: ${order.customerName}\nEmail: ${order.customerEmail}\nCédula: ${order.customerDoc}\nConcepto: ${order.concept}\nMonto: $${parseFloat(order.amount).toFixed(2)}\nMes: ${order.paymentMonth || 'Sin especificar'}\nRef: ${order.id}\n\nRevisa el panel de administración para aprobar o rechazar el pago.`,
+                `<!DOCTYPE html><html><head><meta charset="utf-8">
+                <style>
+                  body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px}
+                  .card{background:#fff;border-radius:8px;max-width:520px;margin:0 auto;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+                  .header{background:#060002;padding:24px 32px;text-align:center}
+                  .header h1{color:#c9a227;margin:0;font-size:22px;letter-spacing:1px}
+                  .header p{color:#fff;margin:6px 0 0;font-size:13px;opacity:.7}
+                  .name-banner{background:#c9a227;padding:16px 32px;text-align:center}
+                  .name-banner h2{margin:0;color:#060002;font-size:24px}
+                  .body{padding:24px 32px}
+                  .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+                  .row:last-child{border-bottom:none}
+                  .label{color:#888;font-weight:bold;min-width:90px}
+                  .value{color:#222;text-align:right}
+                  .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
+                  .footer{background:#060002;padding:16px 32px;text-align:center}
+                  .footer a{display:inline-block;margin-top:8px;background:#c9a227;color:#060002;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:14px}
+                  .ref{color:#aaa;font-size:11px;margin-top:8px}
+                </style></head><body>
+                <div class="card">
+                  <div class="header">
+                    <h1>EXPRESART</h1>
+                    <p>Nuevo comprobante de pago recibido</p>
+                  </div>
+                  <div class="name-banner">
+                    <h2>${order.customerName}</h2>
+                  </div>
+                  <div class="body">
+                    <div class="row"><span class="label">Email</span><span class="value">${order.customerEmail}</span></div>
+                    <div class="row"><span class="label">Cédula</span><span class="value">${order.customerDoc}</span></div>
+                    <div class="row"><span class="label">Concepto</span><span class="value">${order.concept}</span></div>
+                    <div class="row"><span class="label">Mes</span><span class="value">${order.paymentMonth || 'Sin especificar'}</span></div>
+                    <div class="row"><span class="label">Monto</span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
+                  </div>
+                  <div class="footer">
+                    <a href="https://pagina-web-expresart-production.up.railway.app/admin.html">Ver panel de admin</a>
+                    <div class="ref">Ref: ${order.id}</div>
+                  </div>
+                </div>
+                </body></html>`
             );
         } catch (e) {
             console.error('[POST /api/orders]', e);
