@@ -1185,6 +1185,10 @@ async function loadBackupList() {
     try {
         const r = await fetch('/api/backup', { headers: { 'x-session-token': TOKEN } });
         const d = await r.json();
+        if (d.storage) {
+            document.getElementById('backupStatus').innerHTML =
+                `<span style="color:rgba(255,200,200,.5);font-size:.80em">Almacenamiento: <b style="color:#c9a227">${d.storage}</b></span>`;
+        }
         if (!d.ok || !d.backups.length) {
             wrap.innerHTML = '<p class="no-users">No hay respaldos todavía. Crea uno manualmente.</p>';
             return;
