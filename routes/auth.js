@@ -16,9 +16,10 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (!username || !password || typeof username !== 'string' || typeof password !== 'string')
             return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
 
-        const uname = username.trim().toLowerCase();
-        const ip    = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-        const att   = loginAttempts.get(uname) || { count: 0, lockedUntil: 0 };
+        const uname  = username.trim().toLowerCase();
+        const ip     = req.ip || 'unknown';
+        const lockKey = `${ip}:${uname}`;                        // lockout per IP+username
+        const att    = loginAttempts.get(lockKey) || { count: 0, lockedUntil: 0 };
 
         if (Date.now() < att.lockedUntil) {
             logSecurity('LOGIN_BLOCKED', `usuario=${uname} ip=${ip}`);
@@ -35,7 +36,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             } else {
                 logSecurity('LOGIN_FAIL', `usuario=${uname} ip=${ip} intento=${att.count}`);
             }
-            loginAttempts.set(uname, att);
+            loginAttempts.set(lockKey, att);
             return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos' });
         }
 
@@ -44,11 +45,15 @@ router.post('/login', loginLimiter, async (req, res) => {
             return res.status(403).json({ ok: false, message: 'Cuenta inactiva — contacta a EXPRESART' });
         }
 
-        loginAttempts.delete(uname);
+        loginAttempts.delete(lockKey);
         logSecurity('LOGIN_OK', `usuario=${uname} ip=${ip} rol=${user.role}`);
 
-        const token = createSession({ userId: user.userId, role: user.role });
-        res.json({ ok: true, token, role: user.role, mustChangePassword: !!user.mustChangePassword });
+        const token    = createSession({ userId: user.userId, role: user.role });
+        const isProd   = process.env.NODE_ENV === 'production';
+        const cookieOpts = { httpOnly: true, sameSite: 'strict', secure: isProd, path: '/' };
+        res.cookie('exp_session', token, cookieOpts);
+        res.cookie('exp_role', user.role, { sameSite: 'strict', secure: isProd, path: '/' });
+        res.json({ ok: true, role: user.role, mustChangePassword: !!user.mustChangePassword });
     } catch (e) {
         console.error('[/api/login]', e);
         res.status(500).json({ ok: false, message: 'Error interno' });
@@ -57,8 +62,12 @@ router.post('/login', loginLimiter, async (req, res) => {
 
 /* ── Logout ── */
 router.post('/logout', (req, res) => {
+    const cookieToken = req.cookies?.exp_session;
+    if (cookieToken) revokeSession(cookieToken);
     const raw = req.headers['x-session-token'];
-    revokeSession(raw);
+    if (raw) revokeSession(raw);
+    res.clearCookie('exp_session', { path: '/' });
+    res.clearCookie('exp_role',    { path: '/' });
     res.json({ ok: true });
 });
 
@@ -175,7 +184,8 @@ router.get('/backup/:filename', async (req, res) => {
         const stream = await getBackupStream(req.params.filename);
         if (!stream) return res.status(404).json({ ok: false, message: 'Backup no encontrado' });
 
-        res.setHeader('Content-Disposition', `attachment; filename="${req.params.filename}"`);
+        const safeName = encodeURIComponent(req.params.filename);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeName}`);
         res.setHeader('Content-Type', 'application/gzip');
         stream.pipe(res);
     } catch (e) {

@@ -18,8 +18,9 @@ function getPwSalt() {
 
 const PW_SALT = getPwSalt();
 
-// Separate key for signing view URLs — derived from master salt, different domain
-const VIEW_SIGN_KEY = crypto.createHmac('sha256', PW_SALT).update('signed-view-url:v1').digest();
+// Separate key for signing view URLs — uses EXP_SIGN_SECRET if set, otherwise derived from PW_SALT
+const _signSecret  = process.env.EXP_SIGN_SECRET || PW_SALT;
+const VIEW_SIGN_KEY = crypto.createHmac('sha256', _signSecret).update('signed-view-url:v1').digest();
 
 function hashPassword(pw) {
     return crypto.pbkdf2Sync(pw, PW_SALT, 100_000, 64, 'sha256').toString('hex');

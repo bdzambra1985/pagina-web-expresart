@@ -2,12 +2,10 @@ function redirectByRole(role) {
     location.href = role === 'admin' ? 'admin.html' : 'mi-portafolio.html';
 }
 
-const tok = localStorage.getItem('exp_token');
-if (tok) {
-    fetch('/api/auth', { headers: { 'x-session-token': tok } })
-        .then(r => r.json())
-        .then(d => { if (d.ok) redirectByRole(d.role); });
-}
+fetch('/api/auth')
+    .then(r => r.json())
+    .then(d => { if (d.ok) redirectByRole(d.role); })
+    .catch(() => {});
 
 async function sendResetRequest() {
     const btn  = document.getElementById('resetBtn');
@@ -62,7 +60,7 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         });
         const data = await res.json();
         if (data.ok) {
-            localStorage.setItem('exp_token', data.token);
+            localStorage.setItem('exp_role', data.role);
             if (data.mustChangePassword) {
                 location.href = 'cambiar-password.html';
             } else {

@@ -4,8 +4,9 @@ require('dotenv').config();
 const express     = require('express');
 const path        = require('path');
 const fs          = require('fs');
-const compression = require('compression');
-const helmet      = require('helmet');
+const compression  = require('compression');
+const helmet       = require('helmet');
+const cookieParser = require('cookie-parser');
 
 const db               = require('./db');
 const { hashPassword } = require('./utils/crypto');
@@ -67,7 +68,20 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
+app.use(cookieParser());
 app.use(compression());
+
+/* ── Block access to server-side source files via static serving ── */
+app.use((req, res, next) => {
+    const p = req.path;
+    if (
+        /^\/(data|routes|middleware|utils|sri|node_modules)(\/|$)/i.test(p) ||
+        /^\/(db|server|migrate|package|package-lock)(\.js(on)?)?$/i.test(p) ||
+        p.startsWith('/.')
+    ) return res.status(403).end();
+    next();
+});
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {

@@ -1,12 +1,8 @@
-const TOKEN = localStorage.getItem('exp_token');
-
 /* ── Secure URL opener — fetches a short-lived signed URL from the server
    instead of embedding the session token in query params (OWASP A07) ── */
 async function openProtectedUrl(resourcePath) {
     try {
-        const r = await fetch('/api/signed-url?path=' + encodeURIComponent(resourcePath), {
-            headers: { 'x-session-token': TOKEN }
-        });
+        const r = await fetch('/api/signed-url?path=' + encodeURIComponent(resourcePath));
         const d = await r.json();
         if (d.ok) { window.open(d.url, '_blank', 'noopener'); }
         else showToast('Error al generar enlace seguro', true);
@@ -14,11 +10,10 @@ async function openProtectedUrl(resourcePath) {
 }
 
 async function checkAuth() {
-    if (!TOKEN) return (location.href = 'login.html');
-    const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
+    const r = await fetch('/api/auth');
     const d = await r.json();
     if (!d.ok || d.role !== 'admin') {
-        localStorage.removeItem('exp_token');
+        localStorage.removeItem('exp_role');
         location.href = 'login.html';
     }
 }
@@ -64,8 +59,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 /* ── Logout ── */
 document.getElementById('logoutBtn').onclick = async () => {
-    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': TOKEN } });
-    localStorage.removeItem('exp_token');
+    await fetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('exp_role');
     location.href = 'login.html';
 };
 
@@ -103,7 +98,7 @@ function buildPager(total, page, action) {
 let allAlumnos = [];
 
 async function loadUsers() {
-    const r  = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
+    const r  = await fetch('/api/users', { credentials: 'same-origin' });
     const data = await r.json();
     allAlumnos = data.filter(u => u.role !== 'admin');
     renderUsers();
@@ -178,7 +173,7 @@ function renderUsers() {
 async function toggleUser(userId, currentlyActive) {
     const r = await fetch('/api/users/' + userId, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !currentlyActive })
     });
     const d = await r.json();
@@ -190,7 +185,7 @@ async function deleteUser(userId, username) {
     if (!confirm(`¿Eliminar al alumno "${username}"? Se borrarán su perfil y todas sus fotos.`)) return;
     const r = await fetch('/api/users/' + userId, {
         method: 'DELETE',
-        headers: { 'x-session-token': TOKEN }
+        credentials: 'same-origin'
     });
     const d = await r.json();
     if (d.ok) { showToast('✓ Alumno eliminado'); loadUsers(); loadResetRequests(); loadCalUsers(); renderMatrix(); }
@@ -201,7 +196,7 @@ async function adminResetPassword(userId, username) {
     if (!confirm(`¿Resetear la contraseña de "${username}"? Se generará una clave temporal que deberás comunicarle.`)) return;
     const r = await fetch('/api/users/' + userId + '/reset-password', {
         method: 'POST',
-        headers: { 'x-session-token': TOKEN }
+        credentials: 'same-origin'
     });
     const d = await r.json();
     if (d.ok) {
@@ -215,7 +210,7 @@ async function adminResetPassword(userId, username) {
 }
 
 async function loadResetRequests() {
-    const r    = await fetch('/api/reset-requests', { headers: { 'x-session-token': TOKEN } });
+    const r    = await fetch('/api/reset-requests', { credentials: 'same-origin' });
     const data = await r.json();
     const wrap = document.getElementById('resetRequestsWrap');
     if (!wrap) return;
@@ -243,7 +238,7 @@ async function loadResetRequests() {
 }
 
 async function dismissResetRequest(id) {
-    await fetch('/api/reset-requests/' + id, { method: 'DELETE', headers: { 'x-session-token': TOKEN } });
+    await fetch('/api/reset-requests/' + id, { method: 'DELETE', credentials: 'same-origin' });
     loadResetRequests();
 }
 
@@ -257,8 +252,8 @@ let matrixAllOrders = [];
 
 async function loadCalUsers() {
     const [usersRes, ordersRes] = await Promise.all([
-        fetch('/api/users',  { headers: { 'x-session-token': TOKEN } }),
-        fetch('/api/orders', { headers: { 'x-session-token': TOKEN } })
+        fetch('/api/users',  { credentials: 'same-origin' }),
+        fetch('/api/orders', { credentials: 'same-origin' })
     ]);
     const users  = await usersRes.json();
     const orders = await ordersRes.json();
@@ -360,7 +355,7 @@ document.getElementById('createUserBtn').onclick = async () => {
     try {
         const r = await fetch('/api/users', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password, displayName })
         });
         const d = await r.json();
@@ -387,7 +382,7 @@ loadResetRequests();
 let _ciStudents = [];
 (async function loadCIStudents() {
     try {
-        const r = await fetch('/api/users', { headers: { 'x-session-token': TOKEN } });
+        const r = await fetch('/api/users', { credentials: 'same-origin' });
         const users = await r.json();
         _ciStudents = users.filter(u => u.role !== 'admin');
     } catch {}
@@ -465,7 +460,7 @@ let _ciStudents = [];
 
 (async function loadCashInvoiceServices() {
     try {
-        const r    = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } });
+        const r    = await fetch('/api/bank-info', { credentials: 'same-origin' });
         const info = await r.json();
         const sel  = document.getElementById('ci_concept');
         (info.services || []).forEach(s => {
@@ -508,7 +503,7 @@ document.getElementById('cashInvoiceBtn').onclick = async () => {
     try {
         const r = await fetch('/api/orders/cash-invoice', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ customerName: name, customerDoc: doc, customerEmail: email, concept, amount, paymentMonth: month, notes, userId })
         });
         const d = await r.json();
@@ -673,7 +668,7 @@ function renderProfile() {
 async function saveSection(section, data) {
     const r = await fetch('/api/content', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ section, data })
     });
     const d = await r.json();
@@ -719,7 +714,7 @@ document.getElementById('photoInput').onchange = async () => {
     const formData = new FormData();
     formData.append('photo', file);
     showToast('Subiendo imagen…');
-    const r = await fetch('/api/upload', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: formData });
+    const r = await fetch('/api/upload', { method: 'POST', credentials: 'same-origin', body: formData });
     const d = await r.json();
     if (d.ok) {
         content.destacada       = content.destacada || {};
@@ -750,7 +745,7 @@ let editingEvtId = null;
 let adminEvts    = [];
 
 async function loadEvents() {
-    const r   = await fetch('/api/events', { headers: { 'x-session-token': TOKEN } });
+    const r   = await fetch('/api/events', { credentials: 'same-origin' });
     adminEvts = await r.json();
     renderEvents();
 }
@@ -872,13 +867,13 @@ document.getElementById('saveEvtBtn').onclick = async () => {
         if (editingEvtId) {
             r = await fetch('/api/events/' + editingEvtId, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
         } else {
             r = await fetch('/api/events', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
         }
@@ -899,7 +894,7 @@ async function deleteEvent(id, title) {
     if (!confirm('¿Eliminar el evento "' + title + '"?')) return;
     const r = await fetch('/api/events/' + id, {
         method: 'DELETE',
-        headers: { 'x-session-token': TOKEN }
+        credentials: 'same-origin'
     });
     const d = await r.json();
     if (d.ok) { showToast('✓ Evento eliminado'); loadEvents(); }
@@ -916,7 +911,7 @@ let allOrders     = [];
 let currentFilter = 'todos';
 
 async function loadBankInfo() {
-    const r    = await fetch('/api/bank-info', { headers: { 'x-session-token': TOKEN } });
+    const r    = await fetch('/api/bank-info', { credentials: 'same-origin' });
     const info = await r.json();
     document.getElementById('bkBank').value    = info.bankName      || '';
     document.getElementById('bkType').value    = info.accountType   || 'Ahorros';
@@ -970,7 +965,7 @@ document.getElementById('saveBankBtn').onclick = async () => {
         services:      bankServices
     };
     try {
-        const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const r = await fetch('/api/bank-info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const d = await r.json();
         if (d.ok) showToast('✓ Configuración guardada'); else showToast('Error al guardar', true);
     } finally {
@@ -979,7 +974,7 @@ document.getElementById('saveBankBtn').onclick = async () => {
 };
 
 async function loadOrders() {
-    const r = await fetch('/api/orders', { headers: { 'x-session-token': TOKEN } });
+    const r = await fetch('/api/orders', { credentials: 'same-origin' });
     allOrders = await r.json();
     renderOrders();
     maybeStartSriPolling();
@@ -990,7 +985,7 @@ function maybeStartSriPolling() {
     const pending = allOrders.filter(o => o.status === 'confirmado' && (!o.sri || o.sri.status === 'procesando'));
     if (pending.length && !_sriPoll) {
         _sriPoll = setInterval(async () => {
-            const r2 = await fetch('/api/orders', { headers: { 'x-session-token': TOKEN } });
+            const r2 = await fetch('/api/orders', { credentials: 'same-origin' });
             allOrders = await r2.json();
             renderOrders();
             const stillPending = allOrders.filter(o => o.status === 'confirmado' && (!o.sri || o.sri.status === 'procesando'));
@@ -1079,7 +1074,7 @@ function renderOrders() {
 
 window.confirmOrder = async (id) => {
     if (!confirm('¿Confirmar este pago y generar el comprobante?')) return;
-    const r = await fetch(`/api/orders/${id}/confirm`, { method: 'PUT', headers: { 'x-session-token': TOKEN } });
+    const r = await fetch(`/api/orders/${id}/confirm`, { method: 'PUT', credentials: 'same-origin' });
     const d = await r.json();
     if (d.ok) { showToast('✓ Pago confirmado — No. ' + d.invoiceNumber); await loadOrders(); maybeStartSriPolling(); }
     else showToast('Error: ' + d.message, true);
@@ -1087,7 +1082,7 @@ window.confirmOrder = async (id) => {
 
 window.rejectOrder = async (id) => {
     const reason = prompt('Motivo del rechazo (opcional):') ?? '';
-    const r = await fetch(`/api/orders/${id}/reject`, { method: 'PUT', headers: { 'x-session-token': TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+    const r = await fetch(`/api/orders/${id}/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
     const d = await r.json();
     if (d.ok) { showToast('Pago rechazado'); loadOrders(); }
     else showToast('Error: ' + d.message, true);
@@ -1095,7 +1090,7 @@ window.rejectOrder = async (id) => {
 
 window.sriRetry = async (id) => {
     showToast('Reintentando autorización SRI…');
-    const r = await fetch(`/api/orders/${id}/sri-retry`, { method: 'POST', headers: { 'x-session-token': TOKEN } });
+    const r = await fetch(`/api/orders/${id}/sri-retry`, { method: 'POST', credentials: 'same-origin' });
     const d = await r.json();
     if (d.ok) showToast('✓ Factura autorizada por el SRI');
     else showToast('SRI error: ' + (d.error || d.message), true);
@@ -1112,7 +1107,7 @@ window.verifyOrder = async (id) => {
     if (rawReceiptUrl.startsWith('/uploads/')) {
         try {
             const r = await fetch('/api/signed-url?path=' + encodeURIComponent(rawReceiptUrl), {
-                headers: { 'x-session-token': TOKEN }
+                credentials: 'same-origin'
             });
             const d = await r.json();
             if (d.ok) authReceiptUrl = d.url;
@@ -1183,7 +1178,7 @@ async function loadBackupList() {
     const wrap = document.getElementById('backupList');
     wrap.innerHTML = '<p class="no-users">Cargando…</p>';
     try {
-        const r = await fetch('/api/backup', { headers: { 'x-session-token': TOKEN } });
+        const r = await fetch('/api/backup', { credentials: 'same-origin' });
         const d = await r.json();
         if (d.storage) {
             document.getElementById('backupStatus').innerHTML =
@@ -1217,7 +1212,7 @@ async function loadBackupList() {
                 e.preventDefault();
                 const filename = a.dataset.backupDownload;
                 const res = await fetch('/api/backup/' + encodeURIComponent(filename), {
-                    headers: { 'x-session-token': TOKEN }
+                    credentials: 'same-origin'
                 });
                 if (!res.ok) { showToast('Error al descargar', true); return; }
                 const blob = await res.blob();
@@ -1239,7 +1234,7 @@ document.getElementById('btnRunBackup').addEventListener('click', async () => {
     btn.disabled = true;
     status.innerHTML = '<span style="color:#c9a227">⏳ Generando respaldo…</span>';
     try {
-        const r = await fetch('/api/backup', { method: 'POST', headers: { 'x-session-token': TOKEN } });
+        const r = await fetch('/api/backup', { method: 'POST', credentials: 'same-origin' });
         const d = await r.json();
         if (d.ok) {
             status.innerHTML = `<span style="color:#7ed97e">✓ Respaldo creado: ${d.filename} (${d.sizeKb} KB)</span>`;

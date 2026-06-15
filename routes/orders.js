@@ -62,6 +62,8 @@ router.post('/orders', (req, res) => {
             const { customerName, customerDoc, customerEmail, concept, amount, notes, paymentMonth } = req.body;
             if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
                 return res.status(400).json({ ok: false, message: 'Todos los campos son requeridos' });
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim()))
+                return res.status(400).json({ ok: false, message: 'Email inválido' });
 
             const amountNum = parseFloat(amount);
             if (isNaN(amountNum) || amountNum <= 0)
@@ -86,7 +88,7 @@ router.post('/orders', (req, res) => {
             }
 
             const order = {
-                id: 'ord_' + Date.now(), token: crypto.randomBytes(16).toString('hex'),
+                id: 'ord_' + crypto.randomBytes(8).toString('hex'), token: crypto.randomBytes(16).toString('hex'),
                 status: 'pendiente', userId: linkedUserId,
                 customerName:  customerName.trim().slice(0, 200),
                 customerDoc:   customerDoc.trim().slice(0, 20),
@@ -123,6 +125,8 @@ router.post('/orders/cash-invoice', async (req, res) => {
         const { customerName, customerDoc, customerEmail, concept, amount, paymentMonth, notes, userId: linkedUserId } = req.body;
         if (!customerName || !customerDoc || !customerEmail || !concept || !amount)
             return res.status(400).json({ ok: false, message: 'Completa todos los campos obligatorios' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim()))
+            return res.status(400).json({ ok: false, message: 'Email inválido' });
 
         const amountNum = parseFloat(amount);
         if (isNaN(amountNum) || amountNum <= 0)

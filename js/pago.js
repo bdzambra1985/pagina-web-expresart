@@ -1,9 +1,7 @@
 initNavAuth();
 
 (function() {
-    const tok = localStorage.getItem('exp_token');
-    if (!tok) return;
-    fetch('/api/auth', { headers: { 'x-session-token': tok } })
+    fetch('/api/auth')
         .then(r => r.json())
         .then(d => {
             if (!d.ok || d.role === 'admin') return;
@@ -16,8 +14,8 @@ initNavAuth();
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async () => {
-                    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': tok } }).catch(() => {});
-                    localStorage.removeItem('exp_token');
+                    await fetch('/api/logout', { method: 'POST' }).catch(() => {});
+                    localStorage.removeItem('exp_role');
                     location.href = 'login.html';
                 });
             }
@@ -154,11 +152,8 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     fd.append('paymentMonth',  paymentMonth);
     fd.append('receipt',       receipt);
 
-    const sessionTok = localStorage.getItem('exp_token');
-    const headers = sessionTok ? { 'x-session-token': sessionTok } : {};
-
     try {
-        const r    = await fetch('/api/orders', { method: 'POST', headers, body: fd });
+        const r    = await fetch('/api/orders', { method: 'POST', body: fd });
         const data = await r.json();
         if (!data.ok) throw new Error(data.message);
         document.getElementById('successId').textContent = 'Ref: ' + data.orderId;

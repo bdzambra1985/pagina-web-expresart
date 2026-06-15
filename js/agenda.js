@@ -22,11 +22,10 @@ today.setHours(0,0,0,0);
 initNavAuth();
 
 async function loadEvents() {
-    const tok = localStorage.getItem('exp_token') || '';
     try {
         const [evRes, authRes] = await Promise.all([
             fetch('/api/events'),
-            fetch('/api/auth', { headers: { 'x-session-token': tok } })
+            fetch('/api/auth')
         ]);
         allEvents  = await evRes.json();
         const auth = await authRes.json();

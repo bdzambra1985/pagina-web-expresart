@@ -1,5 +1,4 @@
-const tok = localStorage.getItem('exp_token');
-if (!tok) location.href = 'login.html';
+if (!localStorage.getItem('exp_role')) location.href = 'login.html';
 
 document.getElementById('changeForm').onsubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +28,7 @@ document.getElementById('changeForm').onsubmit = async (e) => {
     try {
         const res  = await fetch('/api/change-password', {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': tok },
+            headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ newPassword: np })
         });
         const data = await res.json();

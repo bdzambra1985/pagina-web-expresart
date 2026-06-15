@@ -44,6 +44,13 @@ function _resolve(rawToken) {
 }
 
 function getSession(req) {
+    // Cookie (HttpOnly) takes precedence — more secure than header
+    const cookieToken = req.cookies?.exp_session;
+    if (cookieToken) {
+        const sess = _resolve(cookieToken);
+        if (sess) return sess;
+    }
+    // Fallback: x-session-token header (backward compat)
     const raw = req.headers['x-session-token'];
     return raw ? _resolve(raw) : null;
 }

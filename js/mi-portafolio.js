@@ -1,11 +1,8 @@
-const TOKEN = localStorage.getItem('exp_token');
 let myUserId = '';
 let profile  = { displayName:'', bio:'', bio_short:'', photoUrl:'', especialidades:[], producciones:[], videos:[] };
 
 /* ── Auth ── */
 async function init() {
-    if (!TOKEN) return (location.href = 'login.html');
-
     const wantPay = new URLSearchParams(location.search).get('view') === 'pay';
     if (wantPay) {
         document.getElementById('editContent').style.display = 'none';
@@ -14,10 +11,10 @@ async function init() {
         document.getElementById('payToggleBtn').classList.add('tab-active');
     }
 
-    const r = await fetch('/api/auth', { headers: { 'x-session-token': TOKEN } });
+    const r = await fetch('/api/auth');
     const d = await r.json();
     if (!d.ok || d.role === 'admin') {
-        localStorage.removeItem('exp_token');
+        localStorage.removeItem('exp_role');
         return (location.href = 'login.html');
     }
     myUserId = d.userId;
@@ -44,8 +41,8 @@ function showToast(msg, isError = false) {
 
 /* ── Logout ── */
 document.getElementById('logoutBtn').onclick = async () => {
-    await fetch('/api/logout', { method: 'POST', headers: { 'x-session-token': TOKEN } });
-    localStorage.removeItem('exp_token');
+    await fetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('exp_role');
     location.href = 'login.html';
 };
 
@@ -56,7 +53,7 @@ document.getElementById('portfolioToggleBtn').addEventListener('click', togglePo
 
 /* ── Cargar perfil ── */
 async function loadProfile() {
-    const r = await fetch('/api/my-profile', { headers: { 'x-session-token': TOKEN } });
+    const r = await fetch('/api/my-profile', {});
     const d = await r.json();
     if (!d.ok) return;
     profile = d.profile;
@@ -90,7 +87,7 @@ async function togglePortfolioActive() {
     try {
         const r = await fetch('/api/my-profile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ portfolioActive: newVal })
         });
         const d = await r.json();
@@ -120,7 +117,7 @@ document.getElementById('photoInput').onchange = async () => {
     const fd = new FormData();
     fd.append('photo', file);
     showToast('Subiendo foto…');
-    const r = await fetch('/api/upload-photo', { method:'POST', headers:{'x-session-token':TOKEN}, body: fd });
+    const r = await fetch('/api/upload-photo', { method:'POST', body: fd });
     const d = await r.json();
     if (d.ok) {
         profile.photoUrl = d.url;
@@ -138,7 +135,7 @@ document.getElementById('saveBasicBtn').onclick = async () => {
     try {
         const r = await fetch('/api/my-profile', {
             method: 'POST',
-            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type':'application/json' },
             body: JSON.stringify({
                 displayName: document.getElementById('displayName').value.trim(),
                 bio_short:   document.getElementById('bio_short').value.trim(),
@@ -204,7 +201,7 @@ document.getElementById('saveEspBtn').onclick = async () => {
     try {
         const r = await fetch('/api/my-profile', {
             method: 'POST',
-            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type':'application/json' },
             body: JSON.stringify({ especialidades: profile.especialidades })
         });
         const d = await r.json();
@@ -297,7 +294,7 @@ function renderProd() {
             const fd = new FormData();
             fd.append('photo', file);
             showToast('Subiendo imagen…');
-            const r = await fetch('/api/upload-prod-photo', { method:'POST', headers:{'x-session-token':TOKEN}, body:fd });
+            const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
             const d = await r.json();
             if (d.ok) {
                 profile.producciones[i].photoUrl = d.url;
@@ -356,7 +353,7 @@ async function uploadCollagePhoto(prodIdx, slotIdx) {
         const fd = new FormData();
         fd.append('photo', file);
         showToast('Subiendo foto del collage…');
-        const r = await fetch('/api/upload-prod-photo', { method:'POST', headers:{'x-session-token':TOKEN}, body:fd });
+        const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
         const d = await r.json();
         if (d.ok) {
             if (!profile.producciones[prodIdx].photos) profile.producciones[prodIdx].photos = [];
@@ -396,7 +393,7 @@ document.getElementById('saveProdBtn').onclick = async () => {
         const producciones = collectProd();
         const r = await fetch('/api/my-profile', {
             method: 'POST',
-            headers: { 'Content-Type':'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type':'application/json' },
             body: JSON.stringify({ producciones })
         });
         const d = await r.json();
@@ -446,7 +443,7 @@ window.deleteProdVideo = function(prodIdx, j) {
 
 /* ── Share links ── */
 async function loadShareLinks() {
-    const r = await fetch('/api/share-links', { headers: { 'x-session-token': TOKEN } });
+    const r = await fetch('/api/share-links', {});
     if (!r.ok) return;
     const links = await r.json();
     renderShareList(links);
@@ -482,7 +479,7 @@ document.getElementById('genShareBtn').onclick = async () => {
     try {
         const r = await fetch('/api/share-links', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ label })
         });
         const d = await r.json();
@@ -526,8 +523,7 @@ function copyVal(id) {
 window.revokeShareLink = async function(shareId) {
     if (!confirm('¿Revocar este enlace? Quien lo tenga ya no podrá acceder.')) return;
     const r = await fetch('/api/share-links/' + encodeURIComponent(shareId), {
-        method: 'DELETE',
-        headers: { 'x-session-token': TOKEN }
+        method: 'DELETE'
     });
     const d = await r.json();
     if (d.ok) {
@@ -749,7 +745,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     fd.append('paymentMonth',  month);
     fd.append('receipt',       receipt);
     try {
-        const r    = await fetch('/api/orders', { method: 'POST', headers: { 'x-session-token': TOKEN }, body: fd });
+        const r    = await fetch('/api/orders', { method: 'POST', body: fd });
         const data = await r.json();
         if (!data.ok) throw new Error(data.message);
         // Guardar datos si el checkbox está marcado
@@ -783,7 +779,7 @@ let myOrdersSearch   = '';
 async function loadMyOrders() {
     const wrap = document.getElementById('myOrdersWrap');
     try {
-        const r  = await fetch('/api/my-orders', { headers: { 'x-session-token': TOKEN } });
+        const r  = await fetch('/api/my-orders', {});
         allMyOrders  = await r.json();
         myMatOrders  = allMyOrders;
         const matrixWrap = document.getElementById('myMatrixWrap');
@@ -847,9 +843,7 @@ function renderMyOrders() {
                 const badgeTxt = o.status === 'confirmado' ? 'Confirmado'
                                : o.status === 'rechazado'  ? 'Rechazado'
                                : 'Pendiente';
-                const receiptHref = o.receiptUrl && o.receiptUrl.startsWith('/uploads/')
-                    ? o.receiptUrl + '?t=' + encodeURIComponent(TOKEN)
-                    : (o.receiptUrl || '');
+                const receiptHref = o.receiptUrl || '';
                 const docs = receiptHref
                     ? `<a class="pay-link" href="${esc(receiptHref)}" target="_blank"><i class="bx bx-image-alt"></i> Comprobante</a>`
                     : '';
