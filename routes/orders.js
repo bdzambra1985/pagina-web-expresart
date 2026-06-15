@@ -5,7 +5,7 @@ const db      = require('../db');
 const { requireAuth, requireAdmin, getSessionByRawToken } = require('../middleware/auth');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_RECEIPT } = require('../middleware/upload');
 const { emitirFactura, getSRIConfig }  = require('../sri/index');
-const { notifyWhatsApp }               = require('../utils/notify');
+const { notifyEmail }                  = require('../utils/notify');
 const { htmlEncode, generateComprobanteHTML } = require('../utils/html');
 const { verifyViewPath }               = require('../utils/crypto');
 
@@ -103,13 +103,17 @@ router.post('/orders', (req, res) => {
             await db.createOrder(order);
             res.json({ ok: true, orderId: order.id, token: order.token });
 
-            notifyWhatsApp(
-                `💰 NUEVO PAGO - EXPRESART\n` +
-                `👤 ${order.customerName}\n` +
-                `📋 ${order.concept}\n` +
-                `💵 $${parseFloat(order.amount).toFixed(2)}\n` +
-                `🗓 ${order.paymentMonth || 'Sin mes'}\n` +
-                `🔖 Ref: ${order.id}`
+            notifyEmail(
+                `💰 Nuevo pago pendiente — ${order.customerName}`,
+                `Se recibió un comprobante de pago en EXPRESART.\n\n` +
+                `Alumno:  ${order.customerName}\n` +
+                `Email:   ${order.customerEmail}\n` +
+                `Cédula:  ${order.customerDoc}\n` +
+                `Concepto: ${order.concept}\n` +
+                `Monto:   $${parseFloat(order.amount).toFixed(2)}\n` +
+                `Mes:     ${order.paymentMonth || 'Sin especificar'}\n` +
+                `Ref:     ${order.id}\n\n` +
+                `Revisa el panel de administración para aprobar o rechazar el pago.`
             );
         } catch (e) {
             console.error('[POST /api/orders]', e);
