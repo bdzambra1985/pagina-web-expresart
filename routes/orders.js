@@ -2,7 +2,7 @@
 const crypto  = require('crypto');
 const router  = require('express').Router();
 const db      = require('../db');
-const { requireAuth, requireAdmin, getSessionByRawToken } = require('../middleware/auth');
+const { requireAuth, requireAdmin, getSession } = require('../middleware/auth');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_RECEIPT } = require('../middleware/upload');
 const { emitirFactura, getSRIConfig }  = require('../sri/index');
 const { notifyEmail }                  = require('../utils/notify');
@@ -79,13 +79,10 @@ router.post('/orders', (req, res) => {
             const subtotal   = Math.round((amountNum / 1.15) * 100) / 100;
             const iva        = Math.round((amountNum - subtotal) * 100) / 100;
 
-            // Link to student session if present
+            // Link to student session if present (cookie-based)
             let linkedUserId = null;
-            const rawSessTok = req.headers['x-session-token'];
-            if (rawSessTok) {
-                const sess = getSessionByRawToken(rawSessTok);
-                if (sess && sess.role === 'alumno') linkedUserId = sess.userId;
-            }
+            const sess = getSession(req);
+            if (sess && sess.role === 'alumno') linkedUserId = sess.userId;
 
             const order = {
                 id: 'ord_' + crypto.randomBytes(8).toString('hex'), token: crypto.randomBytes(16).toString('hex'),
