@@ -298,11 +298,13 @@ router.put('/orders/:id/confirm', async (req, res) => {
                 if (result.ok && orderSnap.customerEmail) {
                     const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
                     const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
+                    const facturaHtml = generateComprobanteHTML(finalOrder);
                     await notifyEmail(
                         `✅ Tu factura electrónica — EXPRESART`,
-                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nDescarga tu factura en:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
                         _facturaEmailHtml(finalOrder, facturaUrl),
-                        orderSnap.customerEmail
+                        orderSnap.customerEmail,
+                        [{ filename: `factura-${usedInv}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
                     );
                 }
             } catch (e) {
@@ -343,11 +345,13 @@ router.post('/orders/:id/sri-retry', async (req, res) => {
                 if (result.ok && orderSnap.customerEmail) {
                     const finalOrder = { ...orderSnap, invoiceNumber: usedInv, sri: sriData };
                     const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${orderSnap.token}`;
+                    const facturaHtml = generateComprobanteHTML(finalOrder);
                     await notifyEmail(
                         `✅ Tu factura electrónica — EXPRESART`,
-                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nDescarga tu factura en:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
+                        `Hola ${orderSnap.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${orderSnap.concept}\nMonto: $${parseFloat(orderSnap.amount).toFixed(2)}\nFactura: ${usedInv}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
                         _facturaEmailHtml(finalOrder, facturaUrl),
-                        orderSnap.customerEmail
+                        orderSnap.customerEmail,
+                        [{ filename: `factura-${usedInv}.html`, content: Buffer.from(facturaHtml).toString('base64') }]
                     );
                 }
             } catch (e) {
