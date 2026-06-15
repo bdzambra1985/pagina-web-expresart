@@ -191,17 +191,5 @@ router.get('/backup/:filename', async (req, res) => {
     }
 });
 
-/* ── Test email (admin only, temporal) ── */
-router.post('/test-email', async (req, res) => {
-    try {
-        const sess = requireAuth(req, res);
-        if (!sess || sess.role !== 'admin') return;
-        const { notifyEmail } = require('../utils/notify');
-        await notifyEmail('✅ Test email desde Railway', 'Si recibes esto, las notificaciones funcionan correctamente.');
-        res.json({ ok: true, to: process.env.NOTIFY_EMAIL });
-    } catch (e) {
-        res.json({ ok: false, error: e.message, code: e.code });
-    }
-});
 
 module.exports = router;
