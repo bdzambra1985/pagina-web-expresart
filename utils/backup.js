@@ -67,8 +67,8 @@ async function uploadToR2(filename, buffer) {
    ══════════════════════════════════════ */
 async function runBackup() {
     const started  = Date.now();
-    const date     = new Date().toISOString().slice(0, 10);
-    const filename = `backup-${date}.json.gz`;
+    const now      = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const filename = `backup-${now}.json.gz`;
     console.log(`[BACKUP] Iniciando respaldo: ${filename}`);
 
     try {
@@ -103,7 +103,7 @@ async function listBackups() {
         const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
         const res = await r2.send(new ListObjectsV2Command({ Bucket: R2_BUCKET }));
         return (res.Contents || [])
-            .filter(o => /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(o.Key))
+            .filter(o => /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(o.Key))
             .sort((a, b) => b.Key.localeCompare(a.Key))
             .map(o => ({
                 filename: o.Key,
@@ -114,7 +114,7 @@ async function listBackups() {
     /* Local */
     if (!fs.existsSync(BACKUP_DIR)) return [];
     return fs.readdirSync(BACKUP_DIR)
-        .filter(f => /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(f))
+        .filter(f => /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(f))
         .sort().reverse()
         .map(f => {
             const stat = fs.statSync(path.join(BACKUP_DIR, f));
@@ -126,7 +126,7 @@ async function listBackups() {
    OBTENER STREAM PARA DESCARGA
    ══════════════════════════════════════ */
 async function getBackupStream(filename) {
-    if (!/^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(filename)) return null;
+    if (!/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(filename)) return null;
 
     if (USE_R2) {
         const { GetObjectCommand } = require('@aws-sdk/client-s3');
@@ -145,7 +145,7 @@ async function _rotateR2() {
     const { ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
     const res = await r2.send(new ListObjectsV2Command({ Bucket: R2_BUCKET }));
     const all = (res.Contents || [])
-        .filter(o => /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(o.Key))
+        .filter(o => /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(o.Key))
         .sort((a, b) => a.Key.localeCompare(b.Key));
     while (all.length > MAX_BACKUPS) {
         const old = all.shift();
@@ -157,7 +157,7 @@ async function _rotateR2() {
 /* ── Rotar backups locales (solo sin R2) ── */
 function _rotateLocal() {
     const all = fs.readdirSync(BACKUP_DIR)
-        .filter(f => /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(f))
+        .filter(f => /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(f))
         .sort();
     while (all.length > MAX_BACKUPS) {
         fs.unlinkSync(path.join(BACKUP_DIR, all.shift()));

@@ -1197,7 +1197,7 @@ async function loadBackupList() {
             <thead><tr><th>Fecha</th><th>Tamaño</th><th>Descargar</th></tr></thead>
             <tbody>${d.backups.map(b => `
                 <tr>
-                    <td style="font-size:.85em">${b.filename.replace('backup-','').replace('.json.gz','')}</td>
+                    <td style="font-size:.85em">${b.filename.replace('backup-','').replace('.json.gz','').replace('T',' ').replace(/(\d{2})-(\d{2})-(\d{2})$/, '$1:$2:$3')}</td>
                     <td style="font-size:.82em;color:rgba(255,200,200,.6)">${b.sizeKb} KB</td>
                     <td><a href="/api/backup/${encodeURIComponent(b.filename)}"
                             download="${b.filename}"
