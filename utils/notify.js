@@ -5,7 +5,10 @@ const nodemailer = require('nodemailer');
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL;
 
 const _transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host:   'smtp.gmail.com',
+    port:   587,
+    secure: false,
+    family: 4,          // force IPv4 — Railway has no IPv6 egress
     auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_PASS,
