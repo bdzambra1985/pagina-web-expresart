@@ -1057,7 +1057,7 @@ function renderOrders() {
             ` : o.status === 'confirmado' ? `
                 ${receiptLink}
                 ${o.sri && o.sri.status === 'autorizado'
-                    ? `<button data-action="open-protected-url" data-path="/factura/${o.id}" class="edit-btn" style="cursor:pointer">🧾 Factura SRI</button>`
+                    ? `<button data-action="open-protected-url" data-path="/factura/${o.id}" class="edit-btn" style="cursor:pointer;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">🧾 Factura SRI</button>`
                     : ''}
             ` : `
                 <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
