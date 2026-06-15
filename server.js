@@ -129,6 +129,9 @@ app.use('/api', contentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/share-links', shareLinkRoutes);
 
+/* ── Factura/comprobante accesible sin prefijo /api ── */
+app.use('/', orderRoutes);
+
 /* ── 404 catch-all ── */
 app.use((req, res) => {
     if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads/'))

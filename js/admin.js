@@ -514,7 +514,7 @@ document.getElementById('cashInvoiceBtn').onclick = async () => {
         const d = await r.json();
         if (d.ok) {
             const studentInfo = userId ? `<br><span style="color:#7ed97e;font-size:0.9em">✓ Vinculado al historial del alumno</span>` : '';
-            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span>${studentInfo}<br><button onclick="openProtectedUrl('/factura/${d.orderId}')" style="background:none;border:none;color:#c9a227;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">Ver comprobante</button> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
+            result.innerHTML = `<span style="color:#7ed97e">✓ Factura generada — N° ${d.invoiceNumber} · Ref: ${d.orderId}</span>${studentInfo}<br><button data-action="open-protected-url" data-path="/factura/${d.orderId}" style="background:none;border:none;color:#c9a227;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">Ver comprobante</button> <small style="color:rgba(255,200,200,0.5)">(el SRI puede tardar unos segundos)</small>`;
             result.style.display = 'block';
             showToast('✓ Factura en efectivo generada');
         } else {
@@ -1047,7 +1047,7 @@ function renderOrders() {
             }
             const receiptPath = o.receiptUrl && o.receiptUrl.startsWith('/uploads/') ? o.receiptUrl : null;
             const receiptLink = receiptPath
-                ? `<button onclick="openProtectedUrl('${receiptPath.replace(/'/g, "\\'")}')" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227;cursor:pointer">📎 Comprobante</button>`
+                ? `<button data-action="open-protected-url" data-path="${receiptPath}" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227;cursor:pointer">📎 Comprobante</button>`
                 : (o.receiptUrl
                     ? `<a href="${o.receiptUrl}" target="_blank" rel="noopener" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
                     : '');
@@ -1057,7 +1057,7 @@ function renderOrders() {
             ` : o.status === 'confirmado' ? `
                 ${receiptLink}
                 ${o.sri && o.sri.status === 'autorizado'
-                    ? `<button onclick="openProtectedUrl('/factura/${o.id}')" class="edit-btn" style="cursor:pointer">🧾 Factura SRI</button>`
+                    ? `<button data-action="open-protected-url" data-path="/factura/${o.id}" class="edit-btn" style="cursor:pointer">🧾 Factura SRI</button>`
                     : ''}
             ` : `
                 <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
@@ -1245,5 +1245,7 @@ document.addEventListener('click', function(e) {
         eventsPage = parseInt(el.dataset.page); renderEvents();
     } else if (action === 'page-orders') {
         ordersPage = parseInt(el.dataset.page); renderOrders();
+    } else if (action === 'open-protected-url') {
+        openProtectedUrl(el.dataset.path);
     }
 });
