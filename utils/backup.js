@@ -79,6 +79,7 @@ async function runBackup() {
         if (USE_R2) {
             await uploadToR2(filename, compressed);
             console.log(`[BACKUP] ✓ Subido a R2: ${filename} — ${kb} KB (${Date.now() - started}ms)`);
+            await _rotateR2();
         } else {
             /* Guardar en disco local si no hay R2 */
             if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -137,6 +138,20 @@ async function getBackupStream(filename) {
     /* Local */
     const fp = path.join(BACKUP_DIR, filename);
     return fs.existsSync(fp) ? fs.createReadStream(fp) : null;
+}
+
+/* ── Rotar backups en R2 (elimina los que superan MAX_BACKUPS) ── */
+async function _rotateR2() {
+    const { ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    const res = await r2.send(new ListObjectsV2Command({ Bucket: R2_BUCKET }));
+    const all = (res.Contents || [])
+        .filter(o => /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(o.Key))
+        .sort((a, b) => a.Key.localeCompare(b.Key));
+    while (all.length > MAX_BACKUPS) {
+        const old = all.shift();
+        await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: old.Key }));
+        console.log(`[BACKUP] Eliminado respaldo antiguo de R2: ${old.Key}`);
+    }
 }
 
 /* ── Rotar backups locales (solo sin R2) ── */
