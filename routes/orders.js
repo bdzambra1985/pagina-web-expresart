@@ -78,17 +78,21 @@ function invoiceFromSeq(n) {
     return '001-001-' + String(n).padStart(9, '0');
 }
 
-async function emitirConAutoRetry(orderSnap, startSecuencial, maxAttempts = 15) {
+async function emitirConAutoRetry(orderSnap, startSecuencial, maxAttempts = 100) {
     let seq = seqFromInvoice(startSecuencial);
     let result;
+    let consecutiveRejections = 0;
     for (let i = 0; i < maxAttempts; i++) {
         const inv = invoiceFromSeq(seq);
         result = await emitirFactura(orderSnap, inv);
         if (result.ok) return { result, invoiceNumber: inv };
         if (!result.error || !result.error.includes('SECUENCIAL REGISTRADO'))
             return { result, invoiceNumber: inv };
-        console.log(`Secuencial ${inv} ya registrado en SRI, probando ${invoiceFromSeq(seq + 1)}…`);
-        seq++;
+        consecutiveRejections++;
+        // After 10 consecutive rejections jump ahead by 10 to find a free gap faster
+        const jump = consecutiveRejections >= 10 ? 10 : 1;
+        console.log(`Secuencial ${inv} ya registrado en SRI (intento ${i + 1}/${maxAttempts}), probando ${invoiceFromSeq(seq + jump)}…`);
+        seq += jump;
     }
     return { result, invoiceNumber: invoiceFromSeq(seq) };
 }
@@ -427,6 +431,32 @@ router.get('/factura/:id', async (req, res) => {
     } catch (e) {
         console.error('[GET /factura/:id]', e);
         res.status(500).send('<h2>Error interno</h2>');
+    }
+});
+
+/* ── Ajustar secuencial de factura (admin) ── */
+router.post('/orders/set-invoice-seq', async (req, res) => {
+    try {
+        if (!requireAdmin(req, res)) return;
+        const { seq } = req.body;
+        const num = parseInt(seq, 10);
+        if (!num || num < 1) return res.status(400).json({ ok: false, message: 'Secuencial inválido' });
+        // Crear una orden ficticia con ese número para que nextInvoiceNumber() arranque desde ahí
+        await db.updateOrder('__seq_anchor__', {}).catch(() => {});
+        // Insertar un marcador de secuencial directamente en la BD
+        const anchorInv = invoiceFromSeq(num - 1);
+        await db.createOrder({
+            id: `__seq_${Date.now()}__`, token: 'anchor', status: 'anchor',
+            customerName: 'ANCHOR', customerDoc: '', customerEmail: '', concept: '',
+            amount: 0, subtotal: 0, iva: 0, ivaRate: 15, receiptUrl: '', notes: '',
+            paymentMonth: null, invoiceNumber: anchorInv, rejectionReason: '',
+            createdAt: new Date().toISOString(), confirmedAt: null
+        }).catch(() => {});
+        const next = await db.nextInvoiceNumber();
+        res.json({ ok: true, nextInvoiceNumber: next, message: `Próxima factura arrancará desde ${next}` });
+    } catch (e) {
+        console.error('[POST /api/orders/set-invoice-seq]', e);
+        res.status(500).json({ ok: false, message: e.message });
     }
 });
 
