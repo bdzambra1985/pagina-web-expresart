@@ -434,28 +434,31 @@ router.get('/factura/:id', async (req, res) => {
     }
 });
 
-/* ── Ajustar secuencial de factura (admin) ── */
-router.post('/orders/set-invoice-seq', async (req, res) => {
+/* ── Resetear secuencial: limpiar números fantasma no autorizados por SRI ── */
+router.post('/orders/reset-invoice-seq', async (req, res) => {
     try {
         if (!requireAdmin(req, res)) return;
-        const { seq } = req.body;
-        const num = parseInt(seq, 10);
-        if (!num || num < 1) return res.status(400).json({ ok: false, message: 'Secuencial inválido' });
-        // Crear una orden ficticia con ese número para que nextInvoiceNumber() arranque desde ahí
-        await db.updateOrder('__seq_anchor__', {}).catch(() => {});
-        // Insertar un marcador de secuencial directamente en la BD
-        const anchorInv = invoiceFromSeq(num - 1);
-        await db.createOrder({
-            id: `__seq_${Date.now()}__`, token: 'anchor', status: 'anchor',
-            customerName: 'ANCHOR', customerDoc: '', customerEmail: '', concept: '',
-            amount: 0, subtotal: 0, iva: 0, ivaRate: 15, receiptUrl: '', notes: '',
-            paymentMonth: null, invoiceNumber: anchorInv, rejectionReason: '',
-            createdAt: new Date().toISOString(), confirmedAt: null
-        }).catch(() => {});
+        const { lastSriSeq } = req.body;
+        const threshold = parseInt(lastSriSeq, 10);
+        if (!threshold || threshold < 1)
+            return res.status(400).json({ ok: false, message: 'lastSriSeq inválido' });
+
+        const orders = await db.getOrders();
+        let cleared = 0;
+        for (const o of orders) {
+            if (!o.invoiceNumber) continue;
+            const seq = seqFromInvoice(o.invoiceNumber);
+            if (seq <= threshold) continue;
+            const sriOk = o.sri && o.sri.status === 'autorizado';
+            if (sriOk) continue;
+            await db.updateOrder(o.id, { invoiceNumber: null });
+            cleared++;
+        }
         const next = await db.nextInvoiceNumber();
-        res.json({ ok: true, nextInvoiceNumber: next, message: `Próxima factura arrancará desde ${next}` });
+        res.json({ ok: true, cleared, nextInvoiceNumber: next,
+            message: `${cleared} número(s) fantasma limpiados. Próxima factura: ${next}` });
     } catch (e) {
-        console.error('[POST /api/orders/set-invoice-seq]', e);
+        console.error('[POST /api/orders/reset-invoice-seq]', e);
         res.status(500).json({ ok: false, message: e.message });
     }
 });
