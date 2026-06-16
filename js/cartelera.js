@@ -17,7 +17,7 @@ function _vmId(url) {
 /* ── URL de embed ── */
 function _embedUrl(url) {
     const yt = _ytId(url);
-    if (yt) return 'https://www.youtube.com/embed/' + yt + '?autoplay=1&rel=0';
+    if (yt) return 'https://www.youtube.com/embed/' + yt + '?rel=0';
     const vm = _vmId(url);
     if (vm) return 'https://player.vimeo.com/video/' + vm + '?autoplay=1';
     return null;
@@ -36,7 +36,7 @@ function _openVideo(url, title) {
             '<div class="vm-box">' +
                 '<button class="vm-close" aria-label="Cerrar"><i class="bx bx-x"></i></button>' +
                 '<div class="vm-title"></div>' +
-                '<div class="vm-ratio"><iframe class="vm-iframe" frameborder="0" allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe></div>' +
+                '<div class="vm-ratio"><iframe class="vm-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>' +
             '</div>';
         document.body.appendChild(_modal);
         _modal.querySelector('.vm-backdrop').addEventListener('click', _closeVideo);
