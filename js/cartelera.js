@@ -17,7 +17,7 @@ function _vmId(url) {
 /* ── URL de embed ── */
 function _embedUrl(url) {
     const yt = _ytId(url);
-    if (yt) return 'https://www.youtube-nocookie.com/embed/' + yt + '?autoplay=1&rel=0';
+    if (yt) return 'https://www.youtube.com/embed/' + yt + '?autoplay=1&rel=0';
     const vm = _vmId(url);
     if (vm) return 'https://player.vimeo.com/video/' + vm + '?autoplay=1';
     return null;
