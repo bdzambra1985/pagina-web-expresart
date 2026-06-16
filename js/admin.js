@@ -592,16 +592,17 @@ function renderProd() {
     list.innerHTML = '';
     (content.producciones || []).forEach((p, i) => {
         const card = makeItemCard(`Producción ${i+1}`, [
-            { label:'Año',         key:'year',        value: p.year,        placeholder:'2024' },
-            { label:'Título',      key:'title',       value: p.title,       placeholder:'Nombre de la obra' },
-            { label:'Descripción', key:'description', value: p.description, placeholder:'Descripción...', textarea:true, full:true }
+            { label:'Año',                          key:'year',        value: p.year,        placeholder:'2024' },
+            { label:'Título',                       key:'title',       value: p.title,       placeholder:'Nombre de la obra' },
+            { label:'Video (YouTube / Vimeo URL)',  key:'videoUrl',    value: p.videoUrl,    placeholder:'https://youtube.com/watch?v=...' },
+            { label:'Descripción',                  key:'description', value: p.description, placeholder:'Descripción...', textarea:true, full:true }
         ], () => { content.producciones.splice(i, 1); renderProd(); });
         list.appendChild(card);
     });
 }
 document.getElementById('addProd').onclick = () => {
     content.producciones = content.producciones || [];
-    content.producciones.push({ id: Date.now(), year:'', title:'', description:'' });
+    content.producciones.push({ id: Date.now(), year:'', title:'', description:'', videoUrl:'' });
     renderProd();
 };
 function collectProd() {

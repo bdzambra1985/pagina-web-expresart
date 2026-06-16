@@ -279,6 +279,82 @@
             letter-spacing: 1px;
         }
 
+        /* ── Thumbnail de video en tarjeta de producción ── */
+        .prod-thumb {
+            position: relative;
+            width: calc(100% + 52px);
+            margin: -28px -26px 18px;
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 16/9;
+            background: #111;
+        }
+        .prod-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.35s ease;
+        }
+        .prod-thumb:hover img { transform: scale(1.04); }
+        .prod-thumb-placeholder {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(201,162,39,0.07);
+        }
+        .prod-thumb-placeholder i { font-size: 3rem; color: rgba(201,162,39,0.35); }
+        .prod-play-overlay {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.28);
+            transition: background 0.25s;
+        }
+        .prod-thumb:hover .prod-play-overlay { background: rgba(0,0,0,0.45); }
+        .prod-play-btn {
+            width: 54px; height: 54px;
+            border-radius: 50%;
+            background: rgba(201,162,39,0.90);
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.22s, background 0.22s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .prod-thumb:hover .prod-play-btn { transform: scale(1.12); background: #c9a227; }
+        .prod-play-btn i { font-size: 1.6rem; color: #060002; margin-left: 3px; }
+
+        /* ── Modal de video ── */
+        #videoModal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; }
+        #videoModal.vm-open { display: flex; }
+        .vm-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }
+        .vm-box {
+            position: relative; z-index: 1;
+            width: min(880px, 94vw);
+            background: #0d0d0d;
+            border: 1px solid rgba(201,162,39,0.25);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+        }
+        .vm-close {
+            position: absolute; top: 10px; right: 12px; z-index: 2;
+            background: rgba(0,0,0,0.55); border: none; color: #fff;
+            border-radius: 50%; width: 34px; height: 34px;
+            cursor: pointer; font-size: 1.3rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .vm-close:hover { background: rgba(201,162,39,0.7); }
+        .vm-title {
+            padding: 14px 48px 14px 18px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem; color: rgba(255,220,180,0.85);
+            border-bottom: 1px solid rgba(201,162,39,0.15);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .vm-title:empty { display: none; }
+        .vm-ratio { position: relative; padding-bottom: 56.25%; height: 0; }
+        .vm-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
         /* ── Footer ── */
         .cartelera-footer {
             text-align: center;
