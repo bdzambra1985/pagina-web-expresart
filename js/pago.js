@@ -52,9 +52,9 @@ function renderBank(info) {
 
     container.innerHTML = rows.map(r => `
         <div class="bank-row">
-            <span class="bank-label">${r.label}</span>
+            <span class="bank-label">${esc(r.label)}</span>
             <span class="bank-value">
-                ${r.value}
+                ${esc(r.value)}
                 ${r.copy ? `<button class="copy-btn" data-action="copy-text" data-val="${esc(r.value)}">Copiar</button>` : ''}
             </span>
         </div>

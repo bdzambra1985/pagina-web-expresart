@@ -6,6 +6,7 @@ const { uploader, saveFile, detectMime, ALLOWED_MIMES_IMAGE } = require('../midd
 
 const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
 const VALID_AUDIENCES  = new Set(['publico', 'alumnos']);
+const VALID_SECTIONS   = new Set(['destacada', 'producciones', 'formacion', 'especialidades', 'profile']);
 
 /* ── Events ── */
 router.get('/events', async (req, res) => {
@@ -99,6 +100,7 @@ router.post('/content', async (req, res) => {
         if (!requireAdmin(req, res)) return;
         const { section, data } = req.body;
         if (!section || !data) return res.status(400).json({ ok: false, message: 'section y data son requeridos' });
+        if (!VALID_SECTIONS.has(section)) return res.status(400).json({ ok: false, message: 'Sección no válida' });
         await db.saveContentSection(section, data);
         res.json({ ok: true });
     } catch (e) {
