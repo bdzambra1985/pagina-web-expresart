@@ -101,6 +101,7 @@ router.post('/content', async (req, res) => {
         const { section, data } = req.body;
         if (!section || !data) return res.status(400).json({ ok: false, message: 'section y data son requeridos' });
         if (!VALID_SECTIONS.has(section)) return res.status(400).json({ ok: false, message: 'Sección no válida' });
+        if (JSON.stringify(data).length > 200_000) return res.status(400).json({ ok: false, message: 'Datos demasiado grandes' });
         await db.saveContentSection(section, data);
         res.json({ ok: true });
     } catch (e) {

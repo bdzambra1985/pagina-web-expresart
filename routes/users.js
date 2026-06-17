@@ -35,8 +35,10 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
         if (username.trim().length < 3 || username.trim().length > 40)
             return res.status(400).json({ ok: false, message: 'Usuario debe tener entre 3 y 40 caracteres' });
-        if (password.length < 8)
-            return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+        if (password.length < 10)
+            return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 10 caracteres' });
+        if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password))
+            return res.status(400).json({ ok: false, message: 'La contraseña debe incluir letras y números' });
         if (await db.getUserByUsername(username.trim()))
             return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
 

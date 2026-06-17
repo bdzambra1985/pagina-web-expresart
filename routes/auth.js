@@ -78,8 +78,10 @@ router.post('/change-password', async (req, res) => {
         const { newPassword } = req.body;
         if (!newPassword || typeof newPassword !== 'string')
             return res.status(400).json({ ok: false, message: 'Nueva contraseña requerida' });
-        if (newPassword.length < 8)
-            return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 8 caracteres' });
+        if (newPassword.length < 10)
+            return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 10 caracteres' });
+        if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword))
+            return res.status(400).json({ ok: false, message: 'La contraseña debe incluir letras y números' });
 
         const user = await db.getUserById(sess.userId);
         if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
