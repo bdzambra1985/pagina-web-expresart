@@ -9,7 +9,7 @@ async function notifyEmail(subject, text, html, to, attachments) {
     try {
         const { Resend } = require('resend');
         const resend = new Resend(apiKey);
-        const payload = { from: 'EXPRESART <noreply@expresart.ec>', to: recipient, subject, text, html };
+        const payload = { from: 'EXPRESART <onboarding@resend.dev>', to: recipient, subject, text, html };
         if (attachments && attachments.length) payload.attachments = attachments;
         const { error } = await resend.emails.send(payload);
         if (error) console.error('[Email notify]', error.message);
