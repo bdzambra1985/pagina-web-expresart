@@ -138,7 +138,7 @@ function renderUsers() {
             <tbody>
                 ${slice.map(u => `
                 <tr data-uid="${u.userId}">
-                    <td>${u.username}</td>
+                    <td>${esc(u.username)}</td>
                     <td>
                         <span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">
                             ${u.active ? 'Activo' : 'Inactivo'}
@@ -285,7 +285,7 @@ function renderMatrix() {
     });
 
     if (!filtered.length) {
-        wrap.innerHTML = '<p class="cal-no-user">' + (searchTerm ? 'Sin resultados para "' + searchTerm + '".' : 'No hay alumnos registrados.') + '</p>';
+        wrap.innerHTML = '<p class="cal-no-user">' + (searchTerm ? 'Sin resultados para "' + esc(searchTerm) + '".' : 'No hay alumnos registrados.') + '</p>';
         return;
     }
 
@@ -929,7 +929,7 @@ async function loadBankInfo() {
 function renderServices() {
     document.getElementById('servicesList').innerHTML = bankServices.map((s, i) => `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px">
-            <span style="flex:1;font-size:.85em;color:rgba(255,235,235,.85)">${s.name}</span>
+            <span style="flex:1;font-size:.85em;color:rgba(255,235,235,.85)">${esc(s.name)}</span>
             <span style="color:#c9a227;font-size:.85em;font-weight:600">$${parseFloat(s.price||0).toFixed(2)}</span>
             <button data-action="remove-service" data-idx="${i}" style="background:rgba(220,40,40,.2);border:none;color:#f88;border-radius:5px;padding:2px 7px;cursor:pointer">✕</button>
         </div>
@@ -1056,13 +1056,13 @@ function renderOrders() {
                     ? `<button data-action="open-protected-url" data-path="/factura/${o.id}" class="edit-btn" style="cursor:pointer;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">🧾 Factura SRI</button>`
                     : ''}
             ` : `
-                <span style="font-size:.78em;color:rgba(255,200,200,.5)">${o.rejectionReason || '—'}</span>
+                <span style="font-size:.78em;color:rgba(255,200,200,.5)">${esc(o.rejectionReason || '—')}</span>
                 ${receiptLink}
             `;
             return `<tr>
                 <td style="font-size:.8em">${fecha}</td>
-                <td><strong style="font-size:.88em">${o.customerName}</strong><br><small style="color:rgba(255,200,200,.5)">${o.customerEmail}</small></td>
-                <td style="font-size:.82em;max-width:180px">${o.concept}</td>
+                <td><strong style="font-size:.88em">${esc(o.customerName)}</strong><br><small style="color:rgba(255,200,200,.5)">${esc(o.customerEmail)}</small></td>
+                <td style="font-size:.82em;max-width:180px">${esc(o.concept)}</td>
                 <td style="font-size:.88em;color:#c9a227;font-weight:600">$${parseFloat(o.amount).toFixed(2)}</td>
                 <td>${badge}</td>
                 <td style="min-width:110px">${sriBadge}</td>
