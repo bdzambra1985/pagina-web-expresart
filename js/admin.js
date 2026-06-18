@@ -531,6 +531,7 @@ async function loadContent() {
     renderForm();
     renderEsp();
     renderProfile();
+    renderNosotros();
 }
 
 function renderDestacada() {
@@ -666,6 +667,108 @@ function renderProfile() {
     document.getElementById('profile_desc').value = (content.profile || {}).description || '';
 }
 
+const NOS_DEFAULTS = {
+    historia: { texto1: 'EXPRESART nació con el propósito de abrir un espacio donde la expresión artística y el teatro sean accesibles para todos.', texto2: 'Desde nuestros inicios hemos formado actores, artistas y comunicadores capaces de conectar con el público desde la autenticidad y la técnica.', cita: 'El teatro es el arte de hacer vivir lo que no existe, y existir lo que no se ve.', citaAutor: 'EXPRESART' },
+    mision: { misionTexto: 'Formar artistas escénicos con bases técnicas sólidas, sensibilidad creativa y vocación de comunicar.', visionTexto: 'Ser la escuela de actuación de referencia de la región.', cita: 'Formamos artistas que no solo actúan — transforman el mundo desde el escenario.', citaAutor: 'Dirección EXPRESART' },
+    valores: [
+        { icono: '🔥', nombre: 'Pasión',     descripcion: 'Enseñamos desde el amor genuino por el arte escénico.' },
+        { icono: '🎯', nombre: 'Disciplina', descripcion: 'El talento se potencia con trabajo constante y dedicación.' },
+        { icono: '🤝', nombre: 'Comunidad',  descripcion: 'El teatro es colectivo — juntos crecemos — juntos brillamos.' }
+    ],
+    niveles: [
+        { titulo: 'Nivel Básico',               descripcion: 'Introducción a las técnicas fundamentales de la actuación.', etiqueta: 'Nivel 1 — Principiantes', duracion: '' },
+        { titulo: 'Nivel Intermedio',            descripcion: 'Desarrollo de habilidades expresivas y construcción de personaje.', etiqueta: 'Nivel 2 — Intermedio',   duracion: '' },
+        { titulo: 'Nivel Avanzado',              descripcion: 'Profundización en métodos de interpretación y producción de obra.', etiqueta: 'Nivel 3 — Avanzado',     duracion: '' },
+        { titulo: 'Taller de Puesta en Escena', descripcion: 'Producción de una obra completa ante el público.',               etiqueta: 'Todos los niveles',      duracion: '' }
+    ]
+};
+
+let nosValores = [];
+let nosNiveles = [];
+
+function renderNosotros() {
+    const nos = content.nosotros || {};
+    const h   = nos.historia || NOS_DEFAULTS.historia;
+    const m   = nos.mision   || NOS_DEFAULTS.mision;
+    nosValores = (nos.valores && nos.valores.length) ? nos.valores.map(v => ({...v})) : NOS_DEFAULTS.valores.map(v => ({...v}));
+    nosNiveles = (nos.niveles && nos.niveles.length) ? nos.niveles.map(n => ({...n})) : NOS_DEFAULTS.niveles.map(n => ({...n}));
+
+    document.getElementById('nos_h_texto1').value    = h.texto1    || '';
+    document.getElementById('nos_h_texto2').value    = h.texto2    || '';
+    document.getElementById('nos_h_cita').value      = h.cita      || '';
+    document.getElementById('nos_h_citaAutor').value = h.citaAutor || '';
+    document.getElementById('nos_m_mision').value    = m.misionTexto || '';
+    document.getElementById('nos_m_vision').value    = m.visionTexto || '';
+    document.getElementById('nos_m_cita').value      = m.cita      || '';
+    document.getElementById('nos_m_citaAutor').value = m.citaAutor || '';
+
+    renderNosValores();
+    renderNosNiveles();
+}
+
+function renderNosValores() {
+    const wrap = document.getElementById('nosValoresList');
+    wrap.innerHTML = '';
+    nosValores.forEach((v, i) => {
+        const card = makeItemCard(`Valor ${i+1}`, [
+            { label:'Ícono (emoji)', key:'icono',      value: v.icono,      placeholder:'🔥' },
+            { label:'Nombre',        key:'nombre',      value: v.nombre,     placeholder:'Pasión' },
+            { label:'Descripción',   key:'descripcion', value: v.descripcion,placeholder:'...', textarea:true, full:true }
+        ], () => { nosValores.splice(i, 1); renderNosValores(); });
+        wrap.appendChild(card);
+    });
+}
+
+function renderNosNiveles() {
+    const list = document.getElementById('nosNivelesList');
+    list.innerHTML = '';
+    nosNiveles.forEach((n, i) => {
+        const card = makeItemCard(`Nivel ${i+1}`, [
+            { label:'Título',      key:'titulo',      value: n.titulo,      placeholder:'Nivel Básico' },
+            { label:'Etiqueta',    key:'etiqueta',    value: n.etiqueta,    placeholder:'Nivel 1 — Principiantes' },
+            { label:'Duración',    key:'duracion',    value: n.duracion,    placeholder:'6 meses' },
+            { label:'Descripción', key:'descripcion', value: n.descripcion, placeholder:'Descripción...', textarea:true, full:true }
+        ], () => { nosNiveles.splice(i, 1); renderNosNiveles(); });
+        list.appendChild(card);
+    });
+}
+
+document.getElementById('addNosValor').onclick = () => {
+    nosValores.push({ icono:'', nombre:'', descripcion:'' });
+    renderNosValores();
+};
+
+document.getElementById('addNosNivel').onclick = () => {
+    nosNiveles.push({ titulo:'', descripcion:'', etiqueta:'', duracion:'' });
+    renderNosNiveles();
+};
+
+function collectNosotros() {
+    const h = {
+        texto1:    document.getElementById('nos_h_texto1').value,
+        texto2:    document.getElementById('nos_h_texto2').value,
+        cita:      document.getElementById('nos_h_cita').value,
+        citaAutor: document.getElementById('nos_h_citaAutor').value
+    };
+    const m = {
+        misionTexto: document.getElementById('nos_m_mision').value,
+        visionTexto: document.getElementById('nos_m_vision').value,
+        cita:        document.getElementById('nos_m_cita').value,
+        citaAutor:   document.getElementById('nos_m_citaAutor').value
+    };
+    const valores = Array.from(document.getElementById('nosValoresList').querySelectorAll('.item-card')).map(card => {
+        const obj = {};
+        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        return obj;
+    });
+    const niveles = Array.from(document.getElementById('nosNivelesList').querySelectorAll('.item-card')).map(card => {
+        const obj = {};
+        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        return obj;
+    });
+    return { historia: h, mision: m, valores, niveles };
+}
+
 async function saveSection(section, data) {
     const r = await fetch('/api/content', {
         method: 'POST',
@@ -698,6 +801,8 @@ document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
             data = collectEsp();
         } else if (section === 'profile') {
             data = { description: document.getElementById('profile_desc').value };
+        } else if (section === 'nosotros') {
+            data = collectNosotros();
         }
         try {
             await saveSection(section, data);

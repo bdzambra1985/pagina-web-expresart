@@ -6,7 +6,7 @@ const { uploader, saveFile, detectMime, ALLOWED_MIMES_IMAGE } = require('../midd
 
 const VALID_CATEGORIES = new Set(['obra', 'taller', 'audicion', 'otro']);
 const VALID_AUDIENCES  = new Set(['publico', 'alumnos']);
-const VALID_SECTIONS   = new Set(['destacada', 'producciones', 'formacion', 'especialidades', 'profile']);
+const VALID_SECTIONS   = new Set(['destacada', 'producciones', 'formacion', 'especialidades', 'profile', 'nosotros']);
 
 /* ── Events ── */
 router.get('/events', async (req, res) => {
