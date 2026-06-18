@@ -2,3 +2,5 @@ node_modules/
 data/
 uploads/
 .env
+*.p12
+sri/BORIS*
