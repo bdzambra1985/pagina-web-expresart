@@ -15,9 +15,7 @@ async function notifyEmail(subject, text, html, to, attachments) {
         return;
     }
 
-    // Usa onboarding@resend.dev si el dominio expresart.ec no está verificado en Resend.
-    // Para usar noreply@expresart.ec: verificar el dominio en resend.com/domains primero.
-    const FROM = process.env.RESEND_FROM || 'EXPRESART <onboarding@resend.dev>';
+    const FROM = process.env.RESEND_FROM || 'EXPRESART <noreply@expresart.ec>';
 
     try {
         const { Resend } = require('resend');
