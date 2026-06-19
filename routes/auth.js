@@ -52,7 +52,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         const isProd   = process.env.NODE_ENV === 'production';
         const cookieOpts = { httpOnly: true, sameSite: 'strict', secure: isProd, path: '/' };
         res.cookie('exp_session', token, cookieOpts);
-        res.cookie('exp_role', user.role, { sameSite: 'strict', secure: isProd, path: '/' });
+        res.cookie('exp_role', user.role, { httpOnly: true, sameSite: 'strict', secure: isProd, path: '/' });
         res.json({ ok: true, role: user.role, mustChangePassword: !!user.mustChangePassword });
     } catch (e) {
         console.error('[/api/login]', e);

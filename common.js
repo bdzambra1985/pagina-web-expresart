@@ -11,9 +11,7 @@ function esc(s) {
 
 /* ── Update nav login link based on active session ── */
 function initNavAuth() {
-    var tok = localStorage.getItem('exp_token');
-    if (!tok) return;
-    fetch('/api/auth', { headers: { 'x-session-token': tok } })
+    fetch('/api/auth')
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (!d.ok) return;
@@ -46,9 +44,7 @@ function initNavAuth() {
 
 /* ── Thin fetch wrapper — returns parsed JSON or throws ── */
 function api(url, opts) {
-    var tok = localStorage.getItem('exp_token');
     var headers = Object.assign({ 'Content-Type': 'application/json' }, (opts && opts.headers) || {});
-    if (tok) headers['x-session-token'] = tok;
     return fetch(url, Object.assign({}, opts, { headers: headers })).then(function(r) { return r.json(); });
 }
 
