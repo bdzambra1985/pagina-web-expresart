@@ -24,7 +24,7 @@ const _emailCSS = `
   .body{padding:24px 32px}
   .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
   .row:last-child{border-bottom:none}
-  .label{color:#888;font-weight:bold;min-width:90px}
+  .label{color:#888;font-weight:bold;min-width:90px;padding-right:6px}
   .value{color:#222;text-align:right}
   .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
   .footer{background:#060002;padding:16px 32px;text-align:center}
