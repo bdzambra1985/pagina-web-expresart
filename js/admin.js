@@ -667,19 +667,36 @@ function renderProfile() {
     document.getElementById('profile_desc').value = (content.profile || {}).description || '';
 }
 
+const _nosAnios = (() => {
+    const now = new Date();
+    let y = now.getFullYear() - 2023;
+    if (now < new Date(now.getFullYear(), 2, 4)) y--;
+    return y;
+})();
+
 const NOS_DEFAULTS = {
-    historia: { texto1: 'EXPRESART nació con el propósito de abrir un espacio donde la expresión artística y el teatro sean accesibles para todos.', texto2: 'Desde nuestros inicios hemos formado actores, artistas y comunicadores capaces de conectar con el público desde la autenticidad y la técnica.', cita: 'El teatro es el arte de hacer vivir lo que no existe, y existir lo que no se ve.', citaAutor: 'EXPRESART' },
-    mision: { misionTexto: 'Formar artistas escénicos con bases técnicas sólidas, sensibilidad creativa y vocación de comunicar.', visionTexto: 'Ser la escuela de actuación de referencia de la región.', cita: 'Formamos artistas que no solo actúan — transforman el mundo desde el escenario.', citaAutor: 'Dirección EXPRESART' },
+    historia: {
+        texto1:    `EXPRESART nació con el propósito de abrir un espacio donde la expresión artística y el teatro sean accesibles para todos. Fundada por artistas y docentes apasionados por las artes escénicas, nuestra escuela se ha convertido en un semillero de talentos que transforman el escenario en un lugar de vida, emoción y comunicación, con ${_nosAnios} años funcionando y formando artistas en la ciudad de Quito, Ecuador.`,
+        texto2:    'Desde nuestros inicios hemos formado actores, artistas y comunicadores capaces de conectar con el público desde la autenticidad y la técnica.',
+        cita:      'El teatro es el arte de hacer vivir lo que no existe, y existir lo que no se ve.',
+        citaAutor: 'EXPRESART'
+    },
+    mision: {
+        misionTexto: 'Formar artistas escénicos con bases técnicas sólidas, sensibilidad creativa y vocación de comunicar, brindando una educación teatral de calidad en un ambiente de respeto, pasión y disciplina.',
+        visionTexto: 'Ser la escuela de actuación de referencia de la región, reconocida por la excelencia de sus egresados y por su compromiso con el arte escénico como herramienta de transformación personal y social.',
+        cita:        'Formamos artistas que no solo actúan — transforman el mundo desde el escenario.',
+        citaAutor:   'Dirección EXPRESART'
+    },
     valores: [
         { icono: '🔥', nombre: 'Pasión',     descripcion: 'Enseñamos desde el amor genuino por el arte escénico.' },
         { icono: '🎯', nombre: 'Disciplina', descripcion: 'El talento se potencia con trabajo constante y dedicación.' },
         { icono: '🤝', nombre: 'Comunidad',  descripcion: 'El teatro es colectivo — juntos crecemos — juntos brillamos.' }
     ],
     niveles: [
-        { titulo: 'Actuación Básica',             descripcion: 'Introducción a las técnicas fundamentales de la actuación: expresión corporal, voz, respiración y presencia escénica.', etiqueta: 'Principiantes',    duracion: '' },
-        { titulo: 'Actuación Avanzada',           descripcion: 'Profundización en métodos de interpretación, construcción de personaje y trabajo con texto dramático.',                        etiqueta: 'Avanzado',         duracion: '' },
-        { titulo: 'Teatro para Niños y Jóvenes', descripcion: 'Talleres lúdicos que desarrollan la creatividad, la confianza y la comunicación desde una edad temprana.',                     etiqueta: '4 – 17 años',      duracion: '' },
-        { titulo: 'Taller de Puesta en Escena',  descripcion: 'Producción de una obra completa: desde la lectura del guion hasta la presentación ante el público.',                           etiqueta: 'Todos los niveles', duracion: '' }
+        { titulo: 'Actuación Básica',             descripcion: 'Introducción a las técnicas fundamentales de la actuación: expresión corporal, voz, respiración y presencia escénica.',           etiqueta: 'Nivel 1 — Principiantes', duracion: '' },
+        { titulo: 'Actuación Intermedia',         descripcion: 'Desarrollo de habilidades expresivas, construcción de personaje, improvisación y trabajo en escenas cortas con otros actores.',  etiqueta: 'Nivel 2 — Intermedio',    duracion: '' },
+        { titulo: 'Actuación Avanzada',           descripcion: 'Profundización en métodos de interpretación, trabajo con texto dramático y producción de obra completa ante el público.',        etiqueta: 'Nivel 3 — Avanzado',      duracion: '' },
+        { titulo: 'Taller de Puesta en Escena',  descripcion: 'Producción de una obra completa: desde la lectura del guion hasta la presentación ante el público.',                              etiqueta: 'Todos los niveles',       duracion: '' }
     ]
 };
 
