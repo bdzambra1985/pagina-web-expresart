@@ -108,6 +108,12 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 /* ── Static files ── */
 const ONE_WEEK = 7 * 24 * 60 * 60;
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// TWA / PWA: assetlinks.json debe estar en /.well-known/ sin redirect
+app.get('/.well-known/assetlinks.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, '.well-known', 'assetlinks.json'));
+});
 app.use(express.static(__dirname, {
     setHeaders(res, filePath) {
         if (/\.(css|js|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath))
