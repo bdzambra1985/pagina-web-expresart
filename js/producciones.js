@@ -90,6 +90,28 @@ async function loadProducciones() {
     grid.querySelectorAll('.prod-video-btn').forEach(btn => {
         btn.addEventListener('click', () => _openVideo(btn.dataset.url, btn.dataset.title));
     });
+
+    grid.querySelectorAll('.prod-cover-wrap').forEach(wrap => {
+        wrap.style.cursor = 'zoom-in';
+        wrap.addEventListener('click', () => _zoomOpen(wrap.querySelector('img').src));
+    });
+}
+
+/* ── Lightbox foto ── */
+const _zo  = document.getElementById('imgZoomOverlay');
+const _zim = document.getElementById('imgZoomImg');
+document.getElementById('imgZoomClose').addEventListener('click', _zoomClose);
+_zo.addEventListener('click', e => { if (e.target === _zo) _zoomClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _zoomClose(); });
+
+function _zoomOpen(src) {
+    _zim.src = src;
+    _zo.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function _zoomClose() {
+    _zo.classList.remove('show');
+    document.body.style.overflow = '';
 }
 
 /* ── Modal Detalles ── */
@@ -102,8 +124,11 @@ function _openDetalles(p) {
     document.getElementById('dmDur').textContent     = (p.duracion||p.year) ? `Duración: ${p.duracion||p.year}` : '';
     document.getElementById('dmDesc').textContent    = p.description || '';
     const photos = (p.photos || []).filter(x => x);
-    document.getElementById('dmCollage').innerHTML   = photos.map(ph =>
+    document.getElementById('dmCollage').innerHTML = photos.map(ph =>
         `<div class="dm-collage-slot"><img src="${esc(ph)}" loading="lazy"></div>`).join('');
+    document.querySelectorAll('.dm-collage-slot').forEach(slot => {
+        slot.addEventListener('click', () => _zoomOpen(slot.querySelector('img').src));
+    });
     _dm.classList.add('dm-open');
     document.body.style.overflow = 'hidden';
 }

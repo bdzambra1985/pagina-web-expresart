@@ -76,3 +76,12 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         btn.textContent   = 'Entrar al panel';
     }
 };
+
+document.getElementById('pwdToggle').addEventListener('click', function () {
+    const inp  = document.getElementById('password');
+    const icon = document.getElementById('pwdEyeIcon');
+    const show = inp.type === 'password';
+    inp.type       = show ? 'text' : 'password';
+    icon.className = show ? 'bx bx-show' : 'bx bx-hide';
+    this.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+});

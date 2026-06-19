@@ -195,6 +195,43 @@
         .dm-collage-slot { overflow:hidden; border-radius:10px; border:1px solid rgba(201,162,39,0.15); aspect-ratio:1; }
         .dm-collage-slot img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.35s ease; }
         .dm-collage-slot:hover img { transform:scale(1.10); }
+        .dm-collage-slot { cursor: pointer; }
+        /* ── Lightbox foto ampliada ── */
+        #imgZoomOverlay {
+            display: flex; position: fixed; inset: 0; z-index: 99999;
+            background: rgba(0,0,0,0.88); backdrop-filter: blur(0px);
+            align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity .28s ease, backdrop-filter .28s ease, visibility 0s linear .28s;
+        }
+        #imgZoomOverlay.show {
+            opacity: 1; visibility: visible; backdrop-filter: blur(10px);
+            pointer-events: auto;
+            transition: opacity .28s ease, backdrop-filter .28s ease, visibility 0s linear 0s;
+        }
+        #imgZoomFrame {
+            position: relative; display: inline-flex;
+            align-items: center; justify-content: center;
+            border-radius: 18px;
+            transform: scale(0.80);
+            transition: transform .38s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #imgZoomOverlay.show #imgZoomFrame { transform: scale(1); }
+        #imgZoomClose {
+            position: absolute; top: -13px; right: -13px;
+            width: 30px; height: 30px;
+            background: rgba(8,0,2,.90); border: 2px solid rgba(201,162,39,.70);
+            border-radius: 50%; color: rgba(201,162,39,.95); font-size: 1.05rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background .2s, transform .2s;
+        }
+        #imgZoomClose:hover { background: rgba(180,10,10,.92); transform: scale(1.18); }
+        #imgZoomImg {
+            max-width: min(88vw,780px); max-height: min(88vh,780px);
+            border-radius: 18px;
+            box-shadow: 0 32px 90px rgba(0,0,0,.92), 0 0 0 2px rgba(201,162,39,.50);
+            object-fit: contain; display: block;
+        }
         #videoModal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; }
         #videoModal.vm-open { display: flex; }
         .vm-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }
@@ -276,6 +313,13 @@
     <footer class="prod-footer">
         <p>© 2025 EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</p>
     </footer>
+</div>
+
+<div id="imgZoomOverlay">
+    <div id="imgZoomFrame">
+        <button id="imgZoomClose"><i class="bx bx-x"></i></button>
+        <img id="imgZoomImg" src="" alt="">
+    </div>
 </div>
 
 <div id="detallesModal">
