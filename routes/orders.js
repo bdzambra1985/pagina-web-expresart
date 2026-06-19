@@ -447,6 +447,36 @@ router.get('/factura/:id', async (req, res) => {
     }
 });
 
+/* ── Borrar todas las órdenes preservando el secuencial de factura ── */
+router.post('/orders/clear-all', async (req, res) => {
+    try {
+        if (!requireAdmin(req, res)) return;
+        const orders = await db.getOrders();
+        const maxSeq = orders.reduce((m, o) => {
+            if (!o.invoiceNumber) return m;
+            return Math.max(m, seqFromInvoice(o.invoiceNumber));
+        }, 0);
+        await db.deleteAllOrders();
+        if (maxSeq > 0) {
+            await db.createOrder({
+                id: 'seq_anchor_' + Date.now(),
+                token: '', status: 'anchor',
+                userId: null, customerName: 'ANCHOR', customerDoc: '0000000000',
+                customerEmail: 'anchor@system', concept: 'Anchor secuencial',
+                amount: 0, subtotal: 0, iva: 0, ivaRate: 15,
+                receiptUrl: null, notes: '',
+                paymentMonth: null, invoiceNumber: invoiceFromSeq(maxSeq),
+                rejectionReason: '', createdAt: new Date().toISOString(), confirmedAt: null
+            });
+        }
+        const next = await db.nextInvoiceNumber();
+        res.json({ ok: true, deletedCount: orders.length, anchorSeq: maxSeq, nextInvoiceNumber: next });
+    } catch (e) {
+        console.error('[POST /api/orders/clear-all]', e);
+        res.status(500).json({ ok: false, message: e.message });
+    }
+});
+
 /* ── Resetear secuencial: limpiar números fantasma no autorizados por SRI ── */
 router.post('/orders/reset-invoice-seq', async (req, res) => {
     try {
