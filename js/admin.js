@@ -676,10 +676,10 @@ const NOS_DEFAULTS = {
         { icono: '🤝', nombre: 'Comunidad',  descripcion: 'El teatro es colectivo — juntos crecemos — juntos brillamos.' }
     ],
     niveles: [
-        { titulo: 'Nivel Básico',               descripcion: 'Introducción a las técnicas fundamentales de la actuación.', etiqueta: 'Nivel 1 — Principiantes', duracion: '' },
-        { titulo: 'Nivel Intermedio',            descripcion: 'Desarrollo de habilidades expresivas y construcción de personaje.', etiqueta: 'Nivel 2 — Intermedio',   duracion: '' },
-        { titulo: 'Nivel Avanzado',              descripcion: 'Profundización en métodos de interpretación y producción de obra.', etiqueta: 'Nivel 3 — Avanzado',     duracion: '' },
-        { titulo: 'Taller de Puesta en Escena', descripcion: 'Producción de una obra completa ante el público.',               etiqueta: 'Todos los niveles',      duracion: '' }
+        { titulo: 'Actuación Básica',            descripcion: 'Introducción a las técnicas fundamentales de la actuación: expresión corporal, voz, respiración y presencia escénica.', etiqueta: 'Nivel 1 — Principiantes', duracion: '' },
+        { titulo: 'Actuación Intermedia',        descripcion: 'Desarrollo de habilidades expresivas, construcción de personaje, improvisación y trabajo en escenas cortas con otros actores.',  etiqueta: 'Nivel 2 — Intermedio',    duracion: '' },
+        { titulo: 'Actuación Avanzada',          descripcion: 'Profundización en métodos de interpretación, trabajo con texto dramático y producción de obra completa ante el público.',        etiqueta: 'Nivel 3 — Avanzado',      duracion: '' },
+        { titulo: 'Taller de Puesta en Escena', descripcion: 'Producción de una obra completa: desde la lectura del guion hasta la presentación ante el público.',                              etiqueta: 'Todos los niveles',       duracion: '' }
     ]
 };
 
