@@ -71,7 +71,7 @@ async function loadProducciones() {
     grid.innerHTML = prods.map((p, idx) => {
         const hasVid      = !!_embedUrl(p.videoUrl);
         const coverBlock  = p.photoUrl
-            ? `<img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy">`
+            ? `<div class="prod-cover-wrap"><img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy"></div>`
             : '';
         const hasDetalles = p.description || (p.photos && p.photos.filter(x=>x).length);
         return `<div class="prod-card">
@@ -103,7 +103,7 @@ function _openDetalles(p) {
     document.getElementById('dmDesc').textContent    = p.description || '';
     const photos = (p.photos || []).filter(x => x);
     document.getElementById('dmCollage').innerHTML   = photos.map(ph =>
-        `<img src="${esc(ph)}" loading="lazy">`).join('');
+        `<div class="dm-collage-slot"><img src="${esc(ph)}" loading="lazy"></div>`).join('');
     _dm.classList.add('dm-open');
     document.body.style.overflow = 'hidden';
 }
