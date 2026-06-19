@@ -586,7 +586,7 @@ function makeItemCard(label, fields, onDel) {
 }
 
 function _renderAdminCollage(card, photos) {
-    const grid = card.querySelector('.prod-admin-collage-grid');
+    const grid = card.querySelector('.prod-collage-grid');
     if (!grid) return;
     grid.innerHTML = '';
     for (let j = 0; j < 5; j++) {
@@ -602,23 +602,28 @@ function _renderAdminCollage(card, photos) {
             });
         } else {
             slot.innerHTML = `<div class="collage-slot-ph"><i class="bx bx-image-add"></i><span>Foto ${j+1}</span></div>`;
-            slot.addEventListener('click', () => {
-                const inp = document.createElement('input');
-                inp.type = 'file'; inp.accept = '.jpg,.jpeg,.png,.webp,.gif';
-                inp.onchange = async () => {
-                    const file = inp.files[0]; if (!file) return;
-                    const fd = new FormData(); fd.append('photo', file);
-                    try {
-                        const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
-                        const d = await r.json();
-                        if (d.ok) { photos[j] = d.url; _renderAdminCollage(card, photos); }
-                    } catch(e) { console.error('[collage upload]', e); }
-                };
-                inp.click();
-            });
+            slot.addEventListener('click', () => _uploadAdminCollagePhoto(j, photos, card));
         }
         grid.appendChild(slot);
     }
+}
+
+async function _uploadAdminCollagePhoto(slotIdx, photos, card) {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.jpg,.jpeg,.png,.webp,.gif';
+    inp.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0';
+    document.body.appendChild(inp);
+    inp.onchange = async () => {
+        document.body.removeChild(inp);
+        const file = inp.files[0]; if (!file) return;
+        const fd = new FormData(); fd.append('photo', file);
+        try {
+            const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
+            const d = await r.json();
+            if (d.ok) { photos[slotIdx] = d.url; _renderAdminCollage(card, photos); }
+        } catch(e) { console.error('[collage upload]', e); }
+    };
+    inp.click();
 }
 
 function renderProd() {
@@ -668,7 +673,7 @@ function renderProd() {
                 </div>
             </div>
             <span class="prod-collage-label"><i class="bx bx-images"></i> Fotos del collage (hasta 5 — aparecen en Detalles)</span>
-            <div class="prod-admin-collage-grid"></div>`;
+            <div class="prod-collage-grid"></div>`;
 
         // Foto de portada
         const preview    = card.querySelector('.prod-admin-photo-preview');
