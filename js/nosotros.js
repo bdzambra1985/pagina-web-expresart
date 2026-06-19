@@ -44,25 +44,13 @@ async function loadNosotros() {
         nos = c.nosotros || null;
     } catch { /* usa defaults */ }
 
-    const h = (nos && nos.historia) || DEFAULTS.historia;
-    const m = (nos && nos.mision)   || DEFAULTS.mision;
+    // Los textos (historia, misión, visión, citas) viven en el HTML y no se
+    // sobreescriben desde la DB para evitar que versiones antiguas piseen el contenido correcto.
+    // Los grids de valores y niveles sí requieren JS porque sus contenedores están vacíos en el HTML.
+
     const v = (nos && nos.valores && nos.valores.length) ? nos.valores : DEFAULTS.valores;
     const n = (nos && nos.niveles && nos.niveles.length) ? nos.niveles : DEFAULTS.niveles;
 
-    // Texto — solo sobreescribe si el admin guardó algo distinto al default
-    if (nos) {
-        if (h.texto1)    document.getElementById('nos_h_texto1').textContent    = h.texto1;
-        if (h.texto2)    document.getElementById('nos_h_texto2').textContent    = h.texto2;
-        if (h.cita)      document.getElementById('nos_h_cita').textContent      = '"' + h.cita + '"';
-        if (h.citaAutor) document.getElementById('nos_h_citaAutor').textContent = '— ' + h.citaAutor;
-
-        if (m.misionTexto) document.getElementById('nos_m_mision').textContent    = m.misionTexto;
-        if (m.visionTexto) document.getElementById('nos_m_vision').textContent    = m.visionTexto;
-        if (m.cita)        document.getElementById('nos_m_cita').textContent      = '"' + m.cita + '"';
-        if (m.citaAutor)   document.getElementById('nos_m_citaAutor').textContent = '— ' + m.citaAutor;
-    }
-
-    // Valores — siempre se renderizan (el grid está vacío en el HTML)
     document.getElementById('nosValoresGrid').innerHTML = v.map(vl => `
         <div class="valor-card">
             <span class="valor-icon">${esc(vl.icono)}</span>
@@ -70,7 +58,6 @@ async function loadNosotros() {
             <p class="valor-desc">${esc(vl.descripcion)}</p>
         </div>`).join('');
 
-    // Niveles — siempre se renderizan (el grid está vacío en el HTML)
     document.getElementById('nosCursosGrid').innerHTML = n.map(nv => `
         <div class="curso-card">
             <h3 class="curso-titulo">${esc(nv.titulo)}</h3>
