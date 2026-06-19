@@ -109,10 +109,19 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 const ONE_WEEK = 7 * 24 * 60 * 60;
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// TWA / PWA: assetlinks.json debe estar en /.well-known/ sin redirect
+// TWA / PWA: assetlinks.json en /.well-known/ — requerido para Trusted Web Activity
+// El SHA256 se actualiza cuando se genera el APK con bubblewrap/PWABuilder
+const _assetlinks = [{
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: {
+        namespace: 'android_app',
+        package_name: process.env.TWA_PACKAGE || 'ec.expresart.app',
+        sha256_cert_fingerprints: (process.env.TWA_SHA256 || 'PLACEHOLDER').split(',')
+    }
+}];
 app.get('/.well-known/assetlinks.json', (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.sendFile(path.join(__dirname, '.well-known', 'assetlinks.json'));
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json(_assetlinks);
 });
 app.use(express.static(__dirname, {
     setHeaders(res, filePath) {
