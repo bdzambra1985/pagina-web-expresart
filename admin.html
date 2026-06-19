@@ -579,6 +579,9 @@
         <button class="tab-btn" data-tab="agenda">
             <i class="bx bx-calendar-event"></i> Agenda
         </button>
+        <button class="tab-btn" data-tab="producciones">
+            <i class="bx bx-film"></i> Producciones
+        </button>
         <button class="tab-btn" data-tab="contenido">
             <i class="bx bx-edit-alt"></i> Contenido
         </button>
@@ -740,6 +743,19 @@
 
     </div>
 
+    <!-- ══════════════ TAB PRODUCCIONES ══════════════ -->
+    <div class="tab-panel" id="tab-producciones">
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-film"></i> Producciones</h2>
+            <p style="font-size:0.78em;color:rgba(255,255,255,0.45);margin:-8px 0 16px">Estas producciones aparecen en el menú principal → Producciones.</p>
+            <div class="items-list" id="prodList"></div>
+            <div class="btn-row">
+                <button class="add-btn" id="addProd"><i class="bx bx-plus"></i> Agregar producción</button>
+                <button class="save-btn" data-section="producciones"><i class="bx bx-save"></i> Guardar Producciones</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ══════════════ TAB CONTENIDO ══════════════ -->
     <div class="tab-panel" id="tab-contenido">
 
@@ -781,17 +797,6 @@
             </div>
             <div class="btn-row">
                 <button class="save-btn" data-section="destacada"><i class="bx bx-save"></i> Guardar</button>
-            </div>
-        </div>
-
-        <!-- Producciones menú principal -->
-        <div class="admin-section">
-            <h2 class="section-title"><i class="bx bx-film"></i> Producciones</h2>
-            <p style="font-size:0.78em;color:rgba(255,255,255,0.45);margin:-8px 0 16px">Estas producciones aparecen en el menú principal → Producciones.</p>
-            <div class="items-list" id="prodList"></div>
-            <div class="btn-row">
-                <button class="add-btn" id="addProd"><i class="bx bx-plus"></i> Agregar producción</button>
-                <button class="save-btn" data-section="producciones"><i class="bx bx-save"></i> Guardar Producciones</button>
             </div>
         </div>
 
