@@ -27,29 +27,28 @@ const DEFAULTS = {
 };
 
 async function loadNosotros() {
-    let nos = {};
+    let nos = null;
     try {
         const r = await fetch('/api/content');
         const c = await r.json();
-        nos = c.nosotros || {};
-    } catch { /* fallback to defaults */ }
+        nos = c.nosotros || null;
+    } catch { /* conserva el contenido HTML por defecto */ }
 
-    const h = nos.historia || DEFAULTS.historia;
-    const m = nos.mision   || DEFAULTS.mision;
-    const v = (nos.valores && nos.valores.length) ? nos.valores : DEFAULTS.valores;
-    const n = (nos.niveles && nos.niveles.length) ? nos.niveles : DEFAULTS.niveles;
+    // Solo sobreescribe si el admin ya guardó contenido
+    if (!nos) return;
 
-    // Historia
-    document.getElementById('nos_h_texto1').textContent    = h.texto1    || '';
-    document.getElementById('nos_h_texto2').textContent    = h.texto2    || '';
-    document.getElementById('nos_h_cita').textContent      = '"' + (h.cita || '') + '"';
-    document.getElementById('nos_h_citaAutor').textContent = '— ' + (h.citaAutor || '');
+    const h = nos.historia || {};
+    const m = nos.mision   || {};
 
-    // Misión & Visión
-    document.getElementById('nos_m_mision').textContent    = m.misionTexto || '';
-    document.getElementById('nos_m_vision').textContent    = m.visionTexto || '';
-    document.getElementById('nos_m_cita').textContent      = '"' + (m.cita || '') + '"';
-    document.getElementById('nos_m_citaAutor').textContent = '— ' + (m.citaAutor || '');
+    if (h.texto1)    document.getElementById('nos_h_texto1').textContent    = h.texto1;
+    if (h.texto2)    document.getElementById('nos_h_texto2').textContent    = h.texto2;
+    if (h.cita)      document.getElementById('nos_h_cita').textContent      = '"' + h.cita + '"';
+    if (h.citaAutor) document.getElementById('nos_h_citaAutor').textContent = '— ' + h.citaAutor;
+
+    if (m.misionTexto) document.getElementById('nos_m_mision').textContent    = m.misionTexto;
+    if (m.visionTexto) document.getElementById('nos_m_vision').textContent    = m.visionTexto;
+    if (m.cita)        document.getElementById('nos_m_cita').textContent      = '"' + m.cita + '"';
+    if (m.citaAutor)   document.getElementById('nos_m_citaAutor').textContent = '— ' + m.citaAutor;
 
     // Valores
     const vgrid = document.getElementById('nosValoresGrid');
