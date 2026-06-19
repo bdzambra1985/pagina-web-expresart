@@ -24,7 +24,7 @@ const _emailCSS = `
   .body{padding:24px 32px}
   .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
   .row:last-child{border-bottom:none}
-  .label{color:#888;font-weight:bold;min-width:90px;padding-right:6px}
+  .label{color:#888;font-weight:bold;min-width:90px}
   .value{color:#222;text-align:right}
   .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
   .footer{background:#060002;padding:16px 32px;text-align:center}
@@ -39,11 +39,11 @@ function _adminEmailHtml({ name, email, doc, concept, amount, month, id }) {
       <div class="header"><h1>EXPRESART</h1><p>Nuevo comprobante de pago recibido</p></div>
       <div class="banner"><h2>${h(name)}</h2></div>
       <div class="body">
-        <div class="row"><span class="label">Email:</span><span class="value">${h(email)}</span></div>
-        <div class="row"><span class="label">Cédula:</span><span class="value">${h(doc)}</span></div>
-        <div class="row"><span class="label">Concepto:</span><span class="value">${h(concept)}</span></div>
-        <div class="row"><span class="label">Mes:</span><span class="value">${h(month || 'Sin especificar')}</span></div>
-        <div class="row"><span class="label">Monto:</span><span class="value monto">$${parseFloat(amount).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Email: </span><span class="value">${h(email)}</span></div>
+        <div class="row"><span class="label">Cédula: </span><span class="value">${h(doc)}</span></div>
+        <div class="row"><span class="label">Concepto: </span><span class="value">${h(concept)}</span></div>
+        <div class="row"><span class="label">Mes: </span><span class="value">${h(month || 'Sin especificar')}</span></div>
+        <div class="row"><span class="label">Monto: </span><span class="value monto">$${parseFloat(amount).toFixed(2)}</span></div>
       </div>
       <div class="footer">
         <a href="${BASE_URL}/admin.html">Ver panel de admin</a>
@@ -60,10 +60,10 @@ function _facturaEmailHtml(order, facturaUrl) {
       <div class="banner"><h2>Hola, ${h(order.customerName)}!</h2></div>
       <div class="body">
         <p style="color:#444;font-size:14px;margin:0 0 16px">Tu pago fue <strong>confirmado</strong> y el SRI ha autorizado la factura electrónica.</p>
-        <div class="row"><span class="label">Concepto:</span><span class="value">${h(order.concept)}</span></div>
-        <div class="row"><span class="label">Mes:</span><span class="value">${h(order.paymentMonth || 'Sin especificar')}</span></div>
-        <div class="row"><span class="label">Monto:</span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
-        <div class="row"><span class="label">Factura:</span><span class="value">${h(order.invoiceNumber)}</span></div>
+        <div class="row"><span class="label">Concepto: </span><span class="value">${h(order.concept)}</span></div>
+        <div class="row"><span class="label">Mes: </span><span class="value">${h(order.paymentMonth || 'Sin especificar')}</span></div>
+        <div class="row"><span class="label">Monto: </span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Factura: </span><span class="value">${h(order.invoiceNumber)}</span></div>
       </div>
       <div class="note">La factura electrónica está adjunta a este correo y también la puedes ver en línea.</div>
       <div class="footer">
