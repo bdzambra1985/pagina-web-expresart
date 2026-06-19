@@ -1,5 +1,15 @@
 initNavAuth();
 
+// Calcula años desde el 4 de marzo de 2023 — se incrementa cada 4 de marzo
+(function updateAnios() {
+    const now     = new Date();
+    const founded = new Date(2023, 2, 4); // 4 mar 2023
+    let years = now.getFullYear() - founded.getFullYear();
+    if (now < new Date(now.getFullYear(), 2, 4)) years--;
+    const el = document.getElementById('nosAniosCount');
+    if (el) el.textContent = years;
+})();
+
 const DEFAULTS = {
     historia: {
         texto1: 'EXPRESART nació con el propósito de abrir un espacio donde la expresión artística y el teatro sean accesibles para todos. Fundada por artistas y docentes apasionados por las artes escénicas, nuestra escuela se ha convertido en un semillero de talentos que transforman el escenario en un lugar de vida, emoción y comunicación.',
