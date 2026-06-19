@@ -20,7 +20,7 @@ async function notifyEmail(subject, text, html, to, attachments) {
     try {
         const { Resend } = require('resend');
         const resend = new Resend(apiKey);
-        const payload = { from: FROM, to: recipient, subject, text, html };
+        const payload = { from: FROM, reply_to: NOTIFY_EMAIL || FROM, to: recipient, subject, text, html };
         if (attachments && attachments.length) payload.attachments = attachments;
         const { data, error } = await resend.emails.send(payload);
         if (error) {

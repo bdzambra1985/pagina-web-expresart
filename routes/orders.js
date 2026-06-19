@@ -24,7 +24,7 @@ const _emailCSS = `
   .body{padding:24px 32px}
   .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
   .row:last-child{border-bottom:none}
-  .label{color:#888;font-weight:bold;min-width:90px}
+  .label{color:#888;font-weight:bold;min-width:90px}.label::after{content:":"}
   .value{color:#222;text-align:right}
   .monto{color:#2a8a2a;font-weight:bold;font-size:18px}
   .footer{background:#060002;padding:16px 32px;text-align:center}
@@ -170,7 +170,7 @@ router.post('/orders', orderLimiter, (req, res) => {
 
             // Email al admin
             notifyEmail(
-                `💰 Nuevo pago — ${order.customerName}`,
+                `Nuevo comprobante de pago — ${order.customerName}`,
                 `Alumno: ${order.customerName}\nEmail: ${order.customerEmail}\nCédula: ${order.customerDoc}\nConcepto: ${order.concept}\nMonto: $${parseFloat(order.amount).toFixed(2)}\nMes: ${order.paymentMonth || 'Sin especificar'}\nRef: ${order.id}\n\nRevisa el panel de administración para aprobar o rechazar el pago.`,
                 _adminEmailHtml({ name: order.customerName, email: order.customerEmail, doc: order.customerDoc, concept: order.concept, amount: order.amount, month: order.paymentMonth, id: order.id })
             );
@@ -314,7 +314,7 @@ router.put('/orders/:id/confirm', async (req, res) => {
                     const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${updated.token}`;
                     const facturaHtml = generateComprobanteHTML(updated, bankInfo);
                     await notifyEmail(
-                        `✅ Tu factura electrónica — EXPRESART`,
+                        `Factura electronica autorizada — EXPRESART`,
                         `Hola ${updated.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${updated.concept}\nMonto: $${parseFloat(updated.amount).toFixed(2)}\nFactura: ${updated.invoiceNumber}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
                         _facturaEmailHtml(updated, facturaUrl),
                         updated.customerEmail,
@@ -365,7 +365,7 @@ router.post('/orders/:id/sri-retry', async (req, res) => {
                     const facturaUrl = `${BASE_URL}/factura/${orderId}?token=${updated.token}`;
                     const facturaHtml = generateComprobanteHTML(updated, bankInfo);
                     await notifyEmail(
-                        `✅ Tu factura electrónica — EXPRESART`,
+                        `Factura electronica autorizada — EXPRESART`,
                         `Hola ${updated.customerName},\n\nTu pago fue confirmado y el SRI autorizó tu factura electrónica.\n\nConcepto: ${updated.concept}\nMonto: $${parseFloat(updated.amount).toFixed(2)}\nFactura: ${updated.invoiceNumber}\n\nTambién puedes verla en línea:\n${facturaUrl}\n\nGracias,\nEXPRESART`,
                         _facturaEmailHtml(updated, facturaUrl),
                         updated.customerEmail,
