@@ -69,32 +69,26 @@ async function loadProducciones() {
     }
 
     grid.innerHTML = prods.map((p, idx) => {
-        const ytId   = _ytId(p.videoUrl);
-        const hasVid = !!_embedUrl(p.videoUrl);
-        const thumb  = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : '';
-        const mediaBlock = hasVid
-            ? `<div class="prod-thumb" data-url="${esc(p.videoUrl)}" data-title="${esc(p.title)}" role="button" tabindex="0" aria-label="Ver video: ${esc(p.title)}">
-                   ${thumb ? `<img src="${thumb}" alt="${esc(p.title)}" loading="lazy">` : '<div class="prod-thumb-placeholder"><i class="bx bx-play-circle"></i></div>'}
-                   <div class="prod-play-overlay"><div class="prod-play-btn"><i class="bx bx-play"></i></div></div>
-               </div>`
-            : (p.photoUrl ? `<img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy">` : '');
+        const hasVid      = !!_embedUrl(p.videoUrl);
+        const coverBlock  = p.photoUrl
+            ? `<img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy">`
+            : '';
         const hasDetalles = p.description || (p.photos && p.photos.filter(x=>x).length);
         return `<div class="prod-card">
             ${(p.duracion||p.year) ? `<span class="prod-year">${esc(p.duracion||p.year)}</span>` : ''}
-            ${mediaBlock}
+            ${coverBlock}
             <div class="prod-title">${esc(p.title)}</div>
             ${hasDetalles ? `<button class="prod-detalles-btn" data-idx="${idx}"><i class="bx bx-images"></i> Detalles</button>` : ''}
+            ${hasVid ? `<button class="prod-video-btn" data-url="${esc(p.videoUrl)}" data-title="${esc(p.title)}"><i class="bx bx-play-circle"></i> Ver video</button>` : ''}
         </div>`;
     }).join('');
 
-    grid.querySelectorAll('.prod-thumb').forEach(el => {
-        const open = () => _openVideo(el.dataset.url, el.dataset.title);
-        el.addEventListener('click', open);
-        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
-    });
-
     grid.querySelectorAll('.prod-detalles-btn').forEach(btn => {
         btn.addEventListener('click', () => _openDetalles(prods[+btn.dataset.idx]));
+    });
+
+    grid.querySelectorAll('.prod-video-btn').forEach(btn => {
+        btn.addEventListener('click', () => _openVideo(btn.dataset.url, btn.dataset.title));
     });
 }
 
