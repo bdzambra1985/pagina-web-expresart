@@ -77,7 +77,7 @@ async function loadProducciones() {
                    ${thumb ? `<img src="${thumb}" alt="${esc(p.title)}" loading="lazy">` : '<div class="prod-thumb-placeholder"><i class="bx bx-play-circle"></i></div>'}
                    <div class="prod-play-overlay"><div class="prod-play-btn"><i class="bx bx-play"></i></div></div>
                </div>`
-            : '';
+            : (p.photoUrl ? `<img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy">` : '');
         return `<div class="prod-card">
             ${p.year ? `<span class="prod-year">${esc(p.year)}</span>` : ''}
             ${mediaBlock}

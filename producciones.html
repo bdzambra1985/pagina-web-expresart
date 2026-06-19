@@ -146,6 +146,14 @@
         }
         .prod-thumb:hover .prod-play-btn { transform: scale(1.12); background: #c9a227; }
         .prod-play-btn i { font-size: 1.6rem; color: #060002; margin-left: 3px; }
+        .prod-cover {
+            width: 100%; height: 180px;
+            object-fit: cover; border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(201,162,39,0.15);
+            transition: transform 0.28s ease;
+        }
+        .prod-card:hover .prod-cover { transform: scale(1.02); }
         #videoModal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; }
         #videoModal.vm-open { display: flex; }
         .vm-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }

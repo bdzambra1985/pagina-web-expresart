@@ -589,24 +589,90 @@ function renderProd() {
     const list = document.getElementById('prodList');
     list.innerHTML = '';
     (content.producciones || []).forEach((p, i) => {
-        const card = makeItemCard(`Producción ${i+1}`, [
-            { label:'Año',                          key:'year',        value: p.year,        placeholder:'2024' },
-            { label:'Título',                       key:'title',       value: p.title,       placeholder:'Nombre de la obra' },
-            { label:'Video (YouTube / Vimeo URL)',  key:'videoUrl',    value: p.videoUrl,    placeholder:'https://youtube.com/watch?v=...' },
-            { label:'Descripción',                  key:'description', value: p.description, placeholder:'Descripción...', textarea:true, full:true }
-        ], () => { content.producciones.splice(i, 1); renderProd(); });
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        const photoUrl = p.photoUrl || '';
+        card.innerHTML = `
+            <div class="item-card-header">
+                <span class="item-num">Producción ${i+1}</span>
+                <button class="del-btn" type="button"><i class="bx bx-trash"></i></button>
+            </div>
+            <div class="prod-admin-photo-wrap">
+                <img class="prod-admin-photo-preview" src="${esc(photoUrl)}" alt="Foto" ${photoUrl ? 'style="display:block"' : ''}>
+                <div class="prod-admin-photo-zone" ${photoUrl ? 'style="display:none"' : ''}>
+                    <i class="bx bx-image-add"></i><span>Foto de portada — clic para subir</span>
+                </div>
+                <input type="file" class="prod-admin-photo-input" accept=".jpg,.jpeg,.png,.webp,.gif">
+                <input type="hidden" data-key="photoUrl" value="${esc(photoUrl)}">
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label class="field-label">Año</label>
+                    <input class="admin-input" data-key="year" type="text" value="${esc(p.year||'')}" placeholder="2024">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Título</label>
+                    <input class="admin-input" data-key="title" type="text" value="${esc(p.title||'')}" placeholder="Nombre de la obra">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Video (YouTube / Vimeo URL)</label>
+                    <input class="admin-input" data-key="videoUrl" type="text" value="${esc(p.videoUrl||'')}" placeholder="https://youtube.com/watch?v=...">
+                </div>
+            </div>
+            <div class="field-row full">
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <textarea class="admin-textarea" data-key="description" rows="2" placeholder="Descripción de la producción...">${esc(p.description||'')}</textarea>
+                </div>
+            </div>`;
+
+        const preview  = card.querySelector('.prod-admin-photo-preview');
+        const zone     = card.querySelector('.prod-admin-photo-zone');
+        const fileInput = card.querySelector('.prod-admin-photo-input');
+        const photoHidden = card.querySelector('[data-key="photoUrl"]');
+
+        const triggerUpload = () => fileInput.click();
+        zone.addEventListener('click', triggerUpload);
+        preview.addEventListener('click', triggerUpload);
+
+        fileInput.addEventListener('change', async function () {
+            const file = this.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('photo', file);
+            try {
+                const r = await fetch('/api/upload-prod-photo', { method: 'POST', body: fd });
+                const d = await r.json();
+                if (d.ok) {
+                    preview.src = d.url;
+                    preview.style.display = 'block';
+                    zone.style.display = 'none';
+                    photoHidden.value = d.url;
+                }
+            } catch (e) { console.error('[prod photo upload]', e); }
+        });
+
+        card.querySelector('.del-btn').addEventListener('click', () => {
+            content.producciones.splice(i, 1);
+            renderProd();
+        });
+
         list.appendChild(card);
     });
 }
 document.getElementById('addProd').onclick = () => {
     content.producciones = content.producciones || [];
-    content.producciones.push({ id: Date.now(), year:'', title:'', description:'', videoUrl:'' });
+    content.producciones.push({ year:'', title:'', description:'', videoUrl:'', photoUrl:'' });
     renderProd();
 };
 function collectProd() {
     return Array.from(document.getElementById('prodList').querySelectorAll('.item-card')).map(card => {
-        const obj = { id: Date.now() };
-        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
+        const obj = {};
+        card.querySelectorAll('[data-key]').forEach(el => { obj[el.dataset.key] = el.value; });
         return obj;
     });
 }
