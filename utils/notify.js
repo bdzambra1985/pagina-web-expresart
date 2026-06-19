@@ -3,18 +3,35 @@
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL;
 
 async function notifyEmail(subject, text, html, to, attachments) {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey    = process.env.RESEND_API_KEY;
     const recipient = to || NOTIFY_EMAIL;
-    if (!apiKey || !recipient) return;
+
+    if (!apiKey) {
+        console.warn('[Email notify] RESEND_API_KEY no configurado — email no enviado:', subject);
+        return;
+    }
+    if (!recipient) {
+        console.warn('[Email notify] NOTIFY_EMAIL no configurado — email no enviado:', subject);
+        return;
+    }
+
+    // Usa onboarding@resend.dev si el dominio expresart.ec no está verificado en Resend.
+    // Para usar noreply@expresart.ec: verificar el dominio en resend.com/domains primero.
+    const FROM = process.env.RESEND_FROM || 'EXPRESART <onboarding@resend.dev>';
+
     try {
         const { Resend } = require('resend');
         const resend = new Resend(apiKey);
-        const payload = { from: 'EXPRESART <noreply@expresart.ec>', to: recipient, subject, text, html };
+        const payload = { from: FROM, to: recipient, subject, text, html };
         if (attachments && attachments.length) payload.attachments = attachments;
-        const { error } = await resend.emails.send(payload);
-        if (error) console.error('[Email notify]', error.message);
+        const { data, error } = await resend.emails.send(payload);
+        if (error) {
+            console.error('[Email notify] Error Resend:', JSON.stringify(error));
+        } else {
+            console.log('[Email notify] Enviado OK — id:', data?.id, '| para:', recipient, '| asunto:', subject);
+        }
     } catch (e) {
-        console.error('[Email notify]', e.message);
+        console.error('[Email notify] Excepción:', e.message);
     }
 }
 
