@@ -528,9 +528,6 @@ async function loadContent() {
     content  = await r.json();
     renderDestacada();
     renderProd();
-    renderForm();
-    renderEsp();
-    renderProfile();
     renderNosotros();
 }
 
@@ -614,58 +611,6 @@ function collectProd() {
     });
 }
 
-function renderForm() {
-    const list = document.getElementById('formList');
-    list.innerHTML = '';
-    (content.formacion || []).forEach((f, i) => {
-        const card = makeItemCard(`Nivel ${i+1}`, [
-            { label:'Nivel',       key:'level',       value: f.level,       placeholder:'Nivel Básico' },
-            { label:'Título',      key:'title',       value: f.title,       placeholder:'Nombre del nivel' },
-            { label:'Descripción', key:'description', value: f.description, placeholder:'Descripción...', textarea:true, full:true }
-        ], () => { content.formacion.splice(i, 1); renderForm(); });
-        list.appendChild(card);
-    });
-}
-document.getElementById('addForm').onclick = () => {
-    content.formacion = content.formacion || [];
-    content.formacion.push({ id: Date.now(), level:'', title:'', description:'' });
-    renderForm();
-};
-function collectForm() {
-    return Array.from(document.getElementById('formList').querySelectorAll('.item-card')).map(card => {
-        const obj = { id: Date.now() };
-        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
-        return obj;
-    });
-}
-
-function renderEsp() {
-    const list = document.getElementById('espList');
-    list.innerHTML = '';
-    (content.especialidades || []).forEach((e, i) => {
-        const card = makeItemCard(`Especialidad ${i+1}`, [
-            { label:'Título',      key:'title',       value: e.title,       placeholder:'Expresión Corporal' },
-            { label:'Descripción', key:'description', value: e.description, placeholder:'Descripción...', textarea:true, full:true }
-        ], () => { content.especialidades.splice(i, 1); renderEsp(); });
-        list.appendChild(card);
-    });
-}
-document.getElementById('addEsp').onclick = () => {
-    content.especialidades = content.especialidades || [];
-    content.especialidades.push({ id: Date.now(), icon:'bx-star', title:'', description:'' });
-    renderEsp();
-};
-function collectEsp() {
-    return Array.from(document.getElementById('espList').querySelectorAll('.item-card')).map(card => {
-        const obj = { id: Date.now(), icon:'bx-star' };
-        card.querySelectorAll('[data-key]').forEach(el => obj[el.dataset.key] = el.value);
-        return obj;
-    });
-}
-
-function renderProfile() {
-    document.getElementById('profile_desc').value = (content.profile || {}).description || '';
-}
 
 const _nosAnios = (() => {
     const now = new Date();
@@ -812,12 +757,6 @@ document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
             };
         } else if (section === 'producciones') {
             data = collectProd();
-        } else if (section === 'formacion') {
-            data = collectForm();
-        } else if (section === 'especialidades') {
-            data = collectEsp();
-        } else if (section === 'profile') {
-            data = { description: document.getElementById('profile_desc').value };
         } else if (section === 'nosotros') {
             data = collectNosotros();
         }
