@@ -321,6 +321,16 @@
         .prod-admin-photo-zone i { font-size: 1.3rem; }
         .prod-admin-photo-input { display: none; }
 
+        /* ── Collage de producción (admin) ── */
+        .prod-collage-label { font-size:0.60em; letter-spacing:2px; text-transform:uppercase; color:rgba(201,162,39,0.70); margin:14px 0 8px; display:block; }
+        .prod-admin-collage-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:8px; }
+        .collage-slot { aspect-ratio:1; border-radius:7px; border:1px dashed rgba(201,162,39,0.28); background:rgba(255,255,255,0.03); overflow:hidden; position:relative; cursor:pointer; transition:border-color .2s,background .2s; }
+        .collage-slot:hover { border-color:rgba(201,162,39,0.55); background:rgba(201,162,39,0.06); }
+        .collage-slot img { width:100%; height:100%; object-fit:cover; display:block; }
+        .collage-slot-ph { width:100%; height:100%; min-height:44px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:2px; color:rgba(201,162,39,0.38); font-size:0.52rem; text-align:center; }
+        .collage-slot-ph i { font-size:1.2rem; }
+        .collage-slot-del { position:absolute; top:2px; right:2px; width:18px; height:18px; background:rgba(200,0,0,0.80); border:none; border-radius:50%; color:#fff; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; }
+
         /* ── Botones ── */
         .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
 

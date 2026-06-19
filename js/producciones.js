@@ -68,7 +68,7 @@ async function loadProducciones() {
         return;
     }
 
-    grid.innerHTML = prods.map(p => {
+    grid.innerHTML = prods.map((p, idx) => {
         const ytId   = _ytId(p.videoUrl);
         const hasVid = !!_embedUrl(p.videoUrl);
         const thumb  = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : '';
@@ -78,11 +78,12 @@ async function loadProducciones() {
                    <div class="prod-play-overlay"><div class="prod-play-btn"><i class="bx bx-play"></i></div></div>
                </div>`
             : (p.photoUrl ? `<img class="prod-cover" src="${esc(p.photoUrl)}" alt="${esc(p.title)}" loading="lazy">` : '');
+        const hasDetalles = p.description || (p.photos && p.photos.filter(x=>x).length);
         return `<div class="prod-card">
-            ${p.year ? `<span class="prod-year">${esc(p.year)}</span>` : ''}
+            ${(p.duracion||p.year) ? `<span class="prod-year">${esc(p.duracion||p.year)}</span>` : ''}
             ${mediaBlock}
             <div class="prod-title">${esc(p.title)}</div>
-            ${p.description ? `<p class="prod-desc">${esc(p.description)}</p>` : ''}
+            ${hasDetalles ? `<button class="prod-detalles-btn" data-idx="${idx}"><i class="bx bx-images"></i> Detalles</button>` : ''}
         </div>`;
     }).join('');
 
@@ -91,6 +92,33 @@ async function loadProducciones() {
         el.addEventListener('click', open);
         el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
     });
+
+    grid.querySelectorAll('.prod-detalles-btn').forEach(btn => {
+        btn.addEventListener('click', () => _openDetalles(prods[+btn.dataset.idx]));
+    });
 }
+
+/* ── Modal Detalles ── */
+const _dm      = document.getElementById('detallesModal');
+const _dmClose = document.getElementById('dmClose');
+const _dmBack  = document.getElementById('dmBackdrop');
+
+function _openDetalles(p) {
+    document.getElementById('dmTitle').textContent   = p.title || '';
+    document.getElementById('dmDur').textContent     = (p.duracion||p.year) ? `Duración: ${p.duracion||p.year}` : '';
+    document.getElementById('dmDesc').textContent    = p.description || '';
+    const photos = (p.photos || []).filter(x => x);
+    document.getElementById('dmCollage').innerHTML   = photos.map(ph =>
+        `<img src="${esc(ph)}" loading="lazy">`).join('');
+    _dm.classList.add('dm-open');
+    document.body.style.overflow = 'hidden';
+}
+function _closeDetalles() {
+    _dm.classList.remove('dm-open');
+    document.body.style.overflow = '';
+}
+_dmClose.addEventListener('click', _closeDetalles);
+_dmBack.addEventListener('click',  _closeDetalles);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeDetalles(); });
 
 loadProducciones();

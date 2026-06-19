@@ -585,6 +585,42 @@ function makeItemCard(label, fields, onDel) {
     return card;
 }
 
+function _renderAdminCollage(card, photos) {
+    const grid = card.querySelector('.prod-admin-collage-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    for (let j = 0; j < 5; j++) {
+        const slot = document.createElement('div');
+        slot.className = 'collage-slot';
+        if (photos[j]) {
+            slot.innerHTML = `<img src="${esc(photos[j])}" alt="foto ${j+1}">
+                <button class="collage-slot-del" title="Quitar">×</button>`;
+            slot.querySelector('.collage-slot-del').addEventListener('click', e => {
+                e.stopPropagation();
+                photos[j] = '';
+                _renderAdminCollage(card, photos);
+            });
+        } else {
+            slot.innerHTML = `<div class="collage-slot-ph"><i class="bx bx-image-add"></i><span>Foto ${j+1}</span></div>`;
+            slot.addEventListener('click', () => {
+                const inp = document.createElement('input');
+                inp.type = 'file'; inp.accept = '.jpg,.jpeg,.png,.webp,.gif';
+                inp.onchange = async () => {
+                    const file = inp.files[0]; if (!file) return;
+                    const fd = new FormData(); fd.append('photo', file);
+                    try {
+                        const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
+                        const d = await r.json();
+                        if (d.ok) { photos[j] = d.url; _renderAdminCollage(card, photos); }
+                    } catch(e) { console.error('[collage upload]', e); }
+                };
+                inp.click();
+            });
+        }
+        grid.appendChild(slot);
+    }
+}
+
 function renderProd() {
     const list = document.getElementById('prodList');
     list.innerHTML = '';
@@ -592,6 +628,8 @@ function renderProd() {
         const card = document.createElement('div');
         card.className = 'item-card';
         const photoUrl = p.photoUrl || '';
+        card._photos = Array.isArray(p.photos) ? [...p.photos] : [];
+
         card.innerHTML = `
             <div class="item-card-header">
                 <span class="item-num">Producción ${i+1}</span>
@@ -607,8 +645,8 @@ function renderProd() {
             </div>
             <div class="field-row">
                 <div class="field-group">
-                    <label class="field-label">Año</label>
-                    <input class="admin-input" data-key="year" type="text" value="${esc(p.year||'')}" placeholder="2024">
+                    <label class="field-label">Duración</label>
+                    <input class="admin-input" data-key="duracion" type="text" value="${esc(p.duracion||p.year||'')}" placeholder="Ej: 90 min">
                 </div>
             </div>
             <div class="field-row full">
@@ -628,37 +666,37 @@ function renderProd() {
                     <label class="field-label">Descripción</label>
                     <textarea class="admin-textarea" data-key="description" rows="2" placeholder="Descripción de la producción...">${esc(p.description||'')}</textarea>
                 </div>
-            </div>`;
+            </div>
+            <span class="prod-collage-label"><i class="bx bx-images"></i> Fotos del collage (hasta 5 — aparecen en Detalles)</span>
+            <div class="prod-admin-collage-grid"></div>`;
 
-        const preview  = card.querySelector('.prod-admin-photo-preview');
-        const zone     = card.querySelector('.prod-admin-photo-zone');
-        const fileInput = card.querySelector('.prod-admin-photo-input');
+        // Foto de portada
+        const preview    = card.querySelector('.prod-admin-photo-preview');
+        const zone       = card.querySelector('.prod-admin-photo-zone');
+        const fileInput  = card.querySelector('.prod-admin-photo-input');
         const photoHidden = card.querySelector('[data-key="photoUrl"]');
-
-        const triggerUpload = () => fileInput.click();
-        zone.addEventListener('click', triggerUpload);
-        preview.addEventListener('click', triggerUpload);
-
+        const trigger = () => fileInput.click();
+        zone.addEventListener('click', trigger);
+        preview.addEventListener('click', trigger);
         fileInput.addEventListener('change', async function () {
-            const file = this.files[0];
-            if (!file) return;
-            const fd = new FormData();
-            fd.append('photo', file);
+            const file = this.files[0]; if (!file) return;
+            const fd = new FormData(); fd.append('photo', file);
             try {
-                const r = await fetch('/api/upload-prod-photo', { method: 'POST', body: fd });
+                const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
                 const d = await r.json();
                 if (d.ok) {
-                    preview.src = d.url;
-                    preview.style.display = 'block';
-                    zone.style.display = 'none';
-                    photoHidden.value = d.url;
+                    preview.src = d.url; preview.style.display = 'block';
+                    zone.style.display = 'none'; photoHidden.value = d.url;
                 }
-            } catch (e) { console.error('[prod photo upload]', e); }
+            } catch(e) { console.error('[prod photo upload]', e); }
         });
 
+        // Collage
+        _renderAdminCollage(card, card._photos);
+
+        // Eliminar
         card.querySelector('.del-btn').addEventListener('click', () => {
-            content.producciones.splice(i, 1);
-            renderProd();
+            content.producciones.splice(i, 1); renderProd();
         });
 
         list.appendChild(card);
@@ -666,13 +704,14 @@ function renderProd() {
 }
 document.getElementById('addProd').onclick = () => {
     content.producciones = content.producciones || [];
-    content.producciones.push({ year:'', title:'', description:'', videoUrl:'', photoUrl:'' });
+    content.producciones.push({ duracion:'', title:'', description:'', videoUrl:'', photoUrl:'', photos:[] });
     renderProd();
 };
 function collectProd() {
     return Array.from(document.getElementById('prodList').querySelectorAll('.item-card')).map(card => {
         const obj = {};
         card.querySelectorAll('[data-key]').forEach(el => { obj[el.dataset.key] = el.value; });
+        obj.photos = (card._photos || []).filter(u => u);
         return obj;
     });
 }
