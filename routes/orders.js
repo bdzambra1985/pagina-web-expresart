@@ -432,7 +432,15 @@ router.get('/factura/:id', async (req, res) => {
         const isAdmin      = cookieSess && cookieSess.role === 'admin';
 
         const authorizedViaSignedToken = req.query.sv && verifyViewPath(resourcePath, req.query.sv);
-        const authorizedViaOrderToken  = req.query.token === order.token;
+        const authorizedViaOrderToken  = (() => {
+            try {
+                const a = Buffer.from(String(req.query.token || '').padEnd(32, '\0'), 'utf8');
+                const b = Buffer.from(String(order.token   || '').padEnd(32, '\0'), 'utf8');
+                return a.length === b.length &&
+                       crypto.timingSafeEqual(a, b) &&
+                       (req.query.token || '').length === (order.token || '').length;
+            } catch { return false; }
+        })();
 
         if (!isAdmin && !authorizedViaSignedToken && !authorizedViaOrderToken)
             return res.status(403).send('<h2>Acceso no autorizado</h2>');
