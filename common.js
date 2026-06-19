@@ -88,3 +88,10 @@ document.addEventListener('contextmenu', function(e) {
 document.addEventListener('dragstart', function(e) {
     if (e.target.tagName === 'IMG') e.preventDefault();
 }, false);
+
+/* ── Service Worker (PWA) ── */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
+    });
+}

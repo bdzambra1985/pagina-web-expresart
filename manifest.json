@@ -1,0 +1,29 @@
+{
+  "name": "EXPRESART — Escuela de Actuación",
+  "short_name": "EXPRESART",
+  "description": "Escuela de Actuación · Donde el Arte Cobra Vida · Quito, Ecuador",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#060002",
+  "theme_color": "#8b0000",
+  "lang": "es",
+  "categories": ["education", "entertainment"],
+  "icons": [
+    {
+      "src": "/img/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

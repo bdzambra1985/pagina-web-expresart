@@ -77,7 +77,7 @@ app.use((req, res, next) => {
     if (
         /^\/(data|routes|middleware|utils|sri|node_modules)(\/|$)/i.test(p) ||
         /^\/(db|server|migrate|package|package-lock)(\.js(on)?)?$/i.test(p) ||
-        p.startsWith('/.')
+        (p.startsWith('/.') && !p.startsWith('/.well-known/'))
     ) return res.status(403).end();
     next();
 });
