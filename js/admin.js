@@ -155,6 +155,10 @@ function renderUsers() {
                             data-action="view-portfolio" data-uid="${u.userId}">
                             <i class="bx bx-show"></i> Ver
                         </button>
+                        <button class="tbl-btn" style="background:rgba(201,162,39,0.12);border-color:rgba(201,162,39,0.35);color:#c9a227"
+                            data-action="manage-certs" data-uid="${u.userId}" data-name="${esc(u.displayName||u.username)}">
+                            <i class="bx bx-star"></i> Certificados
+                        </button>
                         <button class="tbl-btn" style="background:rgba(201,162,39,0.18);border-color:rgba(201,162,39,0.4);color:#f0d060"
                             data-action="admin-reset-pw" data-uid="${u.userId}" data-username="${esc(u.username)}">
                             <i class="bx bx-key"></i> Resetear clave
@@ -529,6 +533,7 @@ async function loadContent() {
     renderDestacada();
     renderProd();
     renderNosotros();
+    renderObras();
 }
 
 function renderDestacada() {
@@ -869,6 +874,8 @@ document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
             data = collectProd();
         } else if (section === 'nosotros') {
             data = collectNosotros();
+        } else if (section === 'obras') {
+            data = collectObras();
         }
         try {
             await saveSection(section, data);
@@ -1467,6 +1474,28 @@ document.addEventListener('click', function(e) {
         toggleUser(el.dataset.uid, el.dataset.active === 'true');
     } else if (action === 'view-portfolio') {
         location.href = 'portafolio-alumno.html?id=' + el.dataset.uid;
+    } else if (action === 'manage-certs') {
+        const uid = el.dataset.uid;
+        const name = el.dataset.name;
+        const profileR = await fetch('/api/my-profile');
+        // Obtener perfil del alumno via admin
+        const pr = await fetch('/api/profile/' + encodeURIComponent(uid));
+        const pd = await pr.json();
+        const certs = (pd.ok && pd.profile && pd.profile.certificados) ? pd.profile.certificados : [];
+        // Crear panel flotante inline bajo el botón
+        let panel = document.getElementById('certsPanel_' + uid);
+        if (panel) { panel.remove(); return; }
+        panel = document.createElement('div');
+        panel.id = 'certsPanel_' + uid;
+        panel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:min(420px,94vw);background:#1a0005;border:1px solid rgba(201,162,39,0.35);border-radius:14px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.7)';
+        panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0;font-family:'Playfair Display',serif;color:#fff;font-size:1rem">⭐ Certificados — ${esc(name)}</h3>
+            <button id="certsClose_${uid}" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.3rem;cursor:pointer">✕</button>
+        </div>
+        <div id="certsContainer_${uid}"></div>`;
+        document.body.appendChild(panel);
+        document.getElementById('certsClose_' + uid).onclick = () => panel.remove();
+        renderCertificadosAdmin(document.getElementById('certsContainer_' + uid), uid, certs);
     } else if (action === 'admin-reset-pw') {
         adminResetPassword(el.dataset.uid, el.dataset.username);
     } else if (action === 'delete-user') {
@@ -1494,3 +1523,205 @@ document.addEventListener('click', function(e) {
         openProtectedUrl(el.dataset.path);
     }
 });
+
+/* ══════════════════════════════════════════════
+   OBRAS — Galería de Obras (Cartelera)
+   ══════════════════════════════════════════════ */
+
+function _renderObraTestimonios(card, testimonios) {
+    const list = card.querySelector('.obra-testimonios-list');
+    if (!list) return;
+    list.innerHTML = '';
+    testimonios.forEach((t, j) => {
+        const row = document.createElement('div');
+        row.className = 'item-card';
+        row.style.cssText = 'margin-bottom:8px;padding:10px 14px';
+        row.innerHTML = `
+            <div class="item-card-header" style="margin-bottom:8px">
+                <span class="item-num">Testimonio ${j+1}</span>
+                <button class="del-btn" type="button"><i class="bx bx-trash"></i></button>
+            </div>
+            <div class="field-row full"><div class="field-group">
+                <label class="field-label">Texto</label>
+                <textarea class="admin-textarea" data-key="texto" rows="2">${esc(t.texto||'')}</textarea>
+            </div></div>
+            <div class="field-row">
+                <div class="field-group"><label class="field-label">Autor</label>
+                    <input class="admin-input" data-key="autor" type="text" value="${esc(t.autor||'')}" placeholder="Nombre del autor">
+                </div>
+                <div class="field-group"><label class="field-label">Rol</label>
+                    <input class="admin-input" data-key="rol" type="text" value="${esc(t.rol||'')}" placeholder="Alumno / Crítico / Público">
+                </div>
+            </div>`;
+        row.querySelector('.del-btn').addEventListener('click', () => {
+            testimonios.splice(j, 1); _renderObraTestimonios(card, testimonios);
+        });
+        list.appendChild(row);
+    });
+}
+
+function renderObras() {
+    const list = document.getElementById('obrasList');
+    if (!list) return;
+    list.innerHTML = '';
+    const obras = content.obras || [];
+    obras.forEach((o, i) => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        const photoUrl = o.photoUrl || '';
+        card._testimonios = Array.isArray(o.testimonios) ? o.testimonios.map(t => ({...t})) : [];
+        card.innerHTML = `
+            <div class="item-card-header">
+                <span class="item-num">Obra ${i+1}</span>
+                <button class="del-btn" type="button"><i class="bx bx-trash"></i></button>
+            </div>
+            <div class="prod-admin-photo-wrap">
+                <img class="prod-admin-photo-preview" src="${esc(photoUrl)}" alt="Afiche" ${photoUrl ? 'style="display:block"' : ''}>
+                <div class="prod-admin-photo-zone" ${photoUrl ? 'style="display:none"' : ''}>
+                    <i class="bx bx-image-add"></i><span>Afiche / Foto principal — clic para subir</span>
+                </div>
+                <input type="file" class="prod-admin-photo-input" accept=".jpg,.jpeg,.png,.webp,.gif">
+                <input type="hidden" data-key="photoUrl" value="${esc(photoUrl)}">
+            </div>
+            <div class="field-row full"><div class="field-group">
+                <label class="field-label">Título de la obra</label>
+                <input class="admin-input" data-key="titulo" type="text" value="${esc(o.titulo||'')}" placeholder="Nombre de la obra">
+            </div></div>
+            <div class="field-row">
+                <div class="field-group"><label class="field-label">Temporada / Año</label>
+                    <input class="admin-input" data-key="temporada" type="text" value="${esc(o.temporada||'')}" placeholder="2026">
+                </div>
+                <div class="field-group"><label class="field-label">Duración</label>
+                    <input class="admin-input" data-key="duracion" type="text" value="${esc(o.duracion||'')}" placeholder="90 minutos">
+                </div>
+            </div>
+            <div class="field-row full"><div class="field-group">
+                <label class="field-label">Sinopsis</label>
+                <textarea class="admin-textarea" data-key="sinopsis" rows="3" placeholder="Descripción de la obra...">${esc(o.sinopsis||'')}</textarea>
+            </div></div>
+            <h3 style="color:rgba(201,162,39,0.85);font-size:0.72em;letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px">
+                <i class="bx bx-chat"></i> Testimonios
+            </h3>
+            <div class="obra-testimonios-list items-list"></div>
+            <div class="btn-row" style="margin-top:6px">
+                <button class="add-btn obra-add-testimonio" type="button"><i class="bx bx-plus"></i> Agregar testimonio</button>
+            </div>`;
+
+        // Foto upload
+        const preview = card.querySelector('.prod-admin-photo-preview');
+        const zone    = card.querySelector('.prod-admin-photo-zone');
+        const fileInp = card.querySelector('.prod-admin-photo-input');
+        const photoH  = card.querySelector('[data-key="photoUrl"]');
+        const trigger = () => fileInp.click();
+        zone.addEventListener('click', trigger);
+        preview.addEventListener('click', trigger);
+        fileInp.addEventListener('change', async function() {
+            const file = this.files[0]; if (!file) return;
+            const fd = new FormData(); fd.append('photo', file);
+            try {
+                const r = await fetch('/api/upload-prod-photo', { method:'POST', body:fd });
+                const d = await r.json();
+                if (d.ok) { preview.src=d.url; preview.style.display='block'; zone.style.display='none'; photoH.value=d.url; }
+            } catch(e) { console.error('[obra photo]', e); }
+        });
+
+        // Testimonios
+        _renderObraTestimonios(card, card._testimonios);
+        card.querySelector('.obra-add-testimonio').addEventListener('click', () => {
+            card._testimonios.push({ texto:'', autor:'', rol:'' });
+            _renderObraTestimonios(card, card._testimonios);
+        });
+
+        // Eliminar obra
+        card.querySelector('.del-btn').addEventListener('click', () => {
+            (content.obras || []).splice(i, 1); renderObras();
+        });
+
+        list.appendChild(card);
+    });
+}
+
+document.getElementById('addObra').addEventListener('click', () => {
+    if (!content.obras) content.obras = [];
+    content.obras.push({ titulo:'', temporada:'', duracion:'', sinopsis:'', photoUrl:'', testimonios:[] });
+    renderObras();
+});
+
+function collectObras() {
+    return Array.from(document.getElementById('obrasList').querySelectorAll('.item-card')).map(card => {
+        const obj = {};
+        card.querySelectorAll('[data-key]').forEach(el => { obj[el.dataset.key] = el.value; });
+        obj.testimonios = Array.from(card.querySelectorAll('.obra-testimonios-list .item-card')).map(row => {
+            const t = {};
+            row.querySelectorAll('[data-key]').forEach(el => { t[el.dataset.key] = el.value; });
+            return t;
+        });
+        return obj;
+    });
+}
+
+document.querySelector('[data-tab="obras"]').addEventListener('click', () => {
+    loadContent();
+});
+
+/* ══════════════════════════════════════════════
+   CERTIFICADOS — gestión desde perfil de alumno
+   ══════════════════════════════════════════════ */
+
+async function saveCertificados(userId, certificados) {
+    const r = await fetch(`/api/users/${encodeURIComponent(userId)}/certificados`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certificados })
+    });
+    return r.json();
+}
+
+function renderCertificadosAdmin(container, userId, certs) {
+    container.innerHTML = '';
+    const NIVELES = ['Actuación Básica', 'Actuación Intermedia', 'Actuación Avanzada', 'Taller de Puesta en Escena', 'Teatro para Niños y Jóvenes'];
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.08)';
+    wrap.innerHTML = `<p style="font-size:0.72em;letter-spacing:2px;text-transform:uppercase;color:rgba(201,162,39,0.7);margin:0 0 10px">Certificados completados</p>`;
+
+    NIVELES.forEach(nivel => {
+        const existing = certs.find(c => c.nivel === nivel);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:8px';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox'; chk.checked = !!existing;
+        chk.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:#c9a227';
+        const lbl = document.createElement('label');
+        lbl.style.cssText = 'font-size:0.82em;color:rgba(255,220,220,0.80);cursor:pointer;flex:1';
+        lbl.textContent = '⭐ ' + nivel;
+        const fechaInp = document.createElement('input');
+        fechaInp.type = 'date'; fechaInp.className = 'admin-input';
+        fechaInp.style.cssText = 'width:140px;padding:4px 8px;font-size:0.75em';
+        fechaInp.value = existing ? existing.fecha : new Date().toISOString().slice(0,10);
+        fechaInp.style.display = existing ? 'block' : 'none';
+        chk.addEventListener('change', () => { fechaInp.style.display = chk.checked ? 'block' : 'none'; });
+        row.appendChild(chk); row.appendChild(lbl); row.appendChild(fechaInp);
+        wrap.appendChild(row);
+    });
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn'; saveBtn.type = 'button';
+    saveBtn.style.cssText = 'margin-top:10px;width:100%';
+    saveBtn.innerHTML = '<i class="bx bx-save"></i> Guardar certificados';
+    saveBtn.addEventListener('click', async () => {
+        btnLoad(saveBtn);
+        const newCerts = [];
+        wrap.querySelectorAll('div[style*="align-items"]').forEach((row, idx) => {
+            const chk = row.querySelector('input[type="checkbox"]');
+            const fecha = row.querySelector('input[type="date"]');
+            if (chk && chk.checked) newCerts.push({ nivel: NIVELES[idx], titulo: NIVELES[idx], fecha: fecha.value || new Date().toISOString().slice(0,10) });
+        });
+        const d = await saveCertificados(userId, newCerts);
+        btnDone(saveBtn);
+        if (d.ok) showToast('✓ Certificados guardados');
+        else showToast(d.message || 'Error', true);
+    });
+    wrap.appendChild(saveBtn);
+    container.appendChild(wrap);
+}

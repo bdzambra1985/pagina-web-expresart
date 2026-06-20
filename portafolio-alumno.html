@@ -319,6 +319,17 @@
             color: var(--crimson);
             background: rgba(158,0,0,0.05);
         }
+        .cert-badges {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 5px; margin: 6px 0 4px;
+        }
+        .cert-badge {
+            padding: 3px 10px;
+            border: 1px solid rgba(201,162,39,0.45);
+            border-radius: 20px; font-size: 0.60rem;
+            color: #c9a227; background: rgba(201,162,39,0.08);
+            cursor: default;
+        }
 
         /* ── Títulos de sección ── */
         .page-title {
@@ -1015,6 +1026,7 @@
             <div class="book-page page-left">
                 <div class="profile-page">
                     <div id="bookAvatar" class="avatar-placeholder"><i class="bx bx-user"></i></div>
+                    <div id="bookCertificados" class="cert-badges" style="display:none"></div>
                     <h1 id="bookName">Cargando…</h1>
                     <h3>EXPRESART</h3>
                     <div class="profile-esp-list" id="bookEspProfile"></div>

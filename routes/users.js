@@ -167,4 +167,29 @@ router.delete('/reset-requests/:id', async (req, res) => {
     }
 });
 
+/* ── Gestionar certificados de un alumno (admin) ── */
+router.put('/:userId/certificados', async (req, res) => {
+    try {
+        if (!requireAdmin(req, res)) return;
+        const user = await db.getUserById(req.params.userId);
+        if (!user || user.role !== 'alumno')
+            return res.status(404).json({ ok: false, message: 'Alumno no encontrado' });
+        const { certificados } = req.body;
+        if (!Array.isArray(certificados))
+            return res.status(400).json({ ok: false, message: 'certificados debe ser un array' });
+        const clean = certificados.slice(0, 20).map(c => ({
+            nivel:  String(c.nivel  || '').trim().slice(0, 80),
+            titulo: String(c.titulo || '').trim().slice(0, 100),
+            fecha:  String(c.fecha  || '').trim().slice(0, 20)
+        }));
+        const profile = await db.getProfile(user.userId) || {};
+        profile.certificados = clean;
+        await db.upsertProfile(user.userId, profile);
+        res.json({ ok: true, certificados: clean });
+    } catch (e) {
+        console.error('[PUT /api/users/:userId/certificados]', e);
+        res.status(500).json({ ok: false, message: 'Error interno' });
+    }
+});
+
 module.exports = router;

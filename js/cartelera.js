@@ -142,3 +142,74 @@ function renderProducciones(prods) {
 }
 
 loadCartelera();
+
+/* ══════════════════════════════════════════
+   GALERÍA DE OBRAS
+   ══════════════════════════════════════════ */
+
+async function loadObras() {
+    const grid = document.getElementById('obrasGrid');
+    if (!grid) return;
+    let obras = [];
+    try {
+        const r = await fetch('/api/content');
+        const c = await r.json();
+        obras = c.obras || [];
+    } catch { /* sin obras */ }
+
+    if (!obras.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 24px;color:rgba(255,200,200,0.30);font-size:0.85em">Próximamente</div>`;
+        return;
+    }
+
+    grid.innerHTML = obras.map((o, idx) => `
+        <div class="prod-card" style="padding:0;overflow:hidden">
+            ${o.photoUrl ? `<img class="obra-afiche" src="${esc(o.photoUrl)}" alt="${esc(o.titulo)}" loading="lazy">` : ''}
+            <div style="padding:22px 22px 18px">
+                ${o.temporada ? `<span class="prod-year">${esc(o.temporada)}</span>` : ''}
+                <div class="prod-title" style="margin-top:8px">${esc(o.titulo)}</div>
+                ${o.duracion ? `<p class="obra-duracion"><i class="bx bx-time-five" style="vertical-align:middle;margin-right:4px"></i>${esc(o.duracion)}</p>` : ''}
+                ${o.sinopsis ? `<p class="obra-sinopsis">${esc(o.sinopsis.slice(0,120))}${o.sinopsis.length>120?'…':''}</p>` : ''}
+                <button class="obra-btn" data-idx="${idx}"><i class="bx bx-info-circle"></i> Ver más</button>
+            </div>
+        </div>`).join('');
+
+    grid.querySelectorAll('.obra-btn').forEach(btn => {
+        btn.addEventListener('click', () => _openObra(obras[+btn.dataset.idx]));
+    });
+}
+
+/* ── Modal Obra ── */
+const _om     = document.getElementById('obraModal');
+const _omBack = document.getElementById('obraModalBack');
+const _omClose = document.getElementById('obraModalClose');
+
+function _openObra(o) {
+    document.getElementById('obraModalTemporada').textContent = o.temporada || '';
+    document.getElementById('obraModalTitulo').textContent    = o.titulo    || '';
+    document.getElementById('obraModalDuracion').textContent  = o.duracion  ? '⏱ ' + o.duracion : '';
+    document.getElementById('obraModalSinopsis').textContent  = o.sinopsis  || '';
+    const img = document.getElementById('obraModalImg');
+    if (o.photoUrl) { img.src = o.photoUrl; img.style.display = 'block'; }
+    else              { img.style.display = 'none'; }
+
+    const testDiv = document.getElementById('obraModalTestimonios');
+    const tests   = (o.testimonios || []).filter(t => t.texto);
+    if (tests.length) {
+        testDiv.innerHTML = `<h3 style="font-size:0.72em;letter-spacing:2px;text-transform:uppercase;color:rgba(201,162,39,0.7);margin:0 0 12px">Testimonios</h3>` +
+            tests.map(t => `
+                <div class="testimonio-card">
+                    <p class="testimonio-texto">"${esc(t.texto)}"</p>
+                    <p class="testimonio-autor">${esc(t.autor)}${t.rol ? ' · ' + esc(t.rol) : ''}</p>
+                </div>`).join('');
+    } else { testDiv.innerHTML = ''; }
+
+    _om.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function _closeObra() { _om.style.display = 'none'; document.body.style.overflow = ''; }
+_omClose.addEventListener('click', _closeObra);
+_omBack.addEventListener('click',  _closeObra);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeObra(); });
+
+loadObras();

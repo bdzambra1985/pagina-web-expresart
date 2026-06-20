@@ -32,6 +32,26 @@ const _emailCSS = `
   .ref{color:#aaa;font-size:11px;margin-top:8px}
   .note{color:#555;font-size:13px;padding:12px 32px;border-top:1px solid #eee;text-align:center}`;
 
+function _confirmStudentHtml(order) {
+    const h = htmlEncode;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
+    <div class="card">
+      <div class="header"><h1>EXPRESART</h1><p>Confirmación de pago</p></div>
+      <div class="banner"><h2>¡Hola, ${h(order.customerName)}!</h2></div>
+      <div class="body">
+        <p style="color:#444;font-size:14px;margin:0 0 16px">Tu pago ha sido <strong>confirmado</strong> por EXPRESART. Gracias por tu puntualidad.</p>
+        <div class="row"><span class="label">Concepto: </span><span class="value">${h(order.concept)}</span></div>
+        <div class="row"><span class="label">Mes: </span><span class="value">${h(order.paymentMonth || 'Sin especificar')}</span></div>
+        <div class="row"><span class="label">Monto: </span><span class="value monto">$${parseFloat(order.amount).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Referencia: </span><span class="value">${h(order.invoiceNumber || order.id)}</span></div>
+      </div>
+      <div class="note">Recibirás tu factura electrónica cuando sea autorizada por el SRI.</div>
+      <div class="footer">
+        <div class="ref">EXPRESART — Escuela de Actuación · Quito, Ecuador</div>
+      </div>
+    </div></body></html>`;
+}
+
 function _adminEmailHtml({ name, email, doc, concept, amount, month, id }) {
     const h = htmlEncode;
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${_emailCSS}</style></head><body>
@@ -288,6 +308,17 @@ router.put('/orders/:id/confirm', async (req, res) => {
         const confirmedAt   = new Date().toISOString();
         await db.updateOrder(req.params.id, { status: 'confirmado', invoiceNumber, confirmedAt });
         res.json({ ok: true, invoiceNumber });
+
+        // Notificar al alumno que su pago fue confirmado
+        if (order.customerEmail) {
+            const snap = { ...order, status: 'confirmado', invoiceNumber, confirmedAt };
+            notifyEmail(
+                'Pago confirmado — EXPRESART',
+                `Hola ${order.customerName}, tu pago de $${parseFloat(order.amount).toFixed(2)} por ${order.concept} ha sido confirmado. Ref: ${invoiceNumber}`,
+                _confirmStudentHtml(snap),
+                order.customerEmail
+            );
+        }
 
         const orderId   = req.params.id;
         const orderSnap = { ...order, status: 'confirmado', invoiceNumber, confirmedAt };

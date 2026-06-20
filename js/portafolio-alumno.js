@@ -163,6 +163,17 @@ function populateBook(p) {
             `<span class="profile-esp-tag">${esc(e)}</span>`).join('');
     }
 
+    // Certificados como estrellas bajo la foto
+    if (p.certificados && p.certificados.length) {
+        var certsEl = document.getElementById('bookCertificados');
+        if (certsEl) {
+            certsEl.innerHTML = p.certificados.map(c =>
+                `<span class="cert-badge" title="${esc(c.titulo)} — ${esc(c.fecha)}">⭐ ${esc(c.nivel)}</span>`
+            ).join('');
+            certsEl.style.display = '';
+        }
+    }
+
     buildBookPages(p);
     openCover();
 }

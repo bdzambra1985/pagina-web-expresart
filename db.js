@@ -68,6 +68,7 @@ async function initDB() {
             especialidades   JSONB NOT NULL DEFAULT '[]',
             producciones     JSONB NOT NULL DEFAULT '[]',
             videos           JSONB NOT NULL DEFAULT '[]',
+            certificados     JSONB NOT NULL DEFAULT '[]',
             portfolio_active BOOLEAN NOT NULL DEFAULT TRUE,
             updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -140,6 +141,8 @@ async function initDB() {
             status       TEXT NOT NULL DEFAULT 'pending'
         );
     `);
+    // Migraciones para columnas añadidas después de la creación inicial
+    await pool.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS certificados JSONB NOT NULL DEFAULT '[]'`);
     console.log('  [db] PostgreSQL tables ready.');
 }
 
@@ -228,6 +231,7 @@ function toProfile(r) {
         especialidades:  r.especialidades || [],
         producciones:    r.producciones || [],
         videos:          r.videos || [],
+        certificados:    r.certificados || [],
         portfolioActive: r.portfolio_active !== false
     };
 }
@@ -245,14 +249,14 @@ async function upsertProfile(userId, p) {
     if (!USE_DB) { jWrite(path.join(PROFILES_DIR, userId + '.json'), p); return; }
     await pool.query(
         `INSERT INTO profiles (user_id, display_name, bio, bio_short, photo_url,
-                               especialidades, producciones, videos, portfolio_active, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+                               especialidades, producciones, videos, certificados, portfolio_active, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
          ON CONFLICT (user_id) DO UPDATE SET
             display_name=$2, bio=$3, bio_short=$4, photo_url=$5,
-            especialidades=$6, producciones=$7, videos=$8, portfolio_active=$9, updated_at=NOW()`,
+            especialidades=$6, producciones=$7, videos=$8, certificados=$9, portfolio_active=$10, updated_at=NOW()`,
         [userId, p.displayName||'', p.bio||'', p.bio_short||'', p.photoUrl||'',
          JSON.stringify(p.especialidades||[]), JSON.stringify(p.producciones||[]),
-         JSON.stringify(p.videos||[]), p.portfolioActive!==false]
+         JSON.stringify(p.videos||[]), JSON.stringify(p.certificados||[]), p.portfolioActive!==false]
     );
 }
 async function deleteProfile(userId) {

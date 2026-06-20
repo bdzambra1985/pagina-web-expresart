@@ -383,6 +383,16 @@
             .cartelera-wrap { padding: 80px 14px 60px; }
             .prod-grid { grid-template-columns: 1fr; gap: 16px; }
         }
+        /* ── Obra card afiche ── */
+        .obra-afiche { width:100%; height:200px; object-fit:cover; border-radius:12px 12px 0 0; margin:-28px -26px 18px; width:calc(100% + 52px); display:block; }
+        .obra-duracion { font-size:0.68em; color:rgba(201,162,39,0.70); letter-spacing:1.5px; margin-bottom:8px; }
+        .obra-sinopsis { font-size:0.80em; color:rgba(255,220,220,0.65); line-height:1.65; margin-bottom:14px; }
+        .obra-btn { display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:7px 18px; background:transparent; border:1px solid rgba(201,162,39,0.45); border-radius:20px; color:rgba(201,162,39,0.85); font-family:'Poppins',sans-serif; font-size:0.72em; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:background .2s,color .2s; width:100%; justify-content:center; }
+        .obra-btn:hover { background:rgba(201,162,39,0.10); color:#c9a227; }
+        /* ── Testimonios en modal ── */
+        .testimonio-card { background:rgba(255,255,255,0.05); border-left:3px solid rgba(201,162,39,0.45); border-radius:0 10px 10px 0; padding:14px 16px; margin-bottom:12px; }
+        .testimonio-texto { font-style:italic; font-size:0.88em; color:rgba(255,230,200,0.85); line-height:1.65; margin:0 0 8px; }
+        .testimonio-autor { font-size:0.70em; letter-spacing:1.5px; text-transform:uppercase; color:rgba(201,162,39,0.70); }
         .social-links {
             display: flex;
             gap: 12px;
@@ -474,17 +484,29 @@
 
     <div class="gold-divider" id="featuredDivider" style="display:none; margin-bottom:48px;"></div>
 
-    <!-- ══ PRODUCCIONES ══ -->
+    <!-- ══ GALERÍA DE OBRAS ══ -->
     <div class="producciones-section">
         <div class="section-heading">
             <p class="eyebrow">Historial</p>
-            <h2>Nuestras <span>Producciones</span></h2>
+            <h2>Galería de <span>Obras</span></h2>
         </div>
+        <div class="prod-grid" id="obrasGrid">
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,200,200,0.30); font-size:0.85em;">Cargando…</div>
+        </div>
+    </div>
 
-        <div class="prod-grid" id="prodGrid">
-            <!-- estado de carga -->
-            <div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,200,200,0.30); font-size:0.85em;">
-                Cargando…
+    <!-- Modal Obra -->
+    <div id="obraModal" style="display:none;position:fixed;inset:0;z-index:9998;align-items:center;justify-content:center;padding:16px">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.90)" id="obraModalBack"></div>
+        <div id="obraModalBox" style="position:relative;z-index:1;width:min(720px,96vw);max-height:90vh;overflow-y:auto;background:#100004;border:1px solid rgba(201,162,39,0.25);border-radius:16px;padding:0 0 28px">
+            <button id="obraModalClose" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;z-index:2">✕</button>
+            <img id="obraModalImg" src="" alt="" style="width:100%;max-height:320px;object-fit:cover;border-radius:16px 16px 0 0;display:none">
+            <div style="padding:24px 28px 0">
+                <p id="obraModalTemporada" style="font-size:0.65em;letter-spacing:2px;text-transform:uppercase;color:#c9a227;margin:0 0 6px"></p>
+                <h2 id="obraModalTitulo" style="font-family:'Playfair Display',serif;color:#fff;margin:0 0 8px;font-size:1.6rem"></h2>
+                <p id="obraModalDuracion" style="font-size:0.75em;color:rgba(255,200,200,0.5);margin:0 0 16px"></p>
+                <p id="obraModalSinopsis" style="font-size:0.87em;line-height:1.75;color:rgba(255,220,220,0.78);margin:0 0 24px"></p>
+                <div id="obraModalTestimonios"></div>
             </div>
         </div>
     </div>

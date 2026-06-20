@@ -73,6 +73,7 @@ router.post('/my-profile', async (req, res) => {
         if (b.producciones   !== undefined) current.producciones   = Array.isArray(b.producciones)   ? b.producciones.slice(0, 50)   : [];
         if (b.videos         !== undefined) current.videos         = Array.isArray(b.videos)         ? b.videos.slice(0, 30)         : [];
         if (b.portfolioActive !== undefined) current.portfolioActive = Boolean(b.portfolioActive);
+        // certificados solo se modifican via /api/users/:userId/certificados (admin)
         await db.upsertProfile(sess.userId, current);
         res.json({ ok: true });
     } catch (e) {
