@@ -1475,27 +1475,26 @@ document.addEventListener('click', function(e) {
     } else if (action === 'view-portfolio') {
         location.href = 'portafolio-alumno.html?id=' + el.dataset.uid;
     } else if (action === 'manage-certs') {
-        const uid = el.dataset.uid;
-        const name = el.dataset.name;
-        const profileR = await fetch('/api/my-profile');
-        // Obtener perfil del alumno via admin
-        const pr = await fetch('/api/profile/' + encodeURIComponent(uid));
-        const pd = await pr.json();
-        const certs = (pd.ok && pd.profile && pd.profile.certificados) ? pd.profile.certificados : [];
-        // Crear panel flotante inline bajo el botón
-        let panel = document.getElementById('certsPanel_' + uid);
-        if (panel) { panel.remove(); return; }
-        panel = document.createElement('div');
-        panel.id = 'certsPanel_' + uid;
-        panel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:min(420px,94vw);background:#1a0005;border:1px solid rgba(201,162,39,0.35);border-radius:14px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.7)';
-        panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="margin:0;font-family:'Playfair Display',serif;color:#fff;font-size:1rem">⭐ Certificados — ${esc(name)}</h3>
-            <button id="certsClose_${uid}" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.3rem;cursor:pointer">✕</button>
-        </div>
-        <div id="certsContainer_${uid}"></div>`;
-        document.body.appendChild(panel);
-        document.getElementById('certsClose_' + uid).onclick = () => panel.remove();
-        renderCertificadosAdmin(document.getElementById('certsContainer_' + uid), uid, certs);
+        (async () => {
+            const uid  = el.dataset.uid;
+            const name = el.dataset.name;
+            let panel = document.getElementById('certsPanel_' + uid);
+            if (panel) { panel.remove(); return; }
+            const pr  = await fetch('/api/profile/' + encodeURIComponent(uid));
+            const pd  = await pr.json();
+            const certs = (pd.ok && pd.profile && pd.profile.certificados) ? pd.profile.certificados : [];
+            panel = document.createElement('div');
+            panel.id = 'certsPanel_' + uid;
+            panel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:min(420px,94vw);background:#1a0005;border:1px solid rgba(201,162,39,0.35);border-radius:14px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.7)';
+            panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 style="margin:0;font-family:'Playfair Display',serif;color:#fff;font-size:1rem">⭐ Certificados — ${esc(name)}</h3>
+                <button id="certsClose_${uid}" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.3rem;cursor:pointer">✕</button>
+            </div>
+            <div id="certsContainer_${uid}"></div>`;
+            document.body.appendChild(panel);
+            document.getElementById('certsClose_' + uid).onclick = () => panel.remove();
+            renderCertificadosAdmin(document.getElementById('certsContainer_' + uid), uid, certs);
+        })();
     } else if (action === 'admin-reset-pw') {
         adminResetPassword(el.dataset.uid, el.dataset.username);
     } else if (action === 'delete-user') {

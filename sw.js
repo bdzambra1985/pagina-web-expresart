@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'expresart-v1';
+const CACHE_NAME = 'expresart-v2';
 
 // Assets que se cachean al instalar (app shell)
 const PRECACHE = [
