@@ -214,7 +214,7 @@ async function adminResetPassword(userId, username) {
 }
 
 async function loadResetRequests() {
-    const r    = await fetch('/api/reset-requests', { credentials: 'same-origin' });
+    const r    = await fetch('/api/users/reset-requests', { credentials: 'same-origin' });
     const data = await r.json();
     const wrap = document.getElementById('resetRequestsWrap');
     if (!wrap) return;
@@ -242,7 +242,7 @@ async function loadResetRequests() {
 }
 
 async function dismissResetRequest(id) {
-    await fetch('/api/reset-requests/' + id, { method: 'DELETE', credentials: 'same-origin' });
+    await fetch('/api/users/reset-requests/' + id, { method: 'DELETE', credentials: 'same-origin' });
     loadResetRequests();
 }
 
