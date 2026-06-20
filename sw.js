@@ -1,19 +1,28 @@
 'use strict';
 
-const CACHE_NAME = 'expresart-v2';
+const CACHE_NAME = 'expresart-v3';
 
-// Assets que se cachean al instalar (app shell)
+// Solo assets estáticos que NO cambian con el contenido
 const PRECACHE = [
-    '/',
     '/style.css',
-    '/common.js',
     '/logo.png',
     '/img/app-icon-192.png',
     '/img/app-icon-512.png'
 ];
 
-// Rutas que NUNCA se cachean — siempre van a la red
+// Nunca cachear: API, uploads, ni páginas HTML
+// Las HTML siempre deben venir de la red para mostrar imágenes actualizadas
 const NETWORK_ONLY = ['/api/', '/uploads/'];
+
+function isHtml(request, url) {
+    return request.destination === 'document' ||
+           url.pathname === '/' ||
+           url.pathname.endsWith('.html');
+}
+
+function isCrossOrigin(url) {
+    return url.origin !== self.location.origin;
+}
 
 self.addEventListener('install', e => {
     e.waitUntil(
@@ -34,7 +43,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
     const url = new URL(e.request.url);
 
-    // API y uploads: siempre red, nunca caché
+    // API y uploads: siempre red
     if (NETWORK_ONLY.some(p => url.pathname.startsWith(p))) {
         e.respondWith(fetch(e.request));
         return;
@@ -43,20 +52,24 @@ self.addEventListener('fetch', e => {
     // Solo GET
     if (e.request.method !== 'GET') return;
 
-    // Estrategia: Network First → si falla, caché → si no hay, página offline
+    // HTML y recursos externos (Cloudinary, fonts, etc.): siempre red, nunca caché
+    // Esto garantiza que las páginas y las fotos siempre carguen actualizadas
+    if (isHtml(e.request, url) || isCrossOrigin(url)) {
+        e.respondWith(fetch(e.request));
+        return;
+    }
+
+    // Assets estáticos propios (CSS, JS, íconos): Cache First con fallback a red
     e.respondWith(
-        fetch(e.request)
-            .then(res => {
+        caches.match(e.request).then(cached => {
+            if (cached) return cached;
+            return fetch(e.request).then(res => {
                 if (res.ok) {
                     const clone = res.clone();
                     caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
                 }
                 return res;
-            })
-            .catch(() =>
-                caches.match(e.request).then(cached =>
-                    cached || caches.match('/')
-                )
-            )
+            });
+        })
     );
 });
