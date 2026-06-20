@@ -1660,8 +1660,8 @@ function collectObras() {
 }
 
 document.querySelector('[data-tab="obras"]').addEventListener('click', () => {
-    // Solo renderiza obras — NO llama loadContent() para no descartar edits en curso
-    if (Object.keys(content).length) renderObras();
+    // Solo renderiza si ya hay contenido cargado — no descarta edits en curso
+    if (Object.keys(content).length) { renderDestacada(); renderObras(); }
     else loadContent();
 });
 
