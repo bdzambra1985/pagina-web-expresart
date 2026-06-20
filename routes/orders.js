@@ -317,7 +317,7 @@ router.put('/orders/:id/confirm', async (req, res) => {
                 `Hola ${order.customerName}, tu pago de $${parseFloat(order.amount).toFixed(2)} por ${order.concept} ha sido confirmado. Ref: ${invoiceNumber}`,
                 _confirmStudentHtml(snap),
                 order.customerEmail
-            );
+            ).catch(e => console.error('[Email confirm alumno]', e.message));
         }
 
         const orderId   = req.params.id;

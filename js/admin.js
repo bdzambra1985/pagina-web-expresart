@@ -1660,7 +1660,9 @@ function collectObras() {
 }
 
 document.querySelector('[data-tab="obras"]').addEventListener('click', () => {
-    loadContent();
+    // Solo renderiza obras — NO llama loadContent() para no descartar edits en curso
+    if (Object.keys(content).length) renderObras();
+    else loadContent();
 });
 
 /* ══════════════════════════════════════════════
@@ -1700,6 +1702,7 @@ function renderCertificadosAdmin(container, userId, certs) {
         fechaInp.value = existing ? existing.fecha : new Date().toISOString().slice(0,10);
         fechaInp.style.display = existing ? 'block' : 'none';
         chk.addEventListener('change', () => { fechaInp.style.display = chk.checked ? 'block' : 'none'; });
+        row.className = 'cert-nivel-row';
         row.appendChild(chk); row.appendChild(lbl); row.appendChild(fechaInp);
         wrap.appendChild(row);
     });
@@ -1711,7 +1714,7 @@ function renderCertificadosAdmin(container, userId, certs) {
     saveBtn.addEventListener('click', async () => {
         btnLoad(saveBtn);
         const newCerts = [];
-        wrap.querySelectorAll('div[style*="align-items"]').forEach((row, idx) => {
+        wrap.querySelectorAll('.cert-nivel-row').forEach((row, idx) => {
             const chk = row.querySelector('input[type="checkbox"]');
             const fecha = row.querySelector('input[type="date"]');
             if (chk && chk.checked) newCerts.push({ nivel: NIVELES[idx], titulo: NIVELES[idx], fecha: fecha.value || new Date().toISOString().slice(0,10) });

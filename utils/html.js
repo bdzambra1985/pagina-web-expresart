@@ -8,7 +8,7 @@ function htmlEncode(s) {
 
 const emptyProfile = (userId) => ({
     userId, displayName: '', bio: '', bio_short: '',
-    photoUrl: '', especialidades: [], producciones: [], videos: []
+    photoUrl: '', especialidades: [], producciones: [], videos: [], certificados: []
 });
 
 function generateComprobanteHTML(order, info) {

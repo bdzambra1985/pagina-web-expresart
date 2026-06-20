@@ -102,6 +102,23 @@ router.post('/content', async (req, res) => {
         if (!section || !data) return res.status(400).json({ ok: false, message: 'section y data son requeridos' });
         if (!VALID_SECTIONS.has(section)) return res.status(400).json({ ok: false, message: 'Sección no válida' });
         if (JSON.stringify(data).length > 200_000) return res.status(400).json({ ok: false, message: 'Datos demasiado grandes' });
+
+        // Validación estructural de la sección obras
+        if (section === 'obras') {
+            if (!Array.isArray(data)) return res.status(400).json({ ok: false, message: 'obras debe ser un array' });
+            if (data.length > 50) return res.status(400).json({ ok: false, message: 'Máximo 50 obras' });
+            for (const o of data) {
+                if (typeof o.titulo !== 'string' || o.titulo.trim().length === 0)
+                    return res.status(400).json({ ok: false, message: 'Cada obra debe tener un título' });
+                if (o.sinopsis && o.sinopsis.length > 2000)
+                    return res.status(400).json({ ok: false, message: 'Sinopsis máximo 2000 caracteres' });
+                if (o.photoUrl && o.photoUrl.length > 500)
+                    return res.status(400).json({ ok: false, message: 'URL de foto demasiado larga' });
+                if (o.testimonios && (!Array.isArray(o.testimonios) || o.testimonios.length > 10))
+                    return res.status(400).json({ ok: false, message: 'Máximo 10 testimonios por obra' });
+            }
+        }
+
         await db.saveContentSection(section, data);
         res.json({ ok: true });
     } catch (e) {
