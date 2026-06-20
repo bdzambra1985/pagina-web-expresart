@@ -132,8 +132,12 @@ app.get('/.well-known/assetlinks.json', (_req, res) => {
 });
 app.use(express.static(__dirname, {
     setHeaders(res, filePath) {
-        if (/\.(css|js|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath))
-            res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}, stale-while-revalidate=86400`);
+        if (/\.js$/.test(filePath))
+            // no-cache: el navegador revalida con ETag antes de usar la copia local
+            // Evita servir JS stale que impide cargar imágenes correctamente
+            res.setHeader('Cache-Control', 'no-cache');
+        else if (/\.(css|png|jpg|jpeg|webp|gif|ico|woff2?)$/.test(filePath))
+            res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK}`);
         else if (filePath.endsWith('.html'))
             res.setHeader('Cache-Control', 'no-cache');
     }
