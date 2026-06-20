@@ -30,9 +30,10 @@ self.addEventListener('fetch', e => {
     // Solo GET
     if (e.request.method !== 'GET') return;
 
-    // Recursos externos (Cloudinary, Google Fonts, etc.) y API: siempre red
+    // Recursos externos (Cloudinary, unpkg, Google Fonts, etc.) y API:
+    // NO interceptar — dejar que el navegador los maneje directamente.
+    // Llamar e.respondWith(fetch()) en cross-origin viola connect-src de la CSP.
     if (url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/uploads/')) {
-        e.respondWith(fetch(e.request));
         return;
     }
 

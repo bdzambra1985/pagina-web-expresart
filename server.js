@@ -90,7 +90,7 @@ app.use(helmet({
             styleSrc:       ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
             fontSrc:        ["'self'", 'https://fonts.gstatic.com', 'https://unpkg.com'],
             imgSrc:         ["'self'", 'https://res.cloudinary.com', 'https://img.youtube.com', 'data:', 'blob:'],
-            connectSrc:     ["'self'"],
+            connectSrc:     ["'self'", 'https://unpkg.com'],
             frameSrc:       ['https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
             frameAncestors: ["'none'"],
             baseUri:        ["'self'"],
