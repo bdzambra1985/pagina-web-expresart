@@ -122,19 +122,18 @@ async function loadObras() {
     }
 
     grid.innerHTML = obras.map((o, idx) => `
-        <div class="prod-card" style="padding:0;overflow:hidden">
-            ${o.photoUrl ? `<img class="obra-afiche" src="${esc(o.photoUrl)}" alt="${esc(o.titulo)}" loading="lazy">` : ''}
+        <div class="prod-card obra-card-clickable" style="padding:0;overflow:hidden" data-idx="${idx}">
+            ${o.photoUrl ? `<div class="obra-afiche-wrap"><img class="obra-afiche" src="${esc(o.photoUrl)}" alt="${esc(o.titulo)}" loading="lazy"></div>` : ''}
             <div style="padding:22px 22px 18px">
                 ${o.temporada ? `<span class="prod-year">${esc(o.temporada)}</span>` : ''}
-                <div class="prod-title" style="margin-top:8px">${esc(o.titulo)}</div>
+                <div class="prod-title" style="margin-top:8px;transition:color .2s">${esc(o.titulo)}</div>
                 ${o.duracion ? `<p class="obra-duracion"><i class="bx bx-time-five" style="vertical-align:middle;margin-right:4px"></i>${esc(o.duracion)}</p>` : ''}
                 ${o.sinopsis ? `<p class="obra-sinopsis">${esc(o.sinopsis.slice(0,120))}${o.sinopsis.length>120?'…':''}</p>` : ''}
-                <button class="obra-btn" data-idx="${idx}"><i class="bx bx-info-circle"></i> Ver más</button>
             </div>
         </div>`).join('');
 
-    grid.querySelectorAll('.obra-btn').forEach(btn => {
-        btn.addEventListener('click', () => _openObra(obras[+btn.dataset.idx]));
+    grid.querySelectorAll('.obra-card-clickable').forEach(card => {
+        card.addEventListener('click', () => _openObra(obras[+card.dataset.idx]));
     });
 }
 
