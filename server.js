@@ -98,8 +98,15 @@ app.use(helmet({
             scriptSrcAttr:  ["'none'"],
         }
     },
+    frameguard:              { action: 'deny' },
     crossOriginEmbedderPolicy: false
 }));
+
+// Permissions-Policy: deshabilitar APIs de hardware no necesarias
+app.use((_req, res, next) => {
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    next();
+});
 
 app.use(apiLimiter);
 app.use(express.json({ limit: '1mb' }));

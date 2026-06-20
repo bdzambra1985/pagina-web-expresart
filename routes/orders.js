@@ -481,7 +481,7 @@ router.post('/orders/clear-all', async (req, res) => {
         res.json({ ok: true, deletedCount: orders.length, anchorSeq: maxSeq, nextInvoiceNumber: next });
     } catch (e) {
         console.error('[POST /api/orders/clear-all]', e);
-        res.status(500).json({ ok: false, message: e.message });
+        res.status(500).json({ ok: false, message: 'Error interno' });
     }
 });
 
@@ -510,7 +510,7 @@ router.post('/orders/reset-invoice-seq', async (req, res) => {
             message: `${cleared} número(s) fantasma limpiados. Próxima factura: ${next}` });
     } catch (e) {
         console.error('[POST /api/orders/reset-invoice-seq]', e);
-        res.status(500).json({ ok: false, message: e.message });
+        res.status(500).json({ ok: false, message: 'Error interno' });
     }
 });
 

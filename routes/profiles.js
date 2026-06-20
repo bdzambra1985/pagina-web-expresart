@@ -65,8 +65,14 @@ router.post('/my-profile', async (req, res) => {
         const sess = requireAuth(req, res);
         if (!sess) return;
         const current = await db.getProfile(sess.userId) || emptyProfile(sess.userId);
-        ['displayName', 'bio', 'bio_short', 'especialidades', 'producciones', 'videos', 'portfolioActive']
-            .forEach(k => { if (req.body[k] !== undefined) current[k] = req.body[k]; });
+        const b = req.body;
+        if (b.displayName    !== undefined) current.displayName    = String(b.displayName).trim().slice(0, 100);
+        if (b.bio_short      !== undefined) current.bio_short      = String(b.bio_short).trim().slice(0, 300);
+        if (b.bio            !== undefined) current.bio            = String(b.bio).trim().slice(0, 3000);
+        if (b.especialidades !== undefined) current.especialidades = Array.isArray(b.especialidades) ? b.especialidades.slice(0, 20) : [];
+        if (b.producciones   !== undefined) current.producciones   = Array.isArray(b.producciones)   ? b.producciones.slice(0, 50)   : [];
+        if (b.videos         !== undefined) current.videos         = Array.isArray(b.videos)         ? b.videos.slice(0, 30)         : [];
+        if (b.portfolioActive !== undefined) current.portfolioActive = Boolean(b.portfolioActive);
         await db.upsertProfile(sess.userId, current);
         res.json({ ok: true });
     } catch (e) {
