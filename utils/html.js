@@ -60,7 +60,7 @@ td:first-child{color:#666}td:last-child{color:#111}
 </style></head><body>
 <div class="wrap">
   <div class="header">
-    <img src="/logo.png" alt="EXPRESART">
+    <img src="/logo.jpg" alt="EXPRESART">
     <h1>Comprobante de Pago</h1>
     <div class="sub">Escuela de Actuación · Donde el Arte Cobra Vida</div>
   </div>
