@@ -24,6 +24,7 @@ const profileRoutes    = require('./routes/profiles');
 const orderRoutes      = require('./routes/orders');
 const contentRoutes    = require('./routes/content');
 const shareLinkRoutes  = require('./routes/shareLinks');
+const privacyRoutes    = require('./routes/privacy');
 
 const app  = express();
 const PORT = process.env.PORT || 9090;
@@ -109,7 +110,13 @@ app.use((_req, res, next) => {
 });
 
 app.use(apiLimiter);
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+    limit: '1mb',
+    // Guarda el body crudo: lo necesita la verificación de firma del
+    // webhook de Resend (routes/privacy.js), que rompe si se recalcula
+    // sobre el JSON ya parseado/re-serializado.
+    verify: (req, _res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 /* ── Static files ── */
@@ -168,6 +175,7 @@ app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', orderRoutes);
 app.use('/api', contentRoutes);
+app.use('/api', privacyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/share-links', shareLinkRoutes);
 

@@ -1727,3 +1727,71 @@ function renderCertificadosAdmin(container, userId, certs) {
     wrap.appendChild(saveBtn);
     container.appendChild(wrap);
 }
+
+/* ══════════════════════
+   TAB PRIVACIDAD
+   ══════════════════════ */
+document.querySelector('[data-tab="privacidad"]').addEventListener('click', () => {
+    loadPrivacyMessages();
+});
+
+function renderPrivacyMessages(messages) {
+    const wrap = document.getElementById('privacyMsgList');
+    if (!messages.length) {
+        wrap.innerHTML = '<p class="no-users">No hay mensajes en la bandeja todavía.</p>';
+        return;
+    }
+    wrap.innerHTML = messages.map(m => `
+        <div class="privacy-msg ${m.isRead ? '' : 'unread'}" data-id="${esc(m.id)}">
+            <div class="pm-head">
+                <span class="pm-from">${esc(m.fromEmail)}</span>
+                <span class="pm-date">${new Date(m.receivedAt).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}</span>
+            </div>
+            <div class="pm-subject">${esc(m.subject)}</div>
+            <div class="pm-body">${esc(m.body)}</div>
+            <div class="pm-actions">
+                ${m.isRead ? '' : '<button class="tbl-btn tbl-btn-view" data-pm-read="' + esc(m.id) + '"><i class="bx bx-check"></i> Marcar leído</button>'}
+                <a class="tbl-btn tbl-btn-view" href="mailto:${esc(m.fromEmail)}?subject=${encodeURIComponent('Re: ' + m.subject)}"><i class="bx bx-reply"></i> Responder</a>
+                <button class="tbl-btn tbl-btn-delete" data-pm-delete="${esc(m.id)}"><i class="bx bx-trash"></i> Eliminar</button>
+            </div>
+        </div>
+    `).join('');
+
+    wrap.querySelectorAll('[data-pm-read]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            await fetch('/api/privacy-messages/' + encodeURIComponent(btn.dataset.pmRead) + '/read', {
+                method: 'PUT', credentials: 'same-origin'
+            });
+            loadPrivacyMessages();
+        });
+    });
+    wrap.querySelectorAll('[data-pm-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('¿Eliminar este mensaje?')) return;
+            await fetch('/api/privacy-messages/' + encodeURIComponent(btn.dataset.pmDelete), {
+                method: 'DELETE', credentials: 'same-origin'
+            });
+            loadPrivacyMessages();
+        });
+    });
+}
+
+async function loadPrivacyMessages() {
+    const wrap = document.getElementById('privacyMsgList');
+    wrap.innerHTML = '<p class="no-users">Cargando…</p>';
+    try {
+        const r = await fetch('/api/privacy-messages', { credentials: 'same-origin' });
+        const d = await r.json();
+        const messages = d.messages || [];
+        renderPrivacyMessages(messages);
+
+        const unread = messages.filter(m => !m.isRead).length;
+        const badge  = document.getElementById('privacyUnreadBadge');
+        if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline-block'; }
+        else badge.style.display = 'none';
+    } catch {
+        wrap.innerHTML = '<p class="no-users">Error al cargar los mensajes.</p>';
+    }
+}
+
+loadPrivacyMessages();

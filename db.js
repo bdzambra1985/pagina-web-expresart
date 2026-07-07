@@ -29,6 +29,7 @@ const SHARE_LINKS_FILE    = path.join(DATA_DIR, 'share-links.json');
 const RESET_REQUESTS_FILE = path.join(DATA_DIR, 'reset-requests.json');
 const ORDERS_FILE         = path.join(DATA_DIR, 'orders.json');
 const BANKINFO_FILE       = path.join(DATA_DIR, 'bank-info.json');
+const PRIVACY_MSGS_FILE   = path.join(DATA_DIR, 'privacy-messages.json');
 
 /* ── JSON helpers ── */
 function jRead(file, fb) {
@@ -140,6 +141,14 @@ async function initDB() {
             username     TEXT NOT NULL,
             requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             status       TEXT NOT NULL DEFAULT 'pending'
+        );
+        CREATE TABLE IF NOT EXISTS privacy_messages (
+            id           TEXT PRIMARY KEY,
+            from_email   TEXT NOT NULL,
+            subject      TEXT,
+            body         TEXT,
+            received_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            is_read      BOOLEAN NOT NULL DEFAULT FALSE
         );
     `);
     // Migraciones para columnas añadidas después de la creación inicial
@@ -596,6 +605,51 @@ async function dismissResetRequest(id) {
 }
 
 /* ══════════════════════════════════════════
+   PRIVACY MESSAGES (bandeja privacidad@expresart.ec)
+   ══════════════════════════════════════════ */
+function toPrivacyMsg(r) {
+    return {
+        id:         r.id,
+        fromEmail:  r.from_email,
+        subject:    r.subject || '',
+        body:       r.body || '',
+        receivedAt: r.received_at instanceof Date ? r.received_at.toISOString() : (r.received_at || ''),
+        isRead:     !!r.is_read
+    };
+}
+async function getPrivacyMessages() {
+    if (!USE_DB) return jRead(PRIVACY_MSGS_FILE, []).slice().sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
+    const { rows } = await pool.query('SELECT * FROM privacy_messages ORDER BY received_at DESC');
+    return rows.map(toPrivacyMsg);
+}
+async function createPrivacyMessage(msg) {
+    if (!USE_DB) {
+        const a = jRead(PRIVACY_MSGS_FILE, []);
+        if (a.find(m => m.id === msg.id)) return; // idempotente ante reintentos del webhook
+        a.push(msg); jWrite(PRIVACY_MSGS_FILE, a); return;
+    }
+    await pool.query(
+        `INSERT INTO privacy_messages (id, from_email, subject, body, received_at, is_read)
+         VALUES ($1,$2,$3,$4,$5,false) ON CONFLICT (id) DO NOTHING`,
+        [msg.id, msg.fromEmail, msg.subject || '', msg.body || '', msg.receivedAt || new Date().toISOString()]
+    );
+}
+async function markPrivacyMessageRead(id) {
+    if (!USE_DB) {
+        const a = jRead(PRIVACY_MSGS_FILE, []).map(m => m.id === id ? { ...m, isRead: true } : m);
+        jWrite(PRIVACY_MSGS_FILE, a); return;
+    }
+    await pool.query(`UPDATE privacy_messages SET is_read = true WHERE id = $1`, [id]);
+}
+async function deletePrivacyMessage(id) {
+    if (!USE_DB) {
+        const a = jRead(PRIVACY_MSGS_FILE, []).filter(m => m.id !== id);
+        jWrite(PRIVACY_MSGS_FILE, a); return;
+    }
+    await pool.query(`DELETE FROM privacy_messages WHERE id = $1`, [id]);
+}
+
+/* ══════════════════════════════════════════
    EXPORTS
    ══════════════════════════════════════════ */
 module.exports = {
@@ -619,6 +673,8 @@ module.exports = {
     getShareLinks, getShareLink, createShareLink, deleteShareLink,
     /* reset requests */
     getResetRequests, createResetRequest, markResetRequestDone, dismissResetRequest,
+    /* privacy messages */
+    getPrivacyMessages, createPrivacyMessage, markPrivacyMessageRead, deletePrivacyMessage,
     /* data dirs (needed by server.js for cleanup of files) */
     DATA_DIR, PROFILES_DIR
 };

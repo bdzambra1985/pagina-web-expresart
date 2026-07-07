@@ -178,6 +178,32 @@
         .badge-inactive { background: rgba(180,30,30,0.18); color: #ee8888; border: 1px solid rgba(200,60,60,0.30); }
         .badge-admin    { background: rgba(201,162,39,0.18); color: #c9a227; border: 1px solid rgba(201,162,39,0.35); }
 
+        .tab-badge {
+            display: inline-block;
+            min-width: 18px;
+            padding: 1px 6px;
+            margin-left: 4px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 700;
+            background: rgba(200,10,10,0.75);
+            color: #fff;
+        }
+        .privacy-msg {
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.03);
+        }
+        .privacy-msg.unread { border-color: rgba(201,162,39,0.45); background: rgba(201,162,39,0.06); }
+        .privacy-msg .pm-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+        .privacy-msg .pm-from { font-weight: 600; color: #fff; font-size: 0.88em; }
+        .privacy-msg .pm-date { font-size: 0.72em; color: rgba(255,200,200,0.45); }
+        .privacy-msg .pm-subject { font-size: 0.85em; color: #c9a227; margin-top: 4px; }
+        .privacy-msg .pm-body { font-size: 0.82em; color: rgba(255,220,220,0.75); white-space: pre-wrap; margin-top: 10px; line-height: 1.6; }
+        .privacy-msg .pm-actions { margin-top: 10px; display: flex; gap: 8px; }
+
         .tbl-btn {
             display: inline-flex;
             align-items: center;
@@ -612,6 +638,9 @@
         </button>
         <button class="tab-btn" data-tab="respaldos">
             <i class="bx bx-data"></i> Respaldos
+        </button>
+        <button class="tab-btn" data-tab="privacidad">
+            <i class="bx bx-envelope"></i> Privacidad <span id="privacyUnreadBadge" class="tab-badge" style="display:none"></span>
         </button>
     </div>
 
@@ -1069,6 +1098,19 @@
             <div id="backupList"><p class="no-users">Cargando…</p></div>
         </div>
     </div><!-- /tab-respaldos -->
+
+    <div class="tab-panel" id="tab-privacidad">
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-envelope"></i> Bandeja privacidad@expresart.ec</h2>
+            <p style="font-size:0.82em;color:rgba(255,200,200,0.55);margin-bottom:20px;">
+                Mensajes recibidos por los alumnos o cualquier persona que escriba a
+                <strong>privacidad@expresart.ec</strong> (solicitudes de derechos ARCO, consultas
+                de protección de datos). Recordá responder dentro del plazo de 15 días que exige
+                la LOPDP.
+            </p>
+            <div id="privacyMsgList"><p class="no-users">Cargando…</p></div>
+        </div>
+    </div><!-- /tab-privacidad -->
 
 </div>
 
