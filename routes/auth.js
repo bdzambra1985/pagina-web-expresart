@@ -75,19 +75,25 @@ router.post('/change-password', async (req, res) => {
         const sess = getSession(req);
         if (!sess) return res.status(401).json({ ok: false, message: 'No autenticado' });
 
-        const { newPassword } = req.body;
+        const { newPassword, consentAccepted } = req.body;
         if (!newPassword || typeof newPassword !== 'string')
             return res.status(400).json({ ok: false, message: 'Nueva contraseña requerida' });
         if (newPassword.length < 10)
             return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 10 caracteres' });
         if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword))
             return res.status(400).json({ ok: false, message: 'La contraseña debe incluir letras y números' });
+        if (consentAccepted !== true)
+            return res.status(400).json({ ok: false, message: 'Debes aceptar la Política de Privacidad para continuar' });
 
         const user = await db.getUserById(sess.userId);
         if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado' });
 
         const { revokeUserSessions } = require('../middleware/auth');
-        await db.updateUser(sess.userId, { passwordHash: hashPassword(newPassword), mustChangePassword: false });
+        await db.updateUser(sess.userId, {
+            passwordHash: hashPassword(newPassword),
+            mustChangePassword: false,
+            consentAcceptedAt: user.consentAcceptedAt || new Date().toISOString()
+        });
         revokeUserSessions(sess.userId);
 
         logSecurity('PASSWORD_CHANGED', `userId=${sess.userId}`);

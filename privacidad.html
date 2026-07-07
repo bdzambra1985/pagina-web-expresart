@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPRESART — Política de Privacidad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #060002;
+        }
+
+        .privacidad-page { min-height: 100vh; }
+
+        .privacidad-content {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 32px 24px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .privacidad-intro {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9em;
+            line-height: 1.7;
+            color: rgba(255, 210, 210, 0.75);
+            text-align: center;
+        }
+
+        .privacidad-updated {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.72em;
+            letter-spacing: 1px;
+            color: rgba(201, 162, 39, 0.75);
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .privacy-block {
+            background: rgba(255, 255, 255, 0.055);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 28px 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        .privacy-block h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .privacy-block h2 span { color: var(--gold); }
+
+        .privacy-block .rule {
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+            margin-bottom: 14px;
+        }
+
+        .privacy-block p, .privacy-block li {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85em;
+            line-height: 1.7;
+            color: rgba(255, 220, 220, 0.80);
+        }
+        .privacy-block p + p { margin-top: 10px; }
+        .privacy-block ul { margin: 8px 0 0 20px; }
+        .privacy-block li { margin-bottom: 6px; }
+        .privacy-block strong { color: #fff; }
+        .privacy-block a { color: var(--gold); text-decoration: underline; }
+
+        .privacy-fill {
+            color: rgba(255, 200, 120, 0.9);
+            font-style: italic;
+        }
+
+        .privacy-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.82em;
+        }
+        .privacy-table th, .privacy-table td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 220, 220, 0.80);
+        }
+        .privacy-table th {
+            color: var(--gold);
+            font-size: 0.78em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .privacidad-footer {
+            text-align: center;
+            padding: 32px 24px 40px;
+            border-top: 1px solid rgba(201, 162, 39, 0.18);
+        }
+        .privacidad-footer p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75em;
+            color: rgba(255, 200, 200, 0.45);
+            letter-spacing: 1.5px;
+        }
+
+        @media (max-width: 680px) {
+            .privacidad-content { gap: 28px; padding: 24px 16px 60px; }
+            .privacy-block { padding: 22px 20px; }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#8b0000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EXPRESART">
+    <link rel="apple-touch-icon" href="/img/app-icon-180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/app-icon-32.png">
+</head>
+<body>
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <ul class="nav-links">
+            <li><a href="index.html" class="nav-link">Inicio</a></li>
+            <li><a href="nosotros.html" class="nav-link">Nosotros</a></li>
+            <li><a href="cartelera.html" class="nav-link">Cartelera</a></li>
+            <li><a href="producciones.html" class="nav-link">Producciones</a></li>
+            <li><a href="agenda.html" class="nav-link">Agenda</a></li>
+            <li><a href="portafolio.html" class="nav-link">Portafolio</a></li>
+            <li><a href="login.html" class="nav-link" id="navLoginLink">Login</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="privacidad-page">
+
+    <section class="page-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-curtain-l"></div>
+        <div class="hero-curtain-r"></div>
+        <div class="hero-light"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">Política de Privacidad</h1>
+            <div class="hero-rule"></div>
+        </div>
+    </section>
+
+    <div class="privacidad-content">
+
+        <p class="privacidad-updated">Versión 1.0 · Última actualización: julio 2026</p>
+        <p class="privacidad-intro">
+            En EXPRESART protegemos los datos personales de nuestros alumnos, sus representantes
+            y visitantes del sitio, conforme a la <strong>Ley Orgánica de Protección de Datos
+            Personales del Ecuador (LOPDP)</strong> y su Reglamento. Este documento explica qué
+            datos recopilamos, para qué los usamos, y cómo podés ejercer tus derechos.
+        </p>
+
+        <div class="privacy-block">
+            <h2>1. Responsable del <span>Tratamiento</span></h2>
+            <div class="rule"></div>
+            <p>
+                <strong>EXPRESART</strong> — Escuela de Teatro &amp; Actuación, con domicilio en
+                <span class="privacy-fill">[Completar: dirección legal, ciudad]</span>, Quito, Ecuador,
+                RUC <span class="privacy-fill">[Completar: RUC]</span>.
+            </p>
+            <p>
+                Contacto para temas de protección de datos:
+                <span class="privacy-fill">[Completar: correo institucional dedicado, ej. privacidad@expresart.ec]</span>.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>2. Datos que <span>Recopilamos</span></h2>
+            <div class="rule"></div>
+            <table class="privacy-table">
+                <thead><tr><th>Categoría</th><th>Ejemplos</th></tr></thead>
+                <tbody>
+                    <tr><td>Cuenta y perfil</td><td>Nombre, usuario, contraseña (almacenada cifrada), biografía, especialidades, foto de perfil</td></tr>
+                    <tr><td>Portafolio artístico</td><td>Fotos y videos de producciones en las que participás, visibles públicamente solo si activás esa opción</td></tr>
+                    <tr><td>Pagos y facturación</td><td>Comprobantes de transferencia, datos de pago por Payphone, cédula/RUC para la factura electrónica ante el SRI</td></tr>
+                    <tr><td>Comunicaciones</td><td>Correo electrónico para notificaciones operativas (pagos, accesos)</td></tr>
+                    <tr><td>Técnicos</td><td>Cookies de sesión estrictamente necesarias para mantener tu acceso (no usamos cookies de rastreo ni publicidad)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="privacy-block">
+            <h2>3. Niñas, Niños y <span>Adolescentes</span></h2>
+            <div class="rule"></div>
+            <p>
+                Algunos de nuestros programas están dirigidos a menores de edad. Cuando el alumno
+                es menor de 15 años, el tratamiento de sus datos personales (incluyendo fotos y
+                videos de producciones) requiere la <strong>autorización expresa de su madre,
+                padre o representante legal</strong>, otorgada al momento de la inscripción.
+            </p>
+            <p>
+                Los adolescentes de 15 a 17 años pueden otorgar su propio consentimiento para el
+                tratamiento de sus datos, y ejercer directamente los derechos descritos en la
+                sección 6. En todos los casos, prevalece el interés superior de la niña, niño o
+                adolescente sobre cualquier otra consideración.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>4. Para qué usamos tus <span>Datos</span></h2>
+            <div class="rule"></div>
+            <ul>
+                <li>Gestionar tu cuenta y tu relación como alumno de la escuela.</li>
+                <li>Mostrar y compartir tu portafolio artístico, únicamente si vos decidís activarlo o generar un enlace privado.</li>
+                <li>Procesar tus pagos y emitir comprobantes/facturas electrónicas conforme a las obligaciones tributarias vigentes ante el SRI.</li>
+                <li>Enviarte notificaciones operativas por correo (confirmaciones de pago, cambios de acceso).</li>
+                <li>Generar respaldos de seguridad de la información de la plataforma.</li>
+            </ul>
+        </div>
+
+        <div class="privacy-block">
+            <h2>5. Base <span>Legal</span></h2>
+            <div class="rule"></div>
+            <p>Tratamos tus datos según corresponda por:</p>
+            <ul>
+                <li><strong>Consentimiento</strong>: para la publicación de tu portafolio, fotos y videos.</li>
+                <li><strong>Ejecución de la relación educativa</strong>: para administrar tu cuenta y participación en la escuela.</li>
+                <li><strong>Obligación legal</strong>: para la facturación electrónica exigida por el SRI.</li>
+                <li><strong>Interés legítimo</strong>: para la seguridad de la plataforma y los respaldos de información.</li>
+            </ul>
+        </div>
+
+        <div class="privacy-block">
+            <h2>6. Tus <span>Derechos</span></h2>
+            <div class="rule"></div>
+            <p>
+                Como titular de tus datos, en cualquier momento podés ejercer tus derechos de
+                <strong>acceso, rectificación, actualización, eliminación, oposición, portabilidad
+                y revocatoria del consentimiento</strong>, escribiendo a
+                <span class="privacy-fill">[Completar: correo institucional dedicado]</span>.
+                Responderemos tu solicitud en un plazo máximo de <strong>15 días</strong>.
+            </p>
+            <p>
+                También podés presentar un reclamo ante la
+                <a href="https://spdp.gob.ec/" target="_blank" rel="noopener noreferrer">Superintendencia de Protección de Datos Personales (SPDP)</a>,
+                la autoridad de control en Ecuador.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>7. Transferencias <span>Internacionales</span></h2>
+            <div class="rule"></div>
+            <p>
+                Para operar la plataforma usamos proveedores externos que procesan datos fuera de
+                Ecuador: <strong>Cloudinary</strong> y <strong>Amazon Web Services (S3)</strong>
+                (almacenamiento de imágenes), <strong>Resend</strong> (envío de correos),
+                <strong>Payphone</strong> (procesamiento de pagos) y <strong>Cloudflare</strong>
+                (respaldos de la base de datos). Exigimos a estos proveedores medidas de seguridad
+                adecuadas para proteger tu información.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>8. Conservación de los <span>Datos</span></h2>
+            <div class="rule"></div>
+            <p>
+                Conservamos tus datos mientras dure tu relación con la escuela, y posteriormente
+                por los plazos que exige la normativa tributaria y legal aplicable. Podés solicitar
+                la eliminación anticipada de tus datos cuando ya no exista una obligación legal que
+                nos obligue a conservarlos.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>9. Seguridad de la <span>Información</span></h2>
+            <div class="rule"></div>
+            <p>
+                Aplicamos medidas técnicas y organizativas para proteger tus datos: contraseñas
+                nunca almacenadas en texto plano, conexión cifrada (HTTPS), límites de intentos de
+                acceso, cabeceras de seguridad estándar, y respaldos periódicos de la base de datos.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>10. Delegado de Protección de <span>Datos</span></h2>
+            <div class="rule"></div>
+            <p>
+                <span class="privacy-fill">[Completar: nombre del Delegado de Protección de Datos
+                designado y registrado ante la SPDP, o el canal de contacto mientras se completa
+                ese proceso]</span>.
+            </p>
+        </div>
+
+        <div class="privacy-block">
+            <h2>11. Cambios a esta <span>Política</span></h2>
+            <div class="rule"></div>
+            <p>
+                Podemos actualizar esta política para reflejar cambios legales u operativos. La
+                fecha de la última actualización aparece al inicio de este documento. Si el cambio
+                es sustancial, te lo notificaremos por los medios de contacto que tengamos
+                registrados.
+            </p>
+        </div>
+
+    </div>
+
+    <footer class="privacidad-footer">
+        <p>© 2025 EXPRESART — Escuela de Actuación · Donde el Arte Cobra Vida</p>
+    </footer>
+
+</div>
+
+<script src="common.js"></script>
+</body>
+</html>

@@ -57,6 +57,7 @@ async function initDB() {
             role           TEXT NOT NULL DEFAULT 'alumno',
             active         BOOLEAN NOT NULL DEFAULT TRUE,
             must_change_pw BOOLEAN NOT NULL DEFAULT FALSE,
+            consent_accepted_at TIMESTAMPTZ,
             created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE TABLE IF NOT EXISTS profiles (
@@ -143,6 +144,7 @@ async function initDB() {
     `);
     // Migraciones para columnas añadidas después de la creación inicial
     await pool.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS certificados JSONB NOT NULL DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_accepted_at TIMESTAMPTZ`);
     console.log('  [db] PostgreSQL tables ready.');
 }
 
@@ -158,6 +160,7 @@ function toUser(r) {
         role:               r.role,
         active:             !!r.active,
         mustChangePassword: !!r.must_change_pw,
+        consentAcceptedAt:  r.consent_accepted_at ? (r.consent_accepted_at instanceof Date ? r.consent_accepted_at.toISOString() : r.consent_accepted_at) : null,
         createdAt:          r.created_at instanceof Date ? r.created_at.toISOString() : (r.created_at || new Date().toISOString())
     };
 }
@@ -196,7 +199,7 @@ async function updateUser(userId, fields) {
         jWrite(USERS_FILE, a);
         return true;
     }
-    const colMap = { passwordHash:'password_hash', active:'active', mustChangePassword:'must_change_pw', displayName:'display_name' };
+    const colMap = { passwordHash:'password_hash', active:'active', mustChangePassword:'must_change_pw', displayName:'display_name', consentAcceptedAt:'consent_accepted_at' };
     const sets = [], vals = [];
     Object.entries(fields).forEach(([k, v]) => {
         const col = colMap[k]; if (!col) return;
