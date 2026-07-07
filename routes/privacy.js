@@ -51,9 +51,13 @@ router.post('/webhooks/resend-inbound', async (req, res) => {
         let body = '';
         try {
             const full = await resend.emails.receiving.get(data.email_id);
-            body = full.data?.text || full.data?.html || '';
+            if (full.error) {
+                console.error('[privacidad-inbox] la API de Resend devolvió error al pedir el cuerpo:', JSON.stringify(full.error));
+            } else {
+                body = full.data?.text || full.data?.html || '';
+            }
         } catch (e) {
-            console.error('[privacidad-inbox] error obteniendo cuerpo del email:', e.message);
+            console.error('[privacidad-inbox] excepción obteniendo cuerpo del email:', e.message);
         }
 
         await db.createPrivacyMessage({
