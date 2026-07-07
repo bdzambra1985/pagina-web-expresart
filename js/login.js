@@ -18,11 +18,12 @@ async function sendResetRequest() {
     btn.disabled = true;
     btn.textContent = 'Enviando…';
     try {
-        await fetch('/api/reset-request', {
+        const res = await fetch('/api/users/reset-request', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user })
         });
+        if (!res.ok) throw new Error();
         succ.textContent   = 'Solicitud enviada. El administrador te comunicará tu nueva clave.';
         succ.style.display = 'block';
         document.getElementById('resetUsername').value = '';

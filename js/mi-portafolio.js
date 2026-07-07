@@ -227,7 +227,7 @@ function renderProd() {
                 <button class="del-btn" data-action="delete-prod" data-idx="${i}"><i class="bx bx-trash"></i></button>
             </div>
 
-            <div class="prod-photo-wrap">
+            <div class="prod-photo-wrap" ${p.photoUrl ? 'title="Clic para cambiar la foto"' : ''}>
                 ${p.photoUrl
                     ? `<img class="prod-photo-preview" src="${esc(p.photoUrl)}" style="display:block" alt="Foto">`
                     : ''
@@ -285,9 +285,11 @@ function renderProd() {
         renderCollageSlots(i);
         renderProdVideos(i);
 
-        const zone  = card.querySelector('#prodZone' + i);
+        const wrap  = card.querySelector('.prod-photo-wrap');
         const input = card.querySelector('#prodPhotoInput' + i);
-        zone.onclick  = () => input.click();
+        // Los <img> tienen pointer-events:none globalmente (evita clic-derecho/arrastrar),
+        // así que el click hay que capturarlo en el wrapper, no en la imagen.
+        wrap.onclick = () => input.click();
         input.onchange = async () => {
             const file = input.files[0];
             if (!file) return;

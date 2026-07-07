@@ -243,6 +243,8 @@
 
         /* Foto de producción */
         .prod-photo-wrap { margin-bottom: 12px; }
+        .prod-photo-wrap:has(.prod-photo-preview) { cursor: pointer; }
+        .prod-photo-wrap:has(.prod-photo-preview):hover .prod-photo-preview { opacity: 0.75; }
         .prod-photo-preview {
             width: 100%; height: 140px;
             object-fit: cover;
@@ -250,6 +252,7 @@
             border: 1px solid rgba(201,162,39,0.25);
             display: none;
             margin-bottom: 8px;
+            transition: opacity 0.2s;
         }
         .prod-photo-zone {
             width: 100%; height: 80px;
