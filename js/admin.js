@@ -645,7 +645,7 @@ function renderProd() {
                 <span class="item-num">Producción ${i+1}</span>
                 <button class="del-btn" type="button"><i class="bx bx-trash"></i></button>
             </div>
-            <div class="prod-admin-photo-wrap">
+            <div class="prod-admin-photo-wrap" ${photoUrl ? 'title="Clic para cambiar la foto"' : ''}>
                 <img class="prod-admin-photo-preview" src="${esc(photoUrl)}" alt="Foto" ${photoUrl ? 'style="display:block"' : ''}>
                 <div class="prod-admin-photo-zone" ${photoUrl ? 'style="display:none"' : ''}>
                     <i class="bx bx-image-add"></i><span>Foto de portada — clic para subir</span>
@@ -681,13 +681,14 @@ function renderProd() {
             <div class="prod-collage-grid"></div>`;
 
         // Foto de portada
-        const preview    = card.querySelector('.prod-admin-photo-preview');
-        const zone       = card.querySelector('.prod-admin-photo-zone');
-        const fileInput  = card.querySelector('.prod-admin-photo-input');
-        const photoHidden = card.querySelector('[data-key="photoUrl"]');
-        const trigger = () => fileInput.click();
-        zone.addEventListener('click', trigger);
-        preview.addEventListener('click', trigger);
+        const wrap        = card.querySelector('.prod-admin-photo-wrap');
+        const preview      = card.querySelector('.prod-admin-photo-preview');
+        const zone         = card.querySelector('.prod-admin-photo-zone');
+        const fileInput    = card.querySelector('.prod-admin-photo-input');
+        const photoHidden  = card.querySelector('[data-key="photoUrl"]');
+        // Los <img> tienen pointer-events:none globalmente, así que el click
+        // hay que capturarlo en el wrapper, no en la imagen.
+        wrap.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async function () {
             const file = this.files[0]; if (!file) return;
             const fd = new FormData(); fd.append('photo', file);
@@ -886,7 +887,7 @@ document.querySelectorAll('.save-btn[data-section]').forEach(btn => {
     };
 });
 
-document.getElementById('photoZone').onclick  = () => document.getElementById('photoInput').click();
+document.getElementById('photoWrap').onclick  = () => document.getElementById('photoInput').click();
 document.getElementById('photoInput').onchange = async () => {
     const file = document.getElementById('photoInput').files[0];
     if (!file) return;
@@ -1574,7 +1575,7 @@ function renderObras() {
                 <span class="item-num">Obra ${i+1}</span>
                 <button class="del-btn" type="button"><i class="bx bx-trash"></i></button>
             </div>
-            <div class="prod-admin-photo-wrap">
+            <div class="prod-admin-photo-wrap" ${photoUrl ? 'title="Clic para cambiar la foto"' : ''}>
                 <img class="prod-admin-photo-preview" src="${esc(photoUrl)}" alt="Afiche" ${photoUrl ? 'style="display:block"' : ''}>
                 <div class="prod-admin-photo-zone" ${photoUrl ? 'style="display:none"' : ''}>
                     <i class="bx bx-image-add"></i><span>Afiche / Foto principal — clic para subir</span>
@@ -1607,13 +1608,14 @@ function renderObras() {
             </div>`;
 
         // Foto upload
+        const wrap    = card.querySelector('.prod-admin-photo-wrap');
         const preview = card.querySelector('.prod-admin-photo-preview');
         const zone    = card.querySelector('.prod-admin-photo-zone');
         const fileInp = card.querySelector('.prod-admin-photo-input');
         const photoH  = card.querySelector('[data-key="photoUrl"]');
-        const trigger = () => fileInp.click();
-        zone.addEventListener('click', trigger);
-        preview.addEventListener('click', trigger);
+        // Los <img> tienen pointer-events:none globalmente, así que el click
+        // hay que capturarlo en el wrapper, no en la imagen.
+        wrap.addEventListener('click', () => fileInp.click());
         fileInp.addEventListener('change', async function() {
             const file = this.files[0]; if (!file) return;
             const fd = new FormData(); fd.append('photo', file);

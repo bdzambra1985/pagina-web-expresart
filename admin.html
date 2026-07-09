@@ -327,12 +327,12 @@
         .del-btn:hover { color: #ff6666; background: rgba(255,50,50,0.10); }
 
         /* ── Foto por producción (admin producciones) ── */
-        .prod-admin-photo-wrap { margin-bottom: 14px; }
+        .prod-admin-photo-wrap { margin-bottom: 14px; cursor: pointer; }
         .prod-admin-photo-preview {
             width: 100%; height: 150px;
             object-fit: cover; border-radius: 8px;
             border: 1px solid rgba(201,162,39,0.25);
-            display: none; margin-bottom: 8px; cursor: pointer;
+            display: none; margin-bottom: 8px;
         }
         .prod-admin-photo-zone {
             width: 100%; height: 80px;
@@ -429,6 +429,7 @@
         .photo-placeholder i { font-size: 2.5rem; }
         .photo-placeholder p { font-family: 'Poppins', sans-serif; font-size: 0.78em; }
         .photo-input { display: none; }
+        #photoWrap { cursor: pointer; }
 
         /* ── Toast ── */
         .toast {
@@ -816,10 +817,12 @@
             <div class="field-row full">
                 <div class="field-group">
                     <span class="field-label">Foto de la producción</span>
-                    <img id="photoPreview" class="photo-preview" src="" alt="Preview">
-                    <div class="photo-placeholder" id="photoZone">
-                        <i class="bx bx-image-add"></i>
-                        <p>Haz clic para subir una foto (JPG, PNG, WEBP — máx. 10 MB)</p>
+                    <div id="photoWrap" title="Clic para cambiar la foto">
+                        <img id="photoPreview" class="photo-preview" src="" alt="Preview">
+                        <div class="photo-placeholder" id="photoZone">
+                            <i class="bx bx-image-add"></i>
+                            <p>Haz clic para subir una foto (JPG, PNG, WEBP — máx. 10 MB)</p>
+                        </div>
                     </div>
                     <input type="file" id="photoInput" class="photo-input" accept=".jpg,.jpeg,.png,.webp,.gif">
                 </div>
