@@ -101,9 +101,12 @@ setInterval(() => {
     }
     if (removed > 0)
         console.log(`[Auth GC] ${removed} sesión(es) expirada(s) eliminada(s). Activas: ${sessions.size}`);
-    // Clean up expired login lockout entries
+    // Clean up expired login lockout entries — y también las que solo
+    // acumulan intentos fallidos (count) sin haber llegado a bloqueo, para
+    // que el Map no crezca sin límite ante enumeración de usuarios.
     for (const [k, att] of loginAttempts) {
-        if (att.lockedUntil && now >= att.lockedUntil + LOGIN_LOCK_MS) loginAttempts.delete(k);
+        if (att.lockedUntil && now >= att.lockedUntil + LOGIN_LOCK_MS) { loginAttempts.delete(k); continue; }
+        if (!att.lockedUntil && att.ts && now - att.ts >= LOGIN_LOCK_MS) loginAttempts.delete(k);
     }
 }, GC_INTERVAL).unref();
 

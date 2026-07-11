@@ -8,11 +8,27 @@ const fs   = require('fs');
    ══════════════════════════════════════════ */
 const USE_DB = !!process.env.DATABASE_URL;
 let pool;
+/* ── Configuración TLS de PostgreSQL ──
+   Por defecto (producción) se mantiene el comportamiento previo para no
+   romper conexiones a proveedores con certificados internos autofirmados.
+   Para validar el certificado del servidor de BD (recomendado contra MITM):
+     • DATABASE_CA_CERT = contenido PEM del CA  → valida contra ese CA
+     • DATABASE_SSL_STRICT = "true"             → exige cadena de confianza del sistema
+*/
+function pgSslConfig() {
+    if (process.env.NODE_ENV !== 'production') return false;
+    if (process.env.DATABASE_CA_CERT)
+        return { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true };
+    if (process.env.DATABASE_SSL_STRICT === 'true')
+        return { rejectUnauthorized: true };
+    return { rejectUnauthorized: false };
+}
+
 if (USE_DB) {
     const { Pool } = require('pg');
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        ssl: pgSslConfig(),
         max: 10,
         idleTimeoutMillis: 30000
     });

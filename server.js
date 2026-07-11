@@ -31,6 +31,10 @@ const PORT = process.env.PORT || 9090;
 
 /* ── Bootstrap admin user ── */
 async function initAdmin() {
+    // En producción EXP_ADMIN_PW es obligatoria: nunca usar una contraseña por defecto.
+    if (process.env.NODE_ENV === 'production' && !process.env.EXP_ADMIN_PW) {
+        throw new Error('EXP_ADMIN_PW no está definida — requerida en producción para crear/actualizar el admin.');
+    }
     const pw      = process.env.EXP_ADMIN_PW || 'expresart2025';
     const existing = await db.getUserById('admin');
     if (!existing) {

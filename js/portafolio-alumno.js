@@ -343,23 +343,28 @@ function _playVideo(prodIdx, vidIdx) {
     var v  = pr && pr.videos && pr.videos[vidIdx];
     if (!v) return;
     var embed = _getEmbedUrl(v.url);
+    var player = embed
+        ? '<div style="position:relative;padding-top:56.25%;margin-top:12px;border-radius:10px;overflow:hidden;background:#000">' +
+              '<iframe src="' + esc(embed) + '" style="position:absolute;top:0;left:0;width:100%;height:100%" frameborder="0" ' +
+              'allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>' +
+          '</div>'
+        : '<p style="margin-top:12px"><a href="' + esc(v.url) + '" target="_blank" rel="noopener noreferrer">Ver video</a></p>';
     document.getElementById('prodPopupContent').innerHTML =
         '<button data-action="open-videos" data-idx="' + prodIdx + '" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:rgba(201,162,39,0.80);font-size:0.75rem;cursor:pointer;margin-bottom:12px;font-family:Poppins,sans-serif;">' +
             '<i class="bx bx-arrow-back"></i> Volver a videos</button>' +
         '<div class="prod-popup-title">' + esc(v.title||'Video') + '</div>' +
-        '<div style="position:relative;padding-top:56.25%;margin-top:12px;border-radius:10px;overflow:hidden;background:#000">' +
-            '<iframe src="' + esc(embed) + '" style="position:absolute;top:0;left:0;width:100%;height:100%" frameborder="0" ' +
-            'allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>' +
-        '</div>';
+        player;
     document.getElementById('prodPopup').classList.add('open');
 }
 
+// Solo devuelve URLs de embed de proveedores reconocidos (YouTube/Vimeo).
+// Si no reconoce el proveedor devuelve null — nunca la URL cruda en un iframe.
 function _getEmbedUrl(url) {
-    var yt = url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
+    var yt = String(url || '').match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
     if (yt) return 'https://www.youtube.com/embed/' + yt[1] + '?autoplay=1&rel=0';
-    var vm = url.match(/vimeo\.com\/(\d+)/);
+    var vm = String(url || '').match(/vimeo\.com\/(\d+)/);
     if (vm) return 'https://player.vimeo.com/video/' + vm[1] + '?autoplay=1';
-    return url;
+    return null;
 }
 
 /* ── Zoom ── */

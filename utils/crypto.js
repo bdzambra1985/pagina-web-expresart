@@ -22,17 +22,49 @@ const PW_SALT = getPwSalt();
 const _signSecret  = process.env.EXP_SIGN_SECRET || PW_SALT;
 const VIEW_SIGN_KEY = crypto.createHmac('sha256', _signSecret).update('signed-view-url:v1').digest();
 
+/* ══════════════════════════════════════════════════════════════
+   Password hashing — PBKDF2 con salt aleatorio POR USUARIO.
+
+   Formato nuevo:  pbkdf2$<iteraciones>$<saltHex>$<hashHex>
+   Formato legado: 128 caracteres hex (PBKDF2 con salt global PW_SALT)
+
+   verifyPassword acepta ambos formatos para no invalidar contraseñas
+   ya almacenadas. needsRehash() indica cuándo conviene re-hashear un
+   hash legado tras un login exitoso (migración transparente).
+   ══════════════════════════════════════════════════════════════ */
+const PBKDF2_ITERS = 100_000;
+const PBKDF2_KEYLEN = 64;
+
 function hashPassword(pw) {
-    return crypto.pbkdf2Sync(pw, PW_SALT, 100_000, 64, 'sha256').toString('hex');
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(pw, salt, PBKDF2_ITERS, PBKDF2_KEYLEN, 'sha256').toString('hex');
+    return `pbkdf2$${PBKDF2_ITERS}$${salt}$${hash}`;
 }
 
-function verifyPassword(pw, hash) {
+// Hashea con el esquema legado (salt global) — solo para verificación.
+function _legacyHash(pw) {
+    return crypto.pbkdf2Sync(pw, PW_SALT, PBKDF2_ITERS, PBKDF2_KEYLEN, 'sha256').toString('hex');
+}
+
+function verifyPassword(pw, stored) {
     try {
+        if (typeof stored === 'string' && stored.startsWith('pbkdf2$')) {
+            const [, itersStr, salt, expected] = stored.split('$');
+            const iters = parseInt(itersStr, 10) || PBKDF2_ITERS;
+            const actual = crypto.pbkdf2Sync(pw, salt, iters, expected.length / 2, 'sha256').toString('hex');
+            return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex'));
+        }
+        // Formato legado: hex plano con salt global.
         return crypto.timingSafeEqual(
-            Buffer.from(hashPassword(pw), 'hex'),
-            Buffer.from(hash, 'hex')
+            Buffer.from(_legacyHash(pw), 'hex'),
+            Buffer.from(stored, 'hex')
         );
     } catch { return false; }
+}
+
+// true si el hash usa el esquema legado (conviene migrarlo al iniciar sesión).
+function needsRehash(stored) {
+    return typeof stored !== 'string' || !stored.startsWith('pbkdf2$');
 }
 
 function tokenHash(token) {
@@ -78,7 +110,7 @@ function verifyViewPath(resourcePath, sv) {
 }
 
 module.exports = {
-    hashPassword, verifyPassword,
+    hashPassword, verifyPassword, needsRehash,
     tokenHash, newToken, randomAlphaNum,
     signViewPath, verifyViewPath
 };

@@ -1222,9 +1222,9 @@ function renderOrders() {
             }
             const receiptPath = o.receiptUrl && o.receiptUrl.startsWith('/uploads/') ? o.receiptUrl : null;
             const receiptLink = receiptPath
-                ? `<button data-action="open-protected-url" data-path="${receiptPath}" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227;cursor:pointer">📎 Comprobante</button>`
+                ? `<button data-action="open-protected-url" data-path="${esc(receiptPath)}" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227;cursor:pointer">📎 Comprobante</button>`
                 : (o.receiptUrl
-                    ? `<a href="${o.receiptUrl}" target="_blank" rel="noopener" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
+                    ? `<a href="${esc(o.receiptUrl)}" target="_blank" rel="noopener" class="edit-btn" style="margin-right:4px;background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.4);color:#c9a227">📎 Comprobante</a>`
                     : '');
             const actions = o.status === 'pendiente' ? `
                 <button data-action="verify-order" data-id="${o.id}" class="save-btn" style="padding:4px 10px;font-size:.78em;margin-right:4px;background:rgba(201,162,39,.25);color:#c9a227;border:1px solid rgba(201,162,39,.5)">🔍 Verificar</button>
@@ -1299,10 +1299,10 @@ window.verifyOrder = async (id) => {
     const preview = !rawReceiptUrl
         ? `<div class="vm-no-receipt">Sin comprobante adjunto</div>`
         : isImg
-        ? `<img src="${authReceiptUrl}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
+        ? `<img src="${esc(authReceiptUrl)}" alt="Comprobante" style="max-width:100%;border-radius:6px;display:block">`
         : isPdf
-        ? `<iframe src="${authReceiptUrl}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
-        : `<a href="${authReceiptUrl}" target="_blank" rel="noopener" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
+        ? `<iframe src="${esc(authReceiptUrl)}" style="width:100%;height:480px;border:none;border-radius:6px"></iframe>`
+        : `<a href="${esc(authReceiptUrl)}" target="_blank" rel="noopener" class="edit-btn" style="display:inline-block;margin-top:8px">📎 Abrir archivo</a>`;
 
     document.getElementById('vmPreview').innerHTML  = preview;
     document.getElementById('vmName').textContent    = o.customerName;

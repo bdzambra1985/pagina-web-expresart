@@ -1,7 +1,7 @@
 'use strict';
 const router  = require('express').Router();
 const db      = require('../db');
-const { hashPassword, verifyPassword, signViewPath, verifyViewPath } = require('../utils/crypto');
+const { hashPassword, verifyPassword, needsRehash, signViewPath, verifyViewPath } = require('../utils/crypto');
 const {
     createSession, getSession, revokeSession,
     requireAuth, loginAttempts,
@@ -29,6 +29,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         const user = await db.getUserByUsername(username.trim());
         if (!user || !verifyPassword(password, user.passwordHash)) {
             att.count++;
+            att.ts = Date.now();   // permite al GC limpiar entradas sin bloqueo
             if (att.count >= LOGIN_MAX_TRIES) {
                 att.lockedUntil = Date.now() + LOGIN_LOCK_MS;
                 att.count       = 0;
@@ -47,6 +48,17 @@ router.post('/login', loginLimiter, async (req, res) => {
 
         loginAttempts.delete(lockKey);
         logSecurity('LOGIN_OK', `usuario=${uname} ip=${ip} rol=${user.role}`);
+
+        // Migración transparente: si el hash usa el esquema legado (salt global),
+        // re-hashear con salt por usuario ahora que tenemos la contraseña en claro.
+        if (needsRehash(user.passwordHash)) {
+            try {
+                await db.updateUser(user.userId, { passwordHash: hashPassword(password) });
+                logSecurity('PASSWORD_REHASHED', `userId=${user.userId}`);
+            } catch (e) {
+                console.error('[login rehash]', e.message);
+            }
+        }
 
         const token    = createSession({ userId: user.userId, role: user.role });
         const isProd   = process.env.NODE_ENV === 'production';
