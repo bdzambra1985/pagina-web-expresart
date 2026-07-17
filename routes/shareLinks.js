@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const db     = require('../db');
 const { hashPassword, verifyPassword, randomAlphaNum } = require('../utils/crypto');
-const { requireAuth, createSession, SHARE_TTL }        = require('../middleware/auth');
+const { requireMember, createSession, SHARE_TTL }      = require('../middleware/auth');
 const { loginLimiter }                                  = require('../middleware/rateLimiter');
 
 /* ── Get share-link info (public — just returns userId, no secrets) ── */
@@ -43,7 +43,7 @@ router.post('/:shareId/auth', loginLimiter, async (req, res) => {
 /* ── Create share-link ── */
 router.post('/', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         const { label } = req.body || {};
         const shareId   = randomAlphaNum(10);
@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
 /* ── List share-links ── */
 router.get('/', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         const all  = await db.getShareLinks();
         const mine = sess.role === 'admin' ? all : all.filter(l => l.userId === sess.userId);
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
 /* ── Delete share-link ── */
 router.delete('/:shareId', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
 
         const allLinks = await db.getShareLinks();

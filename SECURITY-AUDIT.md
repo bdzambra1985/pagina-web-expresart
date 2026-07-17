@@ -29,6 +29,22 @@ inyección SQL/XSS explotable directamente.
   los scripts sí están bloqueados a `'self'`.
 - **#10 `GET /api/share-links/:shareId/info` público** — divulga `userId`; impacto bajo.
 
+## Segunda pasada — auditoría profunda (SRI, service worker, autorización)
+
+Revisión adicional de firma electrónica SRI, service worker, `migrate.js`, HTML
+(sin handlers inline → OK con la CSP) y flujos de autorización.
+
+| # | Sev | Hallazgo | Estado |
+|---|-----|----------|--------|
+| 11 | **Alta** | **Escalada vía enlace compartido (IDOR).** El endpoint `/api/share-links/:id/auth` devuelve un token de sesión con `userId` del alumno y `role:'share'`. Cualquiera con la contraseña del enlace podía usar ese token como cookie `exp_session` y obtener acceso nivel-alumno: leer `/api/my-orders` (historial de pagos con datos personales), modificar el perfil, subir archivos y crear/borrar enlaces. Los enlaces debían ser solo-lectura. | **Corregido** — nuevo guard `requireMember` (admin\|alumno) que excluye sesiones `share`; aplicado a `/my-orders`, `/my-profile` (GET/POST), subidas, videos y todas las rutas de `share-links`. Verificado con test de integración (403). |
+| 12 | Media | **Falta de saneamiento server-side del perfil.** `POST /api/my-profile` aceptaba `producciones`/`videos` arbitrarios (sin validar host de video, esquema de URL ni longitudes), permitiendo `javascript:`/`data:` en `href`/`src` y payloads grandes. La CSP mitigaba la ejecución, pero era defensa frágil. | **Corregido** — saneamiento server-side: imágenes solo `https:`/`/uploads/`, videos solo YouTube/Vimeo, y topes de longitud/cantidad. Verificado con test. |
+| 13 | Baja | `add-video` sin tope de cantidad/longitud de título. | **Corregido** — máx. 30 videos, título ≤150. |
+
+Revisado y sin problemas: firma XML del SRI (escape correcto, URLs fijas, sin
+entrada de usuario en la URL); service worker (excluye `/api/` y `/uploads/` del
+caché); mensajes de la bandeja de privacidad (escapados con `esc()` pese a venir
+de emails externos); sin secretos ni handlers inline en el HTML.
+
 ## Buenas prácticas ya presentes
 
 Cookies de sesión seguras; SQL parametrizado con allowlist de columnas en updates;
