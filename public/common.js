@@ -1,5 +1,59 @@
 'use strict';
 
+/* ══════════════════════════════════════════════════════════════
+   CSRF — se envuelve window.fetch una sola vez, para no tener que
+   tocar los ~40 puntos del frontend que hacen POST/PUT/DELETE.
+
+   A toda petición mutante del mismo origen se le añade la cabecera
+   X-CSRF-Token leída de la cookie `exp_csrf`. Si aún no hay cookie
+   (primera acción tras cargar la página), se pide a /api/csrf antes
+   de continuar.
+   ══════════════════════════════════════════════════════════════ */
+(function wrapFetchWithCsrf() {
+    var MUTATING = { POST: 1, PUT: 1, PATCH: 1, DELETE: 1 };
+    var nativeFetch = window.fetch.bind(window);
+
+    function readCsrfCookie() {
+        var m = document.cookie.match(/(?:^|;\s*)(?:__Host-)?exp_csrf=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    function isSameOrigin(input) {
+        try {
+            var url = new URL(
+                typeof input === 'string' ? input : input.url,
+                window.location.href
+            );
+            return url.origin === window.location.origin;
+        } catch (e) { return false; }
+    }
+
+    window.fetch = function(input, init) {
+        init = init || {};
+        var method = String(init.method || (input && input.method) || 'GET').toUpperCase();
+
+        if (!MUTATING[method] || !isSameOrigin(input)) return nativeFetch(input, init);
+
+        var token = readCsrfCookie();
+        var proceed = token
+            ? Promise.resolve(token)
+            : nativeFetch('/api/csrf', { credentials: 'same-origin' })
+                .then(function() { return readCsrfCookie(); })
+                .catch(function() { return null; });
+
+        return proceed.then(function(tok) {
+            if (!tok) return nativeFetch(input, init);
+            // Headers puede venir como objeto plano, array o instancia Headers.
+            var h = new Headers(init.headers || (input && input.headers) || undefined);
+            h.set('X-CSRF-Token', tok);
+            var next = {};
+            for (var k in init) next[k] = init[k];
+            next.headers = h;
+            return nativeFetch(input, next);
+        });
+    };
+})();
+
 /* ── Escape HTML entities ── */
 function esc(s) {
     return String(s || '')

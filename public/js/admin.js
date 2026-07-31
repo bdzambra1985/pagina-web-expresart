@@ -1797,3 +1797,170 @@ async function loadPrivacyMessages() {
 }
 
 loadPrivacyMessages();
+
+/* ══════════════════════
+   TAB SEGURIDAD — 2FA y registro
+   ══════════════════════ */
+document.querySelector('[data-tab="seguridad"]').addEventListener('click', () => {
+    loadTwofaStatus();
+    loadSecurityLog();
+});
+document.getElementById('btnReloadSecLog').addEventListener('click', loadSecurityLog);
+
+async function loadTwofaStatus() {
+    const box   = document.getElementById('twofaStatus');
+    const setup = document.getElementById('twofaSetup');
+    try {
+        const d = await fetch('/api/2fa/status').then(r => r.json());
+        if (!d.ok) throw new Error();
+        if (d.enabled) {
+            box.innerHTML =
+                '<span style="color:#7ddc7d"><i class="bx bx-check-shield"></i> Activada</span>' +
+                ' — quedan <strong>' + d.recoveryRemaining + '</strong> códigos de recuperación.';
+            setup.innerHTML =
+                '<button id="btnDisable2fa" class="add-btn" style="background:rgba(160,10,10,0.6)">' +
+                '<i class="bx bx-shield-x"></i> Desactivar</button>' +
+                '<div id="disable2faForm" style="display:none;margin-top:16px;max-width:340px">' +
+                '<input id="disablePw" class="login-input" type="password" placeholder="Tu contraseña" style="margin-bottom:8px">' +
+                '<input id="disableCode" class="login-input" type="text" inputmode="numeric" placeholder="Código de 6 dígitos" style="margin-bottom:8px">' +
+                '<button id="btnConfirmDisable" class="add-btn">Confirmar desactivación</button></div>' +
+                '<div id="twofaMsg" style="margin-top:12px;font-size:0.82em"></div>';
+            document.getElementById('btnDisable2fa').onclick = () => {
+                document.getElementById('disable2faForm').style.display = 'block';
+            };
+            document.getElementById('btnConfirmDisable').onclick = disable2fa;
+        } else {
+            box.innerHTML =
+                '<span style="color:rgba(255,200,200,0.6)"><i class="bx bx-shield-x"></i> Desactivada</span>' +
+                ' — tu cuenta depende solo de la contraseña.';
+            setup.innerHTML =
+                '<button id="btnStart2fa" class="add-btn"><i class="bx bx-qr"></i> Activar verificación en dos pasos</button>' +
+                '<div id="twofaMsg" style="margin-top:12px;font-size:0.82em"></div>';
+            document.getElementById('btnStart2fa').onclick = start2fa;
+        }
+    } catch {
+        box.textContent = 'No se pudo consultar el estado.';
+        setup.innerHTML = '';
+    }
+}
+
+async function start2fa() {
+    const setup = document.getElementById('twofaSetup');
+    setup.innerHTML = '<p class="no-users">Generando código…</p>';
+    try {
+        const d = await fetch('/api/2fa/setup', { method: 'POST' }).then(r => r.json());
+        if (!d.ok) throw new Error(d.message);
+        setup.innerHTML =
+            '<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">' +
+            '<div style="background:#fff;padding:10px;border-radius:10px;line-height:0">' + d.qrSvg + '</div>' +
+            '<div style="max-width:360px">' +
+            '<p style="font-size:0.82em;color:rgba(255,200,200,0.7);margin:0 0 10px">' +
+            '1. Escanea el código con tu app autenticadora.</p>' +
+            '<p style="font-size:0.78em;color:rgba(255,200,200,0.5);margin:0 0 14px">' +
+            'Si no puedes escanear, introduce esta clave a mano:<br>' +
+            '<code style="font-size:1.05em;letter-spacing:2px;color:#c9a227">' + esc(d.secret) + '</code></p>' +
+            '<p style="font-size:0.82em;color:rgba(255,200,200,0.7);margin:0 0 8px">' +
+            '2. Escribe el código de 6 dígitos que aparece:</p>' +
+            '<input id="enableCode" class="login-input" type="text" inputmode="numeric" ' +
+            'placeholder="000000" style="max-width:180px;text-align:center;letter-spacing:5px;margin-bottom:10px">' +
+            '<br><button id="btnConfirm2fa" class="add-btn">Confirmar y activar</button>' +
+            '<div id="twofaMsg" style="margin-top:12px;font-size:0.82em"></div>' +
+            '</div></div>';
+        document.getElementById('btnConfirm2fa').onclick = confirm2fa;
+        document.getElementById('enableCode').focus();
+    } catch (e) {
+        setup.innerHTML = '<p class="no-users">' + esc(e.message || 'Error al generar el código.') + '</p>';
+    }
+}
+
+async function confirm2fa() {
+    const msg  = document.getElementById('twofaMsg');
+    const code = document.getElementById('enableCode').value.trim();
+    msg.textContent = 'Verificando…';
+    try {
+        const d = await fetch('/api/2fa/enable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code })
+        }).then(r => r.json());
+        if (!d.ok) throw new Error(d.message);
+
+        // Los códigos de recuperación solo se muestran aquí: el servidor
+        // guarda su hash y no puede volver a enseñarlos.
+        document.getElementById('twofaSetup').innerHTML =
+            '<div style="border:1px solid rgba(201,162,39,0.4);border-radius:10px;padding:18px;max-width:420px">' +
+            '<p style="font-size:0.86em;color:#c9a227;margin:0 0 10px">' +
+            '<strong>Guarda estos códigos de recuperación ahora</strong></p>' +
+            '<p style="font-size:0.78em;color:rgba(255,200,200,0.6);margin:0 0 14px">' +
+            'Te permiten entrar si pierdes el teléfono. Cada uno sirve una sola vez. ' +
+            'No se volverán a mostrar.</p>' +
+            '<pre style="font-family:monospace;font-size:0.95em;color:#fff;line-height:1.8;margin:0">' +
+            d.recoveryCodes.map(esc).join('\n') + '</pre>' +
+            '<button id="btnDone2fa" class="add-btn" style="margin-top:14px">Ya los guardé</button></div>';
+        document.getElementById('btnDone2fa').onclick = loadTwofaStatus;
+        refreshTwofaStatusLine();
+    } catch (e) {
+        msg.innerHTML = '<span style="color:#ffaaaa">' + esc(e.message || 'Error') + '</span>';
+    }
+}
+
+/* Refresca solo la línea de estado, sin borrar los códigos en pantalla. */
+async function refreshTwofaStatusLine() {
+    try {
+        const d = await fetch('/api/2fa/status').then(r => r.json());
+        if (d.ok && d.enabled) {
+            document.getElementById('twofaStatus').innerHTML =
+                '<span style="color:#7ddc7d"><i class="bx bx-check-shield"></i> Activada</span>' +
+                ' — quedan <strong>' + d.recoveryRemaining + '</strong> códigos de recuperación.';
+        }
+    } catch {}
+}
+
+async function disable2fa() {
+    const msg = document.getElementById('twofaMsg');
+    msg.textContent = 'Verificando…';
+    try {
+        const d = await fetch('/api/2fa/disable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                password: document.getElementById('disablePw').value,
+                code:     document.getElementById('disableCode').value.trim()
+            })
+        }).then(r => r.json());
+        if (!d.ok) throw new Error(d.message);
+        loadTwofaStatus();
+    } catch (e) {
+        msg.innerHTML = '<span style="color:#ffaaaa">' + esc(e.message || 'Error') + '</span>';
+    }
+}
+
+const SEC_EVENT_COLOR = {
+    ADMIN_LOGIN: '#c9a227', TOTP_DISABLED: '#ff8888', LOGIN_LOCKOUT: '#ff8888',
+    BACKUP_DOWNLOADED: '#ff8888', LOGIN_FAIL: 'rgba(255,200,200,0.55)',
+    LOGIN_2FA_FAIL: '#ffaaaa', TOTP_ENABLED: '#7ddc7d'
+};
+
+async function loadSecurityLog() {
+    const wrap = document.getElementById('secLogList');
+    wrap.innerHTML = '<p class="no-users">Cargando…</p>';
+    try {
+        const d = await fetch('/api/security-log?limit=200').then(r => r.json());
+        if (!d.ok) throw new Error();
+        if (!d.entries.length) {
+            wrap.innerHTML = '<p class="no-users">Sin eventos registrados todavía.</p>';
+            return;
+        }
+        wrap.innerHTML =
+            '<div style="max-height:420px;overflow-y:auto;font-family:monospace;font-size:0.78em;line-height:1.9">' +
+            d.entries.map(function(e) {
+                const color = SEC_EVENT_COLOR[e.event] || 'rgba(255,255,255,0.75)';
+                const when  = new Date(e.ts).toLocaleString('es-EC');
+                return '<div><span style="color:rgba(255,200,200,0.4)">' + esc(when) + '</span> ' +
+                       '<span style="color:' + color + '">' + esc(e.event) + '</span> ' +
+                       '<span style="color:rgba(255,255,255,0.6)">' + esc(e.detail || '') + '</span></div>';
+            }).join('') + '</div>';
+    } catch {
+        wrap.innerHTML = '<p class="no-users">Error al cargar el registro.</p>';
+    }
+}

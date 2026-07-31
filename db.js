@@ -166,10 +166,31 @@ async function initDB() {
             received_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             is_read      BOOLEAN NOT NULL DEFAULT FALSE
         );
+        -- Sesiones y bloqueos de login: sobreviven a los reinicios.
+        -- Se guarda el hash del token, nunca el token en sí: quien lea
+        -- la tabla no puede suplantar a nadie con su contenido.
+        CREATE TABLE IF NOT EXISTS sessions (
+            token_hash   TEXT PRIMARY KEY,
+            data         JSONB NOT NULL,
+            created_at   BIGINT NOT NULL,
+            last_seen    BIGINT NOT NULL,
+            expires_at   BIGINT
+        );
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            lock_key     TEXT PRIMARY KEY,
+            count        INTEGER NOT NULL DEFAULT 0,
+            locked_until BIGINT NOT NULL DEFAULT 0,
+            ts           BIGINT NOT NULL
+        );
     `);
     // Migraciones para columnas añadidas después de la creación inicial
     await pool.query(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS certificados JSONB NOT NULL DEFAULT '[]'`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_accepted_at TIMESTAMPTZ`);
+    // Segundo factor (TOTP). totp_secret guarda el secreto en base32; queda
+    // pendiente hasta que totp_enabled pasa a true al confirmar el primer código.
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_recovery JSONB NOT NULL DEFAULT '[]'`);
     console.log('  [db] PostgreSQL tables ready.');
 }
 
@@ -186,6 +207,9 @@ function toUser(r) {
         active:             !!r.active,
         mustChangePassword: !!r.must_change_pw,
         consentAcceptedAt:  r.consent_accepted_at ? (r.consent_accepted_at instanceof Date ? r.consent_accepted_at.toISOString() : r.consent_accepted_at) : null,
+        totpSecret:         r.totp_secret || null,
+        totpEnabled:        !!r.totp_enabled,
+        totpRecovery:       r.totp_recovery || [],
         createdAt:          r.created_at instanceof Date ? r.created_at.toISOString() : (r.created_at || new Date().toISOString())
     };
 }
@@ -224,7 +248,8 @@ async function updateUser(userId, fields) {
         jWrite(USERS_FILE, a);
         return true;
     }
-    const colMap = { passwordHash:'password_hash', active:'active', mustChangePassword:'must_change_pw', displayName:'display_name', consentAcceptedAt:'consent_accepted_at' };
+    const colMap = { passwordHash:'password_hash', active:'active', mustChangePassword:'must_change_pw', displayName:'display_name', consentAcceptedAt:'consent_accepted_at',
+                     totpSecret:'totp_secret', totpEnabled:'totp_enabled', totpRecovery:'totp_recovery' };
     const sets = [], vals = [];
     Object.entries(fields).forEach(([k, v]) => {
         const col = colMap[k]; if (!col) return;
@@ -668,9 +693,121 @@ async function deletePrivacyMessage(id) {
 /* ══════════════════════════════════════════
    EXPORTS
    ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   SESIONES Y BLOQUEOS DE LOGIN
+
+   Respaldo persistente del estado que middleware/auth.js mantiene en
+   memoria. En modo JSON (sin DATABASE_URL) se guarda en data/, con
+   permisos 0600 porque contiene hashes de tokens de sesión activos.
+   ══════════════════════════════════════════ */
+const SESSIONS_FILE       = path.join(DATA_DIR, 'sessions-store.json');
+const LOGIN_ATTEMPTS_FILE = path.join(DATA_DIR, 'login-attempts.json');
+
+function jWriteSecure(file, data) {
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data), { mode: 0o600 });
+    fs.renameSync(tmp, file);
+}
+
+async function loadSessions() {
+    if (!USE_DB) return jRead(SESSIONS_FILE, []);
+    const { rows } = await pool.query('SELECT * FROM sessions');
+    return rows.map(r => ({
+        tokenHash: r.token_hash,
+        data:      r.data,
+        createdAt: Number(r.created_at),
+        lastSeen:  Number(r.last_seen),
+        expiresAt: r.expires_at === null ? undefined : Number(r.expires_at)
+    }));
+}
+
+async function saveSession(tokenHash, sess) {
+    const { ts, createdAt, expiresAt, ...data } = sess;
+    if (!USE_DB) {
+        const all = jRead(SESSIONS_FILE, []).filter(s => s.tokenHash !== tokenHash);
+        all.push({ tokenHash, data, createdAt, lastSeen: ts, expiresAt });
+        jWriteSecure(SESSIONS_FILE, all);
+        return;
+    }
+    await pool.query(
+        `INSERT INTO sessions (token_hash, data, created_at, last_seen, expires_at)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (token_hash) DO UPDATE
+           SET data = $2, last_seen = $4, expires_at = $5`,
+        [tokenHash, JSON.stringify(data), createdAt, ts, expiresAt ?? null]
+    );
+}
+
+async function touchSessions(entries) {
+    if (!entries.length) return;
+    if (!USE_DB) {
+        const byHash = new Map(entries.map(e => [e.tokenHash, e.ts]));
+        const all = jRead(SESSIONS_FILE, []);
+        for (const s of all) if (byHash.has(s.tokenHash)) s.lastSeen = byHash.get(s.tokenHash);
+        jWriteSecure(SESSIONS_FILE, all);
+        return;
+    }
+    await pool.query(
+        `UPDATE sessions SET last_seen = v.ts
+           FROM (SELECT unnest($1::text[]) AS h, unnest($2::bigint[]) AS ts) v
+          WHERE sessions.token_hash = v.h`,
+        [entries.map(e => e.tokenHash), entries.map(e => e.ts)]
+    );
+}
+
+async function deleteSessions(tokenHashes) {
+    if (!tokenHashes.length) return;
+    if (!USE_DB) {
+        const keep = jRead(SESSIONS_FILE, []).filter(s => !tokenHashes.includes(s.tokenHash));
+        jWriteSecure(SESSIONS_FILE, keep);
+        return;
+    }
+    await pool.query('DELETE FROM sessions WHERE token_hash = ANY($1)', [tokenHashes]);
+}
+
+async function loadLoginAttempts() {
+    if (!USE_DB) return jRead(LOGIN_ATTEMPTS_FILE, []);
+    const { rows } = await pool.query('SELECT * FROM login_attempts');
+    return rows.map(r => ({
+        lockKey:     r.lock_key,
+        count:       r.count,
+        lockedUntil: Number(r.locked_until),
+        ts:          Number(r.ts)
+    }));
+}
+
+async function saveLoginAttempt(lockKey, att) {
+    if (!USE_DB) {
+        const all = jRead(LOGIN_ATTEMPTS_FILE, []).filter(a => a.lockKey !== lockKey);
+        all.push({ lockKey, count: att.count || 0, lockedUntil: att.lockedUntil || 0, ts: att.ts || Date.now() });
+        jWriteSecure(LOGIN_ATTEMPTS_FILE, all);
+        return;
+    }
+    await pool.query(
+        `INSERT INTO login_attempts (lock_key, count, locked_until, ts)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (lock_key) DO UPDATE
+           SET count = $2, locked_until = $3, ts = $4`,
+        [lockKey, att.count || 0, att.lockedUntil || 0, att.ts || Date.now()]
+    );
+}
+
+async function deleteLoginAttempts(lockKeys) {
+    if (!lockKeys.length) return;
+    if (!USE_DB) {
+        const keep = jRead(LOGIN_ATTEMPTS_FILE, []).filter(a => !lockKeys.includes(a.lockKey));
+        jWriteSecure(LOGIN_ATTEMPTS_FILE, keep);
+        return;
+    }
+    await pool.query('DELETE FROM login_attempts WHERE lock_key = ANY($1)', [lockKeys]);
+}
+
 module.exports = {
     USE_DB,
     initDB,
+    /* sessions & login attempts */
+    loadSessions, saveSession, touchSessions, deleteSessions,
+    loadLoginAttempts, saveLoginAttempt, deleteLoginAttempts,
     /* users */
     getUsers, getUserByUsername, getUserById,
     createUser, updateUser, deleteUser,

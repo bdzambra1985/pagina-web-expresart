@@ -3,7 +3,7 @@ const path   = require('path');
 const fs     = require('fs');
 const router = require('express').Router();
 const db     = require('../db');
-const { hashPassword }              = require('../utils/crypto');
+const { hashPassword, validatePassword } = require('../utils/crypto');
 const { randomAlphaNum }            = require('../utils/crypto');
 const { requireAdmin }              = require('../middleware/auth');
 const { revokeUserSessions }        = require('../middleware/auth');
@@ -35,16 +35,14 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ ok: false, message: 'Usuario y contraseña son requeridos' });
         if (username.trim().length < 3 || username.trim().length > 40)
             return res.status(400).json({ ok: false, message: 'Usuario debe tener entre 3 y 40 caracteres' });
-        if (password.length < 10)
-            return res.status(400).json({ ok: false, message: 'La contraseña debe tener al menos 10 caracteres' });
-        if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password))
-            return res.status(400).json({ ok: false, message: 'La contraseña debe incluir letras y números' });
+        const pwError = validatePassword(password);
+        if (pwError) return res.status(400).json({ ok: false, message: pwError });
         if (await db.getUserByUsername(username.trim()))
             return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya existe' });
 
         const userId = 'alu_' + Date.now();
         await db.createUser({
-            userId, username: username.trim(), passwordHash: hashPassword(password),
+            userId, username: username.trim(), passwordHash: await hashPassword(password),
             role: 'alumno', active: true, mustChangePassword: true, createdAt: new Date().toISOString()
         });
         await db.upsertProfile(userId, { ...emptyProfile(userId), displayName: displayName || username.trim() });
@@ -64,8 +62,14 @@ router.put('/:userId', async (req, res) => {
         if (user.role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede modificar el admin' });
 
         const fields = {};
-        if (req.body.active   !== undefined) fields.active       = Boolean(req.body.active);
-        if (req.body.password)               fields.passwordHash = hashPassword(req.body.password);
+        if (req.body.active !== undefined) fields.active = Boolean(req.body.active);
+        if (req.body.password) {
+            // Este endpoint no validaba nada: el admin podía dejar a un alumno
+            // con una contraseña de un carácter.
+            const pwError = validatePassword(req.body.password);
+            if (pwError) return res.status(400).json({ ok: false, message: pwError });
+            fields.passwordHash = await hashPassword(req.body.password);
+        }
         await db.updateUser(req.params.userId, fields);
         res.json({ ok: true });
     } catch (e) {
@@ -114,7 +118,7 @@ router.post('/:userId/reset-password', async (req, res) => {
         if (user.role === 'admin') return res.status(403).json({ ok: false, message: 'No se puede resetear el admin' });
 
         const tempPassword = randomAlphaNum(10);
-        await db.updateUser(user.userId, { passwordHash: hashPassword(tempPassword), mustChangePassword: true });
+        await db.updateUser(user.userId, { passwordHash: await hashPassword(tempPassword), mustChangePassword: true });
         revokeUserSessions(user.userId);
         await db.markResetRequestDone(user.userId);
         res.json({ ok: true, tempPassword });

@@ -61,12 +61,9 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         });
         const data = await res.json();
         if (data.ok) {
-            localStorage.setItem('exp_role', data.role);
-            if (data.mustChangePassword) {
-                location.href = 'cambiar-password.html';
-            } else {
-                redirectByRole(data.role);
-            }
+            completeLogin(data);
+        } else if (data.need2fa) {
+            show2faStep(data.challenge);
         } else {
             throw new Error(data.message || 'Error de acceso');
         }
@@ -77,6 +74,50 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         btn.textContent   = 'Entrar al panel';
     }
 };
+
+function completeLogin(data) {
+    localStorage.setItem('exp_role', data.role);
+    if (data.mustChangePassword) location.href = 'cambiar-password.html';
+    else                         redirectByRole(data.role);
+}
+
+/* ── Segundo paso: código de la app autenticadora ── */
+function show2faStep(challenge) {
+    document.getElementById('loginForm').style.display = 'none';
+    document.querySelector('.forgot-link').style.display = 'none';
+    document.getElementById('twofaPanel').style.display = 'block';
+    document.getElementById('twofaCode').focus();
+
+    const err = document.getElementById('twofaError');
+
+    document.getElementById('twofaPanel').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('twofaBtn');
+        btn.disabled = true;
+        btn.textContent = 'Verificando…';
+        err.style.display = 'none';
+        try {
+            const res  = await fetch('/api/login/2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    challenge: challenge,
+                    code: document.getElementById('twofaCode').value.trim()
+                })
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.message || 'Código incorrecto');
+            completeLogin(data);
+        } catch (ex) {
+            err.textContent   = ex.message;
+            err.style.display = 'block';
+            btn.disabled      = false;
+            btn.textContent   = 'Verificar';
+            document.getElementById('twofaCode').value = '';
+            document.getElementById('twofaCode').focus();
+        }
+    };
+}
 
 document.getElementById('pwdToggle').addEventListener('click', function () {
     const inp  = document.getElementById('password');

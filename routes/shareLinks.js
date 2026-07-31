@@ -25,7 +25,7 @@ router.post('/:shareId/auth', loginLimiter, async (req, res) => {
 
         const link = await db.getShareLink(req.params.shareId);
         if (!link) return res.status(404).json({ ok: false, message: 'Enlace no válido' });
-        if (!verifyPassword(password, link.passwordHash))
+        if (!await verifyPassword(password, link.passwordHash))
             return res.status(401).json({ ok: false, message: 'Contraseña incorrecta' });
 
         const expiresAt = Date.now() + SHARE_TTL;
@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
         const shareId   = randomAlphaNum(10);
         const password  = randomAlphaNum(8);
         await db.createShareLink({
-            shareId, userId: sess.userId, passwordHash: hashPassword(password),
+            shareId, userId: sess.userId, passwordHash: await hashPassword(password),
             label: String(label || '').trim().slice(0, 80),
             active: true, createdAt: new Date().toISOString()
         });

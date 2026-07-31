@@ -4,3 +4,14 @@ uploads/
 .env
 *.p12
 sri/BORIS*
+
+# Respaldos: contienen hashes de contraseña y datos de clientes.
+# Nunca deben versionarse.
+backups/
+
+# Logs de seguridad
+logs/
+
+# Material de referencia local (no forma parte del sitio)
+*.pdf
+manual_*.html

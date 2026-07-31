@@ -23,48 +23,106 @@ const _signSecret  = process.env.EXP_SIGN_SECRET || PW_SALT;
 const VIEW_SIGN_KEY = crypto.createHmac('sha256', _signSecret).update('signed-view-url:v1').digest();
 
 /* ══════════════════════════════════════════════════════════════
-   Password hashing — PBKDF2 con salt aleatorio POR USUARIO.
+   Password hashing — scrypt con salt aleatorio POR USUARIO.
 
-   Formato nuevo:  pbkdf2$<iteraciones>$<saltHex>$<hashHex>
-   Formato legado: 128 caracteres hex (PBKDF2 con salt global PW_SALT)
+   scrypt es "memory-hard": obliga al atacante a reservar 64 MiB por
+   intento, lo que anula la ventaja de las GPU/ASIC que hace barato
+   atacar PBKDF2 por fuerza bruta.
 
-   verifyPassword acepta ambos formatos para no invalidar contraseñas
-   ya almacenadas. needsRehash() indica cuándo conviene re-hashear un
-   hash legado tras un login exitoso (migración transparente).
+   Formatos aceptados al verificar, de más nuevo a más viejo:
+     1. scrypt$<N>$<r>$<p>$<saltHex>$<hashHex>   ← actual
+     2. pbkdf2$<iteraciones>$<saltHex>$<hashHex> ← salt por usuario
+     3. 128 hex                                  ← salt global (PW_SALT)
+
+   needsRehash() marca 2 y 3 para que login los migre al esquema 1 de
+   forma transparente, aprovechando que ahí sí se tiene la contraseña
+   en claro.
    ══════════════════════════════════════════════════════════════ */
-const PBKDF2_ITERS = 100_000;
+const SCRYPT_N      = 1 << 16;  // 65536 — coste CPU/memoria (≈64 MiB con r=8)
+const SCRYPT_R      = 8;
+const SCRYPT_P      = 1;
+const SCRYPT_KEYLEN = 64;
+const SCRYPT_MAXMEM = 160 * 1024 * 1024;  // holgura sobre los 64 MiB que pide N·r·128
+
+const PBKDF2_ITERS  = 100_000;
 const PBKDF2_KEYLEN = 64;
 
-function hashPassword(pw) {
+// Tope defensivo: sin él, una contraseña de varios MB convierte cada
+// intento de login en trabajo de hashing gratis para el atacante.
+const MAX_PW_LEN = 200;
+
+/* Todas las funciones de hashing son asíncronas a propósito: scrypt con
+   estos parámetros tarda ~300 ms, y la variante síncrona bloquearía el
+   event loop ese tiempo en cada login, convirtiendo el propio login en
+   un vector de denegación de servicio. Las versiones async delegan en
+   el threadpool de libuv. */
+
+function _scrypt(pw, salt, N, r, p, keylen) {
+    return new Promise((resolve, reject) => {
+        crypto.scrypt(pw, salt, keylen, { N, r, p, maxmem: SCRYPT_MAXMEM },
+            (err, key) => (err ? reject(err) : resolve(key)));
+    });
+}
+
+function _pbkdf2(pw, salt, iters, keylen) {
+    return new Promise((resolve, reject) => {
+        crypto.pbkdf2(pw, salt, iters, keylen, 'sha256',
+            (err, key) => (err ? reject(err) : resolve(key)));
+    });
+}
+
+/* Política de contraseñas — única fuente de verdad.
+   Antes estaba duplicada en tres endpoints y uno de ellos (el admin
+   editando a un alumno) no la aplicaba en absoluto. */
+function validatePassword(pw) {
+    if (!pw || typeof pw !== 'string')       return 'Contraseña requerida';
+    if (pw.length < 10)                      return 'La contraseña debe tener al menos 10 caracteres';
+    if (pw.length > MAX_PW_LEN)              return `La contraseña no puede superar ${MAX_PW_LEN} caracteres`;
+    if (!/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw))
+        return 'La contraseña debe incluir letras y números';
+    return null;
+}
+
+async function hashPassword(pw) {
+    if (typeof pw !== 'string' || pw.length > MAX_PW_LEN)
+        throw new Error(`La contraseña no puede superar ${MAX_PW_LEN} caracteres`);
     const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.pbkdf2Sync(pw, salt, PBKDF2_ITERS, PBKDF2_KEYLEN, 'sha256').toString('hex');
-    return `pbkdf2$${PBKDF2_ITERS}$${salt}$${hash}`;
+    const hash = await _scrypt(pw, salt, SCRYPT_N, SCRYPT_R, SCRYPT_P, SCRYPT_KEYLEN);
+    return `scrypt$${SCRYPT_N}$${SCRYPT_R}$${SCRYPT_P}$${salt}$${hash.toString('hex')}`;
 }
 
-// Hashea con el esquema legado (salt global) — solo para verificación.
-function _legacyHash(pw) {
-    return crypto.pbkdf2Sync(pw, PW_SALT, PBKDF2_ITERS, PBKDF2_KEYLEN, 'sha256').toString('hex');
-}
-
-function verifyPassword(pw, stored) {
+async function verifyPassword(pw, stored) {
     try {
+        if (typeof pw !== 'string' || pw.length > MAX_PW_LEN) return false;
+
+        if (typeof stored === 'string' && stored.startsWith('scrypt$')) {
+            const [, nStr, rStr, pStr, salt, expected] = stored.split('$');
+            const actual = await _scrypt(
+                pw, salt,
+                parseInt(nStr, 10) || SCRYPT_N,
+                parseInt(rStr, 10) || SCRYPT_R,
+                parseInt(pStr, 10) || SCRYPT_P,
+                expected.length / 2
+            );
+            return crypto.timingSafeEqual(actual, Buffer.from(expected, 'hex'));
+        }
+
         if (typeof stored === 'string' && stored.startsWith('pbkdf2$')) {
             const [, itersStr, salt, expected] = stored.split('$');
-            const iters = parseInt(itersStr, 10) || PBKDF2_ITERS;
-            const actual = crypto.pbkdf2Sync(pw, salt, iters, expected.length / 2, 'sha256').toString('hex');
-            return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex'));
+            const iters  = parseInt(itersStr, 10) || PBKDF2_ITERS;
+            const actual = await _pbkdf2(pw, salt, iters, expected.length / 2);
+            return crypto.timingSafeEqual(actual, Buffer.from(expected, 'hex'));
         }
+
         // Formato legado: hex plano con salt global.
-        return crypto.timingSafeEqual(
-            Buffer.from(_legacyHash(pw), 'hex'),
-            Buffer.from(stored, 'hex')
-        );
+        const actual = await _pbkdf2(pw, PW_SALT, PBKDF2_ITERS, PBKDF2_KEYLEN);
+        return crypto.timingSafeEqual(actual, Buffer.from(stored, 'hex'));
     } catch { return false; }
 }
 
-// true si el hash usa el esquema legado (conviene migrarlo al iniciar sesión).
+// true si el hash no usa ya el esquema actual (conviene migrarlo al iniciar sesión).
 function needsRehash(stored) {
-    return typeof stored !== 'string' || !stored.startsWith('pbkdf2$');
+    return typeof stored !== 'string' || !stored.startsWith('scrypt$');
 }
 
 function tokenHash(token) {
@@ -110,7 +168,7 @@ function verifyViewPath(resourcePath, sv) {
 }
 
 module.exports = {
-    hashPassword, verifyPassword, needsRehash,
+    hashPassword, verifyPassword, needsRehash, validatePassword, MAX_PW_LEN,
     tokenHash, newToken, randomAlphaNum,
     signViewPath, verifyViewPath
 };

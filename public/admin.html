@@ -5,7 +5,7 @@
     <meta name="robots" content="noindex, nofollow"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>EXPRESART — Panel Admin</title>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+    <link href="/vendor/boxicons/css/boxicons.min.css" rel="stylesheet"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -640,6 +640,9 @@
         <button class="tab-btn" data-tab="respaldos">
             <i class="bx bx-data"></i> Respaldos
         </button>
+        <button class="tab-btn" data-tab="seguridad">
+            <i class="bx bx-shield-quarter"></i> Seguridad
+        </button>
         <button class="tab-btn" data-tab="privacidad">
             <i class="bx bx-envelope"></i> Privacidad <span id="privacyUnreadBadge" class="tab-badge" style="display:none"></span>
         </button>
@@ -1101,6 +1104,30 @@
             <div id="backupList"><p class="no-users">Cargando…</p></div>
         </div>
     </div><!-- /tab-respaldos -->
+
+    <div class="tab-panel" id="tab-seguridad">
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-lock-alt"></i> Verificación en dos pasos</h2>
+            <p style="font-size:0.82em;color:rgba(255,200,200,0.55);margin-bottom:20px;">
+                Añade un código temporal de tu teléfono al iniciar sesión. Aunque alguien
+                averigüe tu contraseña, sin el teléfono no puede entrar.<br>
+                Funciona con Google Authenticator, Authy, 1Password, Aegis o cualquier app compatible.
+            </p>
+            <div id="twofaStatus" style="font-size:0.86em;margin-bottom:16px;">Cargando…</div>
+            <div id="twofaSetup"></div>
+        </div>
+
+        <div class="admin-section">
+            <h2 class="section-title"><i class="bx bx-list-ul"></i> Registro de seguridad</h2>
+            <p style="font-size:0.82em;color:rgba(255,200,200,0.55);margin-bottom:20px;">
+                Accesos, intentos fallidos, bloqueos y descargas de respaldo. Se conservan 90 días.
+            </p>
+            <button id="btnReloadSecLog" class="add-btn" style="margin-bottom:16px;">
+                <i class="bx bx-refresh"></i> Actualizar
+            </button>
+            <div id="secLogList"><p class="no-users">Cargando…</p></div>
+        </div>
+    </div><!-- /tab-seguridad -->
 
     <div class="tab-panel" id="tab-privacidad">
         <div class="admin-section">

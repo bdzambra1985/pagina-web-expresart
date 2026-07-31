@@ -1,9 +1,76 @@
 'use strict';
-const fs   = require('fs');
-const path = require('path');
-const zlib = require('zlib');
+const fs     = require('fs');
+const path   = require('path');
+const zlib   = require('zlib');
+const crypto = require('crypto');
 const { Readable } = require('stream');
-const db   = require('../db');
+const db     = require('../db');
+
+/* ══════════════════════════════════════════════════════════════
+   CIFRADO DE RESPALDOS — AES-256-GCM
+
+   El snapshot incluye la tabla `users` (con los hashes de contraseña)
+   y todos los pedidos con datos de clientes. Sin cifrar, quien acceda
+   al bucket de R2 —o a una copia local— tiene la base entera.
+
+   GCM además autentica: si alguien altera un byte del respaldo, el
+   descifrado falla en vez de devolver datos manipulados.
+
+   Formato del archivo:  "EXPBK1" | IV (12 B) | authTag (16 B) | ciphertext
+   ══════════════════════════════════════════════════════════════ */
+const MAGIC     = Buffer.from('EXPBK1');
+const IV_LEN    = 12;
+const TAG_LEN   = 16;
+
+function _backupKey() {
+    // Clave dedicada si existe; si no, se deriva de un secreto que el
+    // despliegue ya tiene. Derivar es preferible a no cifrar, pero una
+    // clave propia permite rotarla sin invalidar las firmas de URLs.
+    const explicit = process.env.BACKUP_ENCRYPTION_KEY;
+    if (explicit) {
+        const key = Buffer.from(explicit, 'hex');
+        if (key.length !== 32)
+            throw new Error('BACKUP_ENCRYPTION_KEY debe ser de 32 bytes en hex (64 caracteres)');
+        return key;
+    }
+    const base = process.env.EXP_SIGN_SECRET || process.env.EXP_SALT;
+    if (!base) return null;
+    return crypto.hkdfSync('sha256', Buffer.from(base), Buffer.alloc(0),
+                           Buffer.from('expresart-backup:v1'), 32);
+}
+
+function encryptBackup(plain) {
+    const key = _backupKey();
+    if (!key) {
+        console.warn('[BACKUP] AVISO: sin BACKUP_ENCRYPTION_KEY ni EXP_SIGN_SECRET — respaldo SIN cifrar.');
+        return { buffer: plain, encrypted: false };
+    }
+    const iv     = crypto.randomBytes(IV_LEN);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const ct     = Buffer.concat([cipher.update(plain), cipher.final()]);
+    return {
+        buffer: Buffer.concat([MAGIC, iv, cipher.getAuthTag(), ct]),
+        encrypted: true
+    };
+}
+
+// Descifra si el archivo lleva la cabecera; si no, lo devuelve tal cual
+// (respaldos creados antes de este cambio siguen siendo descargables).
+function decryptBackup(buf) {
+    if (buf.length < MAGIC.length + IV_LEN + TAG_LEN) return buf;
+    if (!buf.subarray(0, MAGIC.length).equals(MAGIC)) return buf;
+
+    const key = _backupKey();
+    if (!key) throw new Error('Respaldo cifrado pero no hay clave para descifrarlo');
+
+    const iv  = buf.subarray(MAGIC.length, MAGIC.length + IV_LEN);
+    const tag = buf.subarray(MAGIC.length + IV_LEN, MAGIC.length + IV_LEN + TAG_LEN);
+    const ct  = buf.subarray(MAGIC.length + IV_LEN + TAG_LEN);
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(ct), decipher.final()]);
+}
 
 /* ── Cloudflare R2 (S3-compatible) ── */
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -74,21 +141,24 @@ async function runBackup() {
     try {
         const snapshot   = await buildSnapshot();
         const compressed = zlib.gzipSync(JSON.stringify(snapshot));
-        const kb         = Math.round(compressed.length / 1024);
+        const { buffer, encrypted } = encryptBackup(compressed);
+        const kb  = Math.round(buffer.length / 1024);
+        const tag = encrypted ? 'cifrado' : 'SIN CIFRAR';
 
         if (USE_R2) {
-            await uploadToR2(filename, compressed);
-            console.log(`[BACKUP] ✓ Subido a R2: ${filename} — ${kb} KB (${Date.now() - started}ms)`);
+            await uploadToR2(filename, buffer);
+            console.log(`[BACKUP] ✓ Subido a R2: ${filename} — ${kb} KB, ${tag} (${Date.now() - started}ms)`);
             await _rotateR2();
         } else {
             /* Guardar en disco local si no hay R2 */
             if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
-            fs.writeFileSync(path.join(BACKUP_DIR, filename), compressed);
-            console.log(`[BACKUP] ✓ Guardado localmente: ${filename} — ${kb} KB (${Date.now() - started}ms)`);
+            // mode 0600: solo el usuario del proceso puede leerlo
+            fs.writeFileSync(path.join(BACKUP_DIR, filename), buffer, { mode: 0o600 });
+            console.log(`[BACKUP] ✓ Guardado localmente: ${filename} — ${kb} KB, ${tag} (${Date.now() - started}ms)`);
             _rotateLocal();
         }
 
-        return { ok: true, filename, sizeKb: kb, storage: USE_R2 ? 'r2' : 'local' };
+        return { ok: true, filename, sizeKb: kb, encrypted, storage: USE_R2 ? 'r2' : 'local' };
     } catch (e) {
         console.error('[BACKUP] Error:', e.message);
         return { ok: false, error: e.message };
@@ -125,19 +195,32 @@ async function listBackups() {
 /* ══════════════════════════════════════
    OBTENER STREAM PARA DESCARGA
    ══════════════════════════════════════ */
+async function _toBuffer(stream) {
+    const chunks = [];
+    for await (const c of stream) chunks.push(c);
+    return Buffer.concat(chunks);
+}
+
+// Devuelve el respaldo YA DESCIFRADO, listo para descargar como .json.gz.
+// Se resuelve entero en memoria porque GCM solo puede verificar la etiqueta
+// de autenticación con el archivo completo — y son de pocos MB.
 async function getBackupStream(filename) {
     if (!/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json\.gz$/.test(filename)) return null;
 
+    let raw;
     if (USE_R2) {
         const { GetObjectCommand } = require('@aws-sdk/client-s3');
         try {
             const res = await r2.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: filename }));
-            return res.Body; // ReadableStream
+            raw = await _toBuffer(res.Body);
         } catch { return null; }
+    } else {
+        const fp = path.join(BACKUP_DIR, filename);
+        if (!fs.existsSync(fp)) return null;
+        raw = fs.readFileSync(fp);
     }
-    /* Local */
-    const fp = path.join(BACKUP_DIR, filename);
-    return fs.existsSync(fp) ? fs.createReadStream(fp) : null;
+
+    return Readable.from(decryptBackup(raw));
 }
 
 /* ── Rotar backups en R2 (elimina los que superan MAX_BACKUPS) ── */
@@ -164,4 +247,7 @@ function _rotateLocal() {
     }
 }
 
-module.exports = { runBackup, listBackups, getBackupStream, USE_R2, R2_BUCKET };
+module.exports = {
+    runBackup, listBackups, getBackupStream, USE_R2, R2_BUCKET,
+    encryptBackup, decryptBackup   // exportadas para poder probarlas
+};

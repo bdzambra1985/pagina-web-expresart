@@ -33,6 +33,7 @@
     "xml-crypto": "^6.1.2"
   },
   "devDependencies": {
-    "playwright": "^1.60.0"
+    "playwright": "^1.60.0",
+    "qrcode": "^1.5.4"
   }
 }
