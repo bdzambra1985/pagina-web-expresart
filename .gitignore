@@ -15,3 +15,8 @@ logs/
 # Material de referencia local (no forma parte del sitio)
 *.pdf
 manual_*.html
+
+# Auditoría de seguridad: SOLO LOCAL.
+# El repositorio es público y este documento enumera las debilidades
+# conocidas del sitio, incluidas las que se decidió no corregir.
+SECURITY-AUDIT.md
