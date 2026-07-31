@@ -297,6 +297,21 @@ async function getProfile(userId) {
     const { rows } = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
     return rows[0] ? toProfile(rows[0]) : null;
 }
+/* Todos los perfiles de golpe. Lo necesita el respaldo: antes se guardaba
+   la tabla `users` pero no `profiles`, así que los portafolios de los alumnos
+   —fotos, producciones, vídeos, certificados— no entraban en la copia. */
+async function getAllProfiles() {
+    if (!USE_DB) {
+        if (!fs.existsSync(PROFILES_DIR)) return [];
+        return fs.readdirSync(PROFILES_DIR)
+            .filter(f => f.endsWith('.json'))
+            .map(f => jRead(path.join(PROFILES_DIR, f), null))
+            .filter(Boolean);
+    }
+    const { rows } = await pool.query('SELECT * FROM profiles');
+    return rows.map(toProfile);
+}
+
 async function upsertProfile(userId, p) {
     if (!/^[\w-]+$/.test(userId)) return;
     if (!USE_DB) { jWrite(path.join(PROFILES_DIR, userId + '.json'), p); return; }
@@ -812,7 +827,7 @@ module.exports = {
     getUsers, getUserByUsername, getUserById,
     createUser, updateUser, deleteUser,
     /* profiles */
-    getProfile, upsertProfile, deleteProfile,
+    getProfile, getAllProfiles, upsertProfile, deleteProfile,
     /* events */
     getEvents, createEvent, updateEvent, deleteEvent,
     /* content */

@@ -96,22 +96,35 @@ const MAX_BACKUPS = 30;
 /* ══════════════════════════════════════
    GENERAR SNAPSHOT DE TODAS LAS TABLAS
    ══════════════════════════════════════ */
+/* Versión 2 del formato: añade profiles, content y privacyMessages.
+   La v1 guardaba users pero no profiles, así que los portafolios de los
+   alumnos —el contenido central del sitio— quedaban fuera de la copia.
+   Tampoco entraban el contenido editable de las páginas ni la bandeja de
+   privacidad, que son registros con valor legal (LOPDP).
+   El restaurador acepta ambas versiones. */
+const SNAPSHOT_VERSION = 2;
+
 async function buildSnapshot() {
-    const [users, events, orders, bankInfo, shareLinks, resetRequests] = await Promise.all([
+    const [users, profiles, events, content, orders,
+           bankInfo, shareLinks, resetRequests, privacyMessages] = await Promise.all([
         db.getUsers(),
+        db.getAllProfiles(),
         db.getEvents(),
+        db.getContent(),
         db.getOrders(),
         db.getBankInfo(),
         db.getShareLinks(),
         db.getResetRequests(),
+        db.getPrivacyMessages(),
     ]);
     return {
         exportedAt: new Date().toISOString(),
-        version: 1,
+        version: SNAPSHOT_VERSION,
         tables: {
-            users, events, orders,
+            users, profiles, events, orders,
+            content:  content  ? [content]  : [],
             bankInfo: bankInfo ? [bankInfo] : [],
-            shareLinks, resetRequests
+            shareLinks, resetRequests, privacyMessages
         }
     };
 }
