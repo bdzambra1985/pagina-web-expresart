@@ -2,7 +2,7 @@
 const crypto  = require('crypto');
 const router  = require('express').Router();
 const db      = require('../db');
-const { requireAuth, requireAdmin, getSession } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireMember, getSession } = require('../middleware/auth');
 const { orderLimiter }                         = require('../middleware/rateLimiter');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_RECEIPT } = require('../middleware/upload');
 const { emitirFactura, getSRIConfig }  = require('../sri/index');
@@ -276,7 +276,7 @@ router.get('/orders', async (req, res) => {
 /* ── Student's own orders ── */
 router.get('/my-orders', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         res.json(await db.getOrdersByUser(sess.userId));
     } catch (e) {

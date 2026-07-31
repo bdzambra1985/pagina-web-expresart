@@ -177,6 +177,20 @@ function requireAdmin(req, res) {
     return sess;
 }
 
+/* Requiere una sesión de miembro real (admin o alumno).
+   Excluye explícitamente las sesiones 'share' (enlaces compartidos), que son
+   de solo-lectura del portafolio público y NUNCA deben poder leer/modificar
+   datos de la cuenta del alumno (órdenes, perfil, subidas, enlaces). */
+function requireMember(req, res) {
+    const sess = requireAuth(req, res);
+    if (!sess) return null;
+    if (sess.role !== 'admin' && sess.role !== 'alumno') {
+        res.status(403).json({ ok: false, message: 'No autorizado' });
+        return null;
+    }
+    return sess;
+}
+
 /* ── Security logging ──
    La implementación vive en utils/securityLog.js (persiste a disco y
    alerta por email). Se reexporta aquí para no tocar los llamadores. */
@@ -230,7 +244,7 @@ module.exports = {
     /* persistencia */
     restoreFromDB, flushTouches,
     /* guards */
-    requireAuth, requireAdmin,
+    requireAuth, requireAdmin, requireMember,
     /* logging */
     logSecurity
 };

@@ -1,9 +1,48 @@
 'use strict';
 const router = require('express').Router();
 const db     = require('../db');
-const { requireAuth }                              = require('../middleware/auth');
+const { requireMember }                            = require('../middleware/auth');
 const { uploader, saveFile, detectMime, ALLOWED_MIMES_IMAGE } = require('../middleware/upload');
 const { emptyProfile }                             = require('../utils/html');
+
+/* ── Saneamiento server-side de contenido de perfil ──
+   No confiar en el cliente: acotar longitudes, tipos y esquemas de URL.
+   Las fotos deben ser https (Cloudinary) o rutas /uploads/ propias; los
+   videos, solo de hosts de YouTube/Vimeo. Previene javascript:/data: en
+   href/src, payloads gigantes y URLs a dominios arbitrarios. */
+const VIDEO_HOSTS = /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)(\/|$)/i;
+
+function safeImgUrl(u) {
+    const s = String(u || '').trim().slice(0, 500);
+    if (!s) return '';
+    return (/^https:\/\//i.test(s) || s.startsWith('/uploads/')) ? s : '';
+}
+function safeVideoUrl(u) {
+    const s = String(u || '').trim().slice(0, 300);
+    return VIDEO_HOSTS.test(s) ? s : '';
+}
+function cleanEspecialidades(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.slice(0, 20).map(e => String(e || '').trim().slice(0, 80)).filter(Boolean);
+}
+function cleanVideos(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.slice(0, 30)
+        .map(v => ({ url: safeVideoUrl(v && v.url), title: String((v && v.title) || '').trim().slice(0, 150) }))
+        .filter(v => v.url);
+}
+function cleanProducciones(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.slice(0, 50).map(p => ({
+        year:        String((p && p.year)        || '').trim().slice(0, 20),
+        title:       String((p && p.title)       || '').trim().slice(0, 150),
+        role:        String((p && p.role)        || '').trim().slice(0, 100),
+        description: String((p && p.description) || '').trim().slice(0, 2000),
+        photoUrl:    safeImgUrl(p && p.photoUrl),
+        photos:      Array.isArray(p && p.photos) ? p.photos.slice(0, 12).map(safeImgUrl).filter(Boolean) : [],
+        videos:      cleanVideos(p && p.videos)
+    }));
+}
 
 /* ── Public: list active portfolios ── */
 router.get('/profiles', async (req, res) => {
@@ -50,7 +89,7 @@ router.get('/profile/:userId', async (req, res) => {
 /* ── Authenticated: get own profile ── */
 router.get('/my-profile', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         res.json({ ok: true, profile: await db.getProfile(sess.userId) || emptyProfile(sess.userId) });
     } catch (e) {
@@ -62,16 +101,16 @@ router.get('/my-profile', async (req, res) => {
 /* ── Authenticated: update own profile ── */
 router.post('/my-profile', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         const current = await db.getProfile(sess.userId) || emptyProfile(sess.userId);
         const b = req.body;
         if (b.displayName    !== undefined) current.displayName    = String(b.displayName).trim().slice(0, 100);
         if (b.bio_short      !== undefined) current.bio_short      = String(b.bio_short).trim().slice(0, 300);
         if (b.bio            !== undefined) current.bio            = String(b.bio).trim().slice(0, 3000);
-        if (b.especialidades !== undefined) current.especialidades = Array.isArray(b.especialidades) ? b.especialidades.slice(0, 20) : [];
-        if (b.producciones   !== undefined) current.producciones   = Array.isArray(b.producciones)   ? b.producciones.slice(0, 50)   : [];
-        if (b.videos         !== undefined) current.videos         = Array.isArray(b.videos)         ? b.videos.slice(0, 30)         : [];
+        if (b.especialidades !== undefined) current.especialidades = cleanEspecialidades(b.especialidades);
+        if (b.producciones   !== undefined) current.producciones   = cleanProducciones(b.producciones);
+        if (b.videos         !== undefined) current.videos         = cleanVideos(b.videos);
         if (b.portfolioActive !== undefined) current.portfolioActive = Boolean(b.portfolioActive);
         // certificados solo se modifican via /api/users/:userId/certificados (admin)
         await db.upsertProfile(sess.userId, current);
@@ -84,7 +123,7 @@ router.post('/my-profile', async (req, res) => {
 
 /* ── Authenticated: upload profile photo ── */
 router.post('/upload-photo', (req, res) => {
-    const sess = requireAuth(req, res);
+    const sess = requireMember(req, res);
     if (!sess) return;
     uploader.single('photo')(req, res, async (err) => {
         if (err)        return res.status(400).json({ ok: false, message: err.message });
@@ -107,7 +146,7 @@ router.post('/upload-photo', (req, res) => {
 
 /* ── Authenticated: upload production photo (no profile update, returns URL) ── */
 router.post('/upload-prod-photo', (req, res) => {
-    const sess = requireAuth(req, res);
+    const sess = requireMember(req, res);
     if (!sess) return;
     uploader.single('photo')(req, res, async (err) => {
         if (err)       return res.status(400).json({ ok: false, message: err.message });
@@ -128,16 +167,17 @@ router.post('/upload-prod-photo', (req, res) => {
 /* ── Authenticated: add video ── */
 router.post('/add-video', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         const { url, title } = req.body;
         if (!url) return res.status(400).json({ ok: false, message: 'URL requerida' });
-        const VIDEO_HOSTS = /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)(\/|$)/i;
-        if (!VIDEO_HOSTS.test(url))
+        if (!VIDEO_HOSTS.test(String(url)))
             return res.status(400).json({ ok: false, message: 'Solo se permiten videos de YouTube o Vimeo' });
         const p = await db.getProfile(sess.userId) || emptyProfile(sess.userId);
-        if (!p.videos) p.videos = [];
-        p.videos.push({ url, title: title || '' });
+        if (!Array.isArray(p.videos)) p.videos = [];
+        if (p.videos.length >= 30)
+            return res.status(400).json({ ok: false, message: 'Máximo 30 videos' });
+        p.videos.push({ url: String(url).trim().slice(0, 300), title: String(title || '').trim().slice(0, 150) });
         await db.upsertProfile(sess.userId, p);
         res.json({ ok: true });
     } catch (e) {
@@ -149,7 +189,7 @@ router.post('/add-video', async (req, res) => {
 /* ── Authenticated: delete video ── */
 router.delete('/video/:idx', async (req, res) => {
     try {
-        const sess = requireAuth(req, res);
+        const sess = requireMember(req, res);
         if (!sess) return;
         const p   = await db.getProfile(sess.userId);
         const idx = parseInt(req.params.idx);
